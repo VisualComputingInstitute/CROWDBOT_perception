@@ -1,0 +1,76 @@
+<!-- Launch file for recording 2d image annotations -->
+<launch>
+
+    <arg name="folder" default="/home/stefan/data/spencer/02-terminal-f-e-processed/"/>
+    <arg name="start" default="1250"/>
+    <arg name="rate" default="0.5"/>
+    <arg name="duration" default="99999999.9"/>
+
+    <arg name="hog" default="true"/>
+    <arg name="sensor_frame" default="front"/>
+    <arg name="queue_size" default="10"/>
+    <arg name="camera_namespace" default="/spencer/sensors/rgbd_front_top"/>
+    <arg name="ground_plane" default="/spencer/sensors/rgbd_front_top/ground_plane"/>
+    <arg name="visual_odometry" default="/spencer/sensors/rgbd_front_top/visual_odometry/motion_matrix"/>
+    <!--Boxes+Timestamps path have to meet format + belong to playbacked sequence in folder, of course-->
+    <arg name="boxes_path" default="/home/stefan/results/spencer_tracker/anno_seq_02-fe-1255_results/anno_seq_02-fe-1255_results.txt"/>
+    <arg name="timestamps_path" default="/home/stefan/results/spencer_tracker/anno_seq_02-fe-1255_results/image_info.txt"/>
+
+    <arg name="sync_slop" default="0.05"/>
+    <arg name="sync_queue_size" default="10"/>
+    <arg name="evaluation_prefix" default="schiphol02/front_rgbd_only/mdl/baseline"/>
+
+    <rosparam param="/use_sim_time">true</rosparam>
+
+    <!-- Launch bagfile -->
+    <include file="$(find spencer_bagfile_tools)/launch/playback.launch">
+        <arg name="folder" value="$(arg folder)"/>
+        <arg name="start" value="$(arg start)"/>
+        <arg name="rate" value="$(arg rate)"/>
+        <arg name="duration" value="$(arg duration)"/>
+        <arg name="laser" value="true"/> <!-- Maybe laser can be used to correct depth of annotations? -->
+        <arg name="dslr" value="false"/>
+        <arg name="visualization" value="false"/>
+        <arg name="pause" value="true"/>
+        <arg name="reconstruct_odometry" value="true"/>
+    </include>
+
+    <!-- People tracking -->
+    <!-- Tracking not needed, but conviniently all.launch starts all the other needed stuff (GP,VO,...) -->
+    <include file="$(find spencer_rwth)/launch/all.launch">
+        <arg name="hog" value="$(arg hog)"/>
+        <arg name="sensor_frame" value="$(arg sensor_frame)"/>
+    </include>
+
+    <!-- Annotation publisher -->
+    <node name="annotation" pkg="rwth_annotations" type="annotation">
+        <param name="queue_size" value="$(arg queue_size)" type="int"/>
+        <param name="camera_namespace" value="$(arg camera_namespace)"/>
+        <param name="ground_plane" value="$(arg ground_plane)"/>
+        <param name="visual_odometry" value="$(arg visual_odometry)"/>
+        <param name="boxes_path" value="$(arg boxes_path)"/>
+        <param name="timestamps_path" value="$(arg timestamps_path)"/>
+    </node>
+
+    <!-- Evaluation -->
+    <node name="spencer_tracking_metrics" pkg="spencer_tracking_metrics" type="online_analysis.py" required="true" output="screen" clear_params="true">
+        <param name="approximate_sync" value="true"/>
+        <param name="sync_slop" value="$(arg sync_slop)"/> 
+        <param name="sync_queue_size" value="$(arg sync_queue_size)"/>
+        <param name="clear_metrics" value="false"/>
+        <param name="ospa" value="false"/>
+        <param name="timing_metrics" value="true"/>
+        <param name="matching_threshold" value="1.0"/>
+        <param name="subscriber_timeout" value="5"/>
+        <param name="transform_flag" value="true"/>
+        <param name="evaluation_prefix" value="$(arg evaluation_prefix)"/>
+        <param name="aggregate_results" value="true"/>
+        <param name="num_expected_gt_cycles" value="900"/>
+
+        <remap from="/groundtruth" to="/spencer/perception/annotated_persons"/>
+        <remap from="/spencer/perception/tracked_persons" to="/spencer/perception_internal/people_tracking/rgbd_front_top/tracked_persons"/>
+        <remap from="/srl_nearest_neighbor_tracker/tracking_timing_metrics" to="/tracking_timing_metrics"/>
+    </node>  
+
+</launch>
+

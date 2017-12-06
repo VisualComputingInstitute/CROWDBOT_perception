@@ -1,0 +1,14 @@
+<launch>
+    <arg name="ground_plane" value="/ground_plane" />
+    <arg name="rate" default="30.0"/>
+    <arg name="base_footprint" default="/robot/BaseFrame" />
+    <arg name="camera_frame" default="/hardware/depth/kinect2/Kinect2Frame" />
+
+    <node pkg="rwth_ground_plane" type="ground_plane_tf_based_fixed" name="ground_plane" output="screen">
+        <param name="base_footprint" value="$(arg base_footprint)" type="string"/>
+        <param name="camera_frame" value="$(arg camera_frame)" type="string"/>
+        <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
+        <param name="rate" value="$(arg rate)"/>
+    </node>
+
+</launch>

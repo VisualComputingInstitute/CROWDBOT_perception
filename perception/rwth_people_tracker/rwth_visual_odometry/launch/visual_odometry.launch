@@ -1,0 +1,11 @@
+<launch>
+    <arg name="queue_size" default="20" />
+    <arg name="camera_namespace" default="/spencer/sensors/rgbd_front_top" />
+    <arg name="motion_parameters" default="/spencer/sensors/visual_odometry/motion_matrix" />
+
+    <node pkg="rwth_visual_odometry" type="visual_odometry" name="visual_odometry" output="screen">
+        <param name="queue_size" value="$(arg queue_size)" type="int"/>
+        <param name="camera_namespace" value="$(arg camera_namespace)" type="string"/>
+        <param name="motion_parameters" value="$(arg motion_parameters)" type="string"/>
+    </node>
+</launch> 

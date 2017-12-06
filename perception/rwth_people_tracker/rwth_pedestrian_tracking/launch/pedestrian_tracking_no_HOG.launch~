@@ -1,0 +1,26 @@
+<launch>
+    <arg name="sensor_frame" default="front" />
+    <arg name="config_file" default="$(find rwth_pedestrian_tracking)/config/config_Asus.inp" />
+    <arg name="queue_size" default="10" />
+    <arg name="camera_namespace" default="/spencer/sensors/rgbd_$(arg sensor_frame)_top" />
+    <arg name="ground_plane" default="/spencer/sensors/rgbd_$(arg sensor_frame)_top/ground_plane" />
+    <arg name="upper_body_detections" default="/spencer/perception_internal/people_detection/rgbd_$(arg sensor_frame)_top/upper_body_detector/detections" />
+    <arg name="visual_odometry" default="/spencer/sensors/rgbd_$(arg sensor_frame)_top/visual_odometry/motion_matrix" />
+    <arg name="pedestrian_array" default="/spencer/perception_internal/people_tracking/rgbd_$(arg sensor_frame)_top/rwth/pedestrian_array" />
+    <arg name="pedestrian_image" default="/spencer/perception_internal/people_tracking/rgbd_$(arg sensor_frame)_top/rwth/image" />
+    <arg name="tracked_persons" default="/spencer/perception_internal/people_tracking/rgbd_$(arg sensor_frame)_top/tracked_persons" />
+
+    <node pkg="rwth_pedestrian_tracking" type="pedestrian_tracking" name="pedestrian_tracking" output="screen">
+        <param name="config_file" value="$(arg config_file)" type="string"/>
+        <param name="queue_size" value="$(arg queue_size)" type="int"/>
+        <param name="camera_namespace" value="$(arg camera_namespace)" type="string"/>
+        <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
+        <param name="ground_hog" value="" type="string"/> <!-- Important to start without groundHOG -->
+        <param name="visual_odometry" value="$(arg visual_odometry)" type="string"/>
+        <param name="upper_body_detections" value="$(arg upper_body_detections)" type="string"/>
+        <param name="pedestrian_array" value="$(arg pedestrian_array)" type="string"/>
+        <param name="pedestrian_image" value="$(arg pedestrian_image)" type="string"/>
+        <param name="tracked_persons" value="$(arg tracked_persons)" type="string"/>
+    </node>
+
+</launch> 

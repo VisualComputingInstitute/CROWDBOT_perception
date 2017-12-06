@@ -1,0 +1,29 @@
+<!-- Launch file for evaluating specific schiphol sequence (calls "evaluate_sequence.launch") -->
+<launch> 
+    <!-- =========== -->
+    <!-- nov05-167 -->
+    <!-- =========== -->
+
+    <!-- Prefixes -->
+    <arg name="sequence_folder_prefix" default="/fastwork/spencer/data"/> <!-- with e.g. /02-terminal-f-e-processed/ -->
+    <arg name="anno_folder_prefix" default="/fastwork/spencer/results"/> <!-- with e.g. /anno_seq_02-fe-1255_results -->
+
+    <include file="$(find rwth_annotations)/launch/evaluate.launch">
+        <!-- Sequence/Playback paras --> <!-- RESET ALL FOR NEW SEQ -->
+        <arg name="from_robot" default="true"/>
+        <arg name="folder" default=""/> <!-- needed for playback.launch -->
+        <arg name="files" default="$(arg sequence_folder_prefix)/schiphol-nov/rear_rgbd_2015-11-30-14-34-55.bag $(arg sequence_folder_prefix)/schiphol-nov/lasers_odom_collision_2015-11-30-14-34-51.bag"/> 
+    <!-- needed for playback_from_robot.launch -->
+        <arg name="start" default="162"/>
+        <arg name="rate" default="0.5"/>
+        <!-- Tracking paras -->
+        <arg name="sensor_frame" default="rear"/> <!-- RESET FOR NEW SEQ -->
+        <!-- Annotation paras --> 
+        <!--Boxes+Timestamps path have to meet format + belong to playbacked sequence in folder, of course-->
+        <arg name="anno_sequence_path" default="$(arg anno_folder_prefix)/anno_seq_nov05-167_results"/> <!-- RESET FOR NEW SEQ -->
+        <!-- Evaluation paras -->
+        <arg name="evaluation_prefix" default="nov05-167/2d_eval/"/> <!-- RESET FOR NEW SEQ -->
+        <arg name="num_expected_gt_cycles" default="1050"/> <!-- RESET FOR NEW SEQ, should be 90-95% of num_annotated_frames (see log.txt) -->
+    </include>
+</launch>
+

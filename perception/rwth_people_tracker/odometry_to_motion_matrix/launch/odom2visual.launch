@@ -1,0 +1,12 @@
+<launch>
+    <arg name="odom" default="/spencer/sensors/odom" />
+    <arg name="motion_parameters" default="/spencer/sensors/visual_odometry/motion_matrix" />
+
+
+    <group ns="/spencer/sensors/">
+      <node pkg="odometry_to_motion_matrix" type="odom2visual" name="odom2visual" output="screen">
+          <param name="odom" value="$(arg odom)" type="string"/>
+          <param name="motion_parameters" value="$(arg motion_parameters)" type="string"/>
+      </node>
+    </group>
+</launch> 

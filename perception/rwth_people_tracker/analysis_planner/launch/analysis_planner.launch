@@ -1,0 +1,15 @@
+<launch>
+
+    <arg name="sensor_frame" default="rear" />
+    <arg name="tracked_persons" default="/spencer/perception_internal/people_tracking/rgbd_$(arg sensor_frame)_top/tracked_persons" />
+    <arg name="tracked_persons_2d" default="/spencer/perception_internal/people_tracking/rgbd_$(arg sensor_frame)_top/tracked_persons_2d" />
+
+
+    <group ns="/spencer/perception_internal/people_tracking/rgbd_$(arg sensor_frame)_top">
+        <node pkg="analysis_planner" type="analysis_planner" name="analysis_planner" output="screen">
+            <param name="tracked_persons" value="$(arg tracked_persons)" type="string"/>
+            <param name="tracked_persons_2d" value="$(arg tracked_persons_2d)" type="string"/>
+        </node>
+    </group>
+
+</launch> 

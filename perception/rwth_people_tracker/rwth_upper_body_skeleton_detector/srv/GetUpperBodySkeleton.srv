@@ -1,0 +1,8 @@
+# request
+float32[307200] depth_image
+float32[50000] depths
+uint32[50000] pixels_x
+uint32[50000] pixels_y
+---
+# response
+float32[27] upper_body_skeleton_joint_positions 

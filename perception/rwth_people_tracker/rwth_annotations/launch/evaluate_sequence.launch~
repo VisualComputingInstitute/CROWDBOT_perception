@@ -1,0 +1,15 @@
+<!-- Launch file for evaluating specific schiphol sequence (give [sequence_name] as argument, calls "evaluate_[sequence_name].launch") -->
+<launch> 
+    <!-- =========== -->
+    <arg name="sequence_name" default="01-e24-1700"/> <!-- 01-e24-1700 | 01-e24-1930 | 02-fe-1255 | 03-e1920-2505 | nov05-167 | nov09-1 -->
+    <!-- =========== -->
+
+    <!-- Prefixes -->
+    <arg name="sequence_folder_prefix" default="/home/stefan/data/spencer"/> <!-- with e.g. /02-terminal-f-e-processed/ -->
+    <arg name="anno_folder_prefix" default="/home/stefan/results/spencer_tracker"/> <!-- with e.g. /anno_seq_02-fe-1255_results -->
+    
+    <include file="$(find rwth_annotations)/launch/evaluate_$(arg sequence_name).launch">
+        <arg name="sequence_folder_prefix" default="$(arg sequence_folder_prefix)"/>
+        <arg name="anno_folder_prefix" default="$(arg anno_folder_prefix)"/>
+    </include>
+</launch>

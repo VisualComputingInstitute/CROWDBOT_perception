@@ -1,0 +1,141 @@
+<!-- Launch file for evaluating specific schiphol sequence (use "evaluate_[SEQ_NAME].launch" to call) -->
+<launch>
+
+    <!-- Prefixes -->
+    <arg name="sequence_folder_prefix" default="/home/stefan/data/spencer"/> <!-- with e.g. /02-terminal-f-e-processed/ -->
+    <arg name="anno_folder_prefix" default="/home/stefan/results/spencer_tracker"/> <!-- with e.g. /anno_seq_02-fe-1255_results -->
+    
+    <!-- Sequence/Playback paras --> <!-- RESET ALL FOR NEW SEQ -->
+    <arg name="from_robot" default="false"/>
+    <arg name="folder" default="$(arg sequence_folder_prefix)/02-terminal-f-e-processed/"/> <!-- needed for playback.launch -->
+    <arg name="files" default="$(arg sequence_folder_prefix)/02-terminal-f-e-processed/"/> <!-- needed for playback_from_robot.launch -->
+    <arg name="start" default="1250"/>
+    <arg name="rate" default="0.5"/>
+    <arg name="duration" default="99999999.9"/>
+
+    <!-- Tracking paras -->
+    <arg name="hog" default="true"/>
+    <arg name="sensor_frame" default="front"/> <!-- RESET FOR NEW SEQ -->
+    <arg name="queue_size" default="10"/>
+    <arg name="camera_namespace" default="/spencer/sensors/rgbd_$(arg sensor_frame)_top"/>
+    <arg name="ground_plane" default="/spencer/sensors/rgbd_$(arg sensor_frame)_top/ground_plane"/>
+    <arg name="visual_odometry" default="/spencer/sensors/rgbd_$(arg sensor_frame)_top/visual_odometry/motion_matrix"/>
+
+    <!-- Annotation paras --> 
+    <!--Boxes+Timestamps path have to meet format + belong to playbacked sequence in folder, of course-->
+    <arg name="anno_sequence_path" default="$(arg anno_folder_prefix)/anno_seq_02-fe-1255_results"/> <!-- RESET FOR NEW SEQ -->
+    <arg name="boxes_path" default="$(arg anno_sequence_path)/annotations.txt"/>
+    <arg name="timestamps_path" default="$(arg anno_sequence_path)/image_info.txt"/>
+    <arg name="misses_filename" default="$(arg anno_sequence_path)/last_run/misses.txt"/>
+    <arg name="falsepositives_filename" default="$(arg anno_sequence_path)/last_run/falsepositives.txt"/>
+    <arg name="mismatches_filename" default="$(arg anno_sequence_path)/last_run/mismatches.txt"/>
+    <arg name="groundtruth_filename" default="$(arg anno_sequence_path)/last_run/groundtruth.txt"/>
+    <arg name="hypotheses_filename" default="$(arg anno_sequence_path)/last_run/hypotheses.txt"/>
+
+    <!-- Evaluation paras -->
+    <arg name="sync_slop" default="0.05"/>
+    <arg name="sync_queue_size" default="10"/>
+    <arg name="evaluation_prefix" default="schiphol02/front_rgbd_only/mdl/baseline"/> <!-- RESET FOR NEW SEQ -->
+    <arg name="eval_2d" default="true"/>
+    <arg name="num_expected_gt_cycles" default="10"/> <!-- RESET FOR NEW SEQ, should be 90-95% of num_annotated_frames (see log.txt) -->
+
+    <rosparam param="/use_sim_time">true</rosparam>
+
+    <!-- Launch bagfile -->
+    <group unless="$(arg from_robot)">
+        <include file="$(find spencer_bagfile_tools)/launch/playback.launch">
+            <arg name="folder" value="$(arg folder)"/>
+            <arg name="start" value="$(arg start)"/>
+            <arg name="rate" value="$(arg rate)"/>
+            <arg name="duration" value="$(arg duration)"/>
+            <arg name="laser" value="true"/> <!-- Maybe laser can be used to correct depth of annotations? -->
+            <arg name="dslr" value="false"/>
+            <arg name="visualization" value="false"/>
+            <arg name="pause" value="true"/>
+            <arg name="reconstruct_odometry" value="true"/>
+        </include>
+    </group>
+    <group if="$(arg from_robot)">
+        <include file="$(find spencer_bagfile_tools)/launch/playback_from_robot.launch">
+            <arg name="files" value="$(arg files)"/>
+            <arg name="start" value="$(arg start)"/>
+            <arg name="rate" value="$(arg rate)"/>
+            <arg name="duration" value="$(arg duration)"/>
+            <arg name="visualization" value="false"/>
+            <arg name="pause" value="true"/>
+            <arg name="uncompress_rgbd" value="true"/>
+        </include>
+    </group> 
+
+    <!-- People tracking -->
+    <!-- Tracking not needed, but conviniently all.launch starts all the other needed stuff (GP,VO,...) -->
+    <include file="$(find spencer_rwth)/launch/all.launch">
+        <arg name="hog" value="$(arg hog)"/>
+        <arg name="sensor_frame" value="$(arg sensor_frame)"/>
+    </include>
+
+    <!-- Annotation publisher -->
+    <node name="annotation" pkg="rwth_annotations" type="annotation">
+        <param name="queue_size" value="$(arg queue_size)" type="int"/>
+        <param name="camera_namespace" value="$(arg camera_namespace)"/>
+        <param name="ground_plane" value="$(arg ground_plane)"/>
+        <param name="visual_odometry" value="$(arg visual_odometry)"/>
+        <param name="boxes_path" value="$(arg boxes_path)"/>
+        <param name="timestamps_path" value="$(arg timestamps_path)"/>
+    </node>
+
+    <!-- Evaluation -->
+    <group unless="$(arg eval_2d)">
+        <node name="spencer_tracking_metrics" pkg="spencer_tracking_metrics" type="online_analysis.py" required="true" output="screen" clear_params="true">
+            <param name="approximate_sync" value="true"/>
+            <param name="sync_slop" value="$(arg sync_slop)"/> 
+            <param name="sync_queue_size" value="$(arg sync_queue_size)"/>
+            <param name="clear_metrics" value="false"/>
+            <param name="ospa" value="false"/>
+            <param name="timing_metrics" value="true"/>
+            <param name="matching_threshold" value="1.0"/>
+            <param name="subscriber_timeout" value="5"/>
+            <param name="transform_flag" value="true"/>
+            <param name="evaluation_prefix" value="$(arg evaluation_prefix)"/>
+            <param name="aggregate_results" value="true"/>
+            <param name="num_expected_gt_cycles" value="$(arg num_expected_gt_cycles)"/>
+            <param name="misses_filename" value="$(arg misses_filename)"/>
+            <param name="falsepositives_filename" value="$(arg falsepositives_filename)"/>
+            <param name="mismatches_filename" value="$(arg mismatches_filename)"/>
+            <param name="groundtruth_filename" value="$(arg groundtruth_filename)"/>
+            <param name="hypotheses_filename" value="$(arg hypotheses_filename)"/>
+
+            <remap from="/groundtruth" to="/spencer/perception/annotated_persons"/>
+            <remap from="/spencer/perception/tracked_persons" to="/spencer/perception_internal/people_tracking/rgbd_$(arg sensor_frame)_top/tracked_persons"/>
+            <remap from="/srl_nearest_neighbor_tracker/tracking_timing_metrics" to="/tracking_timing_metrics"/>
+        </node> 
+    </group> 
+
+    <group if="$(arg eval_2d)">
+        <node name="spencer_tracking_metrics_2d" pkg="spencer_tracking_metrics_2d" type="online_analysis.py" required="true" output="screen" clear_params="true">
+            <param name="approximate_sync" value="true"/>
+            <param name="sync_slop" value="$(arg sync_slop)"/> 
+            <param name="sync_queue_size" value="$(arg sync_queue_size)"/>
+            <param name="clear_metrics" value="false"/>
+            <param name="ospa" value="false"/>
+            <param name="timing_metrics" value="true"/>
+            <param name="matching_threshold" value="0.5"/>
+            <param name="subscriber_timeout" value="5"/>
+            <param name="transform_flag" value="false"/>
+            <param name="evaluation_prefix" value="$(arg evaluation_prefix)"/>
+            <param name="aggregate_results" value="true"/>
+            <param name="num_expected_gt_cycles" value="$(arg num_expected_gt_cycles)"/>
+            <param name="misses_filename" value="$(arg misses_filename)"/>
+            <param name="falsepositives_filename" value="$(arg falsepositives_filename)"/>
+            <param name="mismatches_filename" value="$(arg mismatches_filename)"/>
+            <param name="groundtruth_filename" value="$(arg groundtruth_filename)"/>
+            <param name="hypotheses_filename" value="$(arg hypotheses_filename)"/>
+
+            <remap from="/groundtruth" to="/spencer/perception/annotated_persons2d"/>
+            <remap from="/spencer/perception/tracked_persons" to="/spencer/perception_internal/people_tracking/rgbd_$(arg sensor_frame)_top/tracked_persons_2d"/>
+            <remap from="/srl_nearest_neighbor_tracker/tracking_timing_metrics" to="/tracking_timing_metrics"/>
+        </node>
+    </group>
+
+</launch>
+

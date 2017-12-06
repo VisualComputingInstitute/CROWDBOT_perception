@@ -1,0 +1,45 @@
+<!-- Launch file for rwth detectors (upperbody+HOG) and tracker -->
+<launch>
+    <!-- Visualization options -->
+    <!-- run rqt_gui with provided perspective, or not  -->
+    <!-- <arg name="visualization" default="true" /> -->
+    <!-- rqt_gui perspective-file -->
+    <!-- <arg name="rqt_perspective_file" default="$(find rwth_pedestrian_tracking)/config/rqt_detsAndTracks.perspective" />  -->
+ 
+
+    <!-- Front RGB-D detectors -->
+    <include file="$(find spencer_people_tracking_launch)/launch/front_rgbd_detectors.launch"/>
+
+    <!-- Visual odometry -->
+    <!-- <include file="$(find rwth_visual_odometry)/launch/visual_odometry.launch"/> -->
+    <!-- Use robot odometry converter instead of visual odometry directly -->
+    <!-- <include file="$(find odometry_to_motion_matrix)/launch/odom2visual.launch"/> -->
+    <include file="$(find odometry_to_motion_matrix)/launch/tf2visual.launch"/>
+
+    <!-- People tracking -->
+    <include file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking.launch"/>
+
+    <!-- Fix orientation of non-moving targets (assume previous orientation while it was still moving, or face towards sensor if unknown) -->
+    <node name="fix_orientation_of_non_moving_targets" pkg="spencer_tracking_utils" type="fix_orientation_of_non_moving_targets">
+        <param name="min_required_avg_velocity" value="0.15"/>
+        <remap from="input_tracks" to="/spencer/perception/tracked_persons"/>
+        <remap from="output_tracks" to="/spencer/perception/tracked_persons_orientation_fixed"/>
+    </node>
+
+    <!-- Filter out non-moving targets -->
+    <node name="filter_non_moving_targets" pkg="spencer_tracking_utils" type="filter_non_moving_targets">
+        <param name="num_frames_to_observe" value="12"/>
+        <param name="max_timespan_to_observe" value="10.0"/>
+        <param name="min_required_avg_velocity" value="0.35"/>
+        <param name="delete_unseen_tracks_after_num_frames" value="15"/>
+        <remap from="input_tracks" to="/spencer/perception/tracked_persons_orientation_fixed"/>
+        <remap from="output_tracks" to="/spencer/perception/tracked_persons_moving"/>
+    </node>
+
+    <!--<group if="$(arg visualization)">
+        <node pkg="rqt_gui" type="rqt_gui" name="rqt_gui">
+            <arg name="perspective-file" value="$(arg rqt_perspective_file)" type="string"/>
+        </node>
+    </group> -->
+</launch>
+
