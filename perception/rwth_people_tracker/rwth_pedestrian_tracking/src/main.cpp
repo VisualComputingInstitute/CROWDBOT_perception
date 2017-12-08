@@ -719,13 +719,13 @@ void callbackWithoutHOG(const ImageConstPtr &color,
         //printf("last:\n");
         //frameInlier(frameInlier.getSize()-1).showFrameInlier();
         Vector<int> currentInlier = frameInlier(frameInlier.getSize()-1).getInlier();
-        if (currentInlier(currentInlier.getSize()-1) > 0){
+        if (currentInlier(0) > 0){
             trackedPerson.is_matched = true;
         }
         else{
             trackedPerson.is_matched = false;
         }
-        //trackedPerson.is_matched = true; // FIXME: available for mht tracker, yet? probably with getIdx() = Inlier detections
+        trackedPerson.is_matched = true; // FIXME: available for mht tracker, yet? probably with getIdx() = Inlier detections
         // from kalman: !!det!!.getColorHist(frame, inl(0), newColHist); same with ID instead of colorhist? Look later...
         trackedPerson.detection_id = 0; // FIXME: available for mht tracker, yet? can we get it from Idx??
 

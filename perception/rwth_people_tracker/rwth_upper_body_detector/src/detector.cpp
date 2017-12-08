@@ -109,7 +109,8 @@ void Detector::ComputeFreespace(const Camera& camera,
     {
         double zj = point_cloud.Z(j);
 
-        if(zj < Globals::freespace_max_depth_to_cons && zj >= 0.1)
+	std::cout << "zj: " << zj << std::endl;
+        if((zj < Globals::freespace_max_depth_to_cons) && (zj >= 0.1))
         {
             double xj = point_cloud.X(j);
             double yj = point_cloud.Y(j);

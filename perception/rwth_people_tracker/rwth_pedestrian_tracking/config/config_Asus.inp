@@ -52,8 +52,8 @@ WORLD_SCALE = 1.0
 #===========================
 # height and width of images
 #===========================
-dImWidth = 640
-dImHeight = 480
+dImWidth = 1920
+dImHeight = 1080
 
 #====================================
 # Camera

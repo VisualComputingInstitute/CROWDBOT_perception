@@ -174,7 +174,7 @@ void colorImageCallback(const ImageConstPtr &color) {
     color_image = color;
 }
 
-void callback(const ImageConstPtr &depth, const GroundPlane::ConstPtr &gp, const CameraInfoConstPtr &info)
+void callback(const ImageConstPtr &depth, const GroundPlane::ConstPtr &gp, const CameraInfoConstPtr &dep_info, const CameraInfoConstPtr &rgb_info)
 {
     // Check if calculation is necessary
     bool detect = pub_message.getNumSubscribers() > 0 || pub_centres.getNumSubscribers() > 0 || pub_detected_persons.getNumSubscribers() > 0;
@@ -188,9 +188,9 @@ void callback(const ImageConstPtr &depth, const GroundPlane::ConstPtr &gp, const
     img_depth_ = cv_depth_ptr->image;
     
 
-    Matrix<double> matrix_depth(info->width, info->height);
-    for (int r = 0;r < info->height;r++){
-        for (int c = 0;c < info->width;c++) {
+    Matrix<double> matrix_depth(dep_info->width, dep_info->height);
+    for (int r = 0;r < dep_info->height;r++){
+        for (int c = 0;c < dep_info->width;c++) {
             matrix_depth(c, r) = img_depth_.at<float>(r,c);
         }
     }
@@ -198,7 +198,8 @@ void callback(const ImageConstPtr &depth, const GroundPlane::ConstPtr &gp, const
     // Generate base camera
     Matrix<double> R = Eye<double>(3);
     Vector<double> t(3, 0.0);
-    Matrix<double> K(3,3, (double*)&info->K[0]);
+    Matrix<double> K(3,3, (double*)&dep_info->K[0]);
+    Matrix<double> K_rgb(3,3, (double*)&rgb_info->K[0]);
 
     // Get GP
     Vector<double> GP(3, (double*) &gp->n[0]);
@@ -221,6 +222,51 @@ void callback(const ImageConstPtr &depth, const GroundPlane::ConstPtr &gp, const
 
     for(int i = 0; i < detected_bounding_boxes.getSize(); i++)
     {
+        // Calculate centres and corner points of bounding boxes in IR, world and RGB
+	double depth_value = detected_bounding_boxes(i)(5);
+        double w_ir = detected_bounding_boxes(i)(2);
+        double h_ir = detected_bounding_boxes(i)(3);
+
+        double x_left_ir = detected_bounding_boxes(i)(0);
+        double y_top_ir = detected_bounding_boxes(i)(1);
+        double x_mid_ir = detected_bounding_boxes(i)(0)+w_ir/2.0;
+        double y_mid_ir = detected_bounding_boxes(i)(1)+h_ir/2.0;
+        double x_right_ir = detected_bounding_boxes(i)(0)+w_ir;
+        double y_down_ir = detected_bounding_boxes(i)(1)+h_ir;
+
+        double x_left_world = depth_value*((x_left_ir-K(2,0))/K(0,0));
+        double y_top_world = depth_value*((y_top_ir-K(2,1))/K(1,1));
+        double x_mid_world = depth_value*((x_mid_ir-K(2,0))/K(0,0));
+        double y_mid_world = depth_value*((y_mid_ir-K(2,1))/K(1,1));
+        double x_right_world = depth_value*((x_right_ir-K(2,0))/K(0,0));
+        double y_down_world = depth_value*((y_down_ir-K(2,1))/K(1,1));
+
+        //TODO: R/t?
+        double x_left_rgb = (x_left_world * K_rgb(0,0) / depth_value) + K_rgb(2,0);
+        double y_top_rgb = (y_top_world * K_rgb(1,1) / depth_value) + K_rgb(2,1);
+        double x_mid_rgb = (x_mid_world * K_rgb(0,0) / depth_value) + K_rgb(2,0);
+        double y_mid_rgb = (y_mid_world * K_rgb(1,1) / depth_value) + K_rgb(2,1);
+        double x_right_rgb = (x_right_world * K_rgb(0,0) / depth_value) + K_rgb(2,0);
+        double y_down_rgb = (y_down_world * K_rgb(1,1) / depth_value) + K_rgb(2,1);
+        double w_rgb = x_right_rgb - x_left_rgb;
+        double h_rgb = y_down_rgb - y_top_rgb;
+
+
+        // PoseArray message for boundingbox centres
+        geometry_msgs::Pose pose;
+        pose.position.x = x_mid_world;
+        pose.position.y = y_mid_world;
+        pose.position.z = depth_value;
+        pose.orientation.w = 1.0; //No rotation atm.
+        bb_centres.poses.push_back(pose);
+
+        // Reset IR coordinates to RGB for custom message
+        detected_bounding_boxes(i)(0) = x_left_rgb;
+        detected_bounding_boxes(i)(1) = y_top_rgb;
+        detected_bounding_boxes(i)(2) = w_rgb;
+        detected_bounding_boxes(i)(3) = h_rgb;
+
+
         // Custom detections message
         detection_msg.pos_x.push_back(detected_bounding_boxes(i)(0));
         detection_msg.pos_y.push_back(detected_bounding_boxes(i)(1));
@@ -228,18 +274,6 @@ void callback(const ImageConstPtr &depth, const GroundPlane::ConstPtr &gp, const
         detection_msg.height.push_back(detected_bounding_boxes(i)(3));
         detection_msg.dist.push_back(detected_bounding_boxes(i)(4));
         detection_msg.median_depth.push_back(detected_bounding_boxes(i)(5));
-
-        // Calculate centres of bounding boxes
-        double mid_point_x = detected_bounding_boxes(i)(0)+detected_bounding_boxes(i)(2)/2.0;
-        double mid_point_y = detected_bounding_boxes(i)(1)+detected_bounding_boxes(i)(3)/2.0;
-
-        // PoseArray message for boundingbox centres
-        geometry_msgs::Pose pose;
-        pose.position.x = detected_bounding_boxes(i)(5)*((mid_point_x-K(2,0))/K(0,0));
-        pose.position.y = detected_bounding_boxes(i)(5)*((mid_point_y-K(2,1))/K(1,1));
-        pose.position.z = detected_bounding_boxes(i)(5);
-        pose.orientation.w = 1.0; //No rotation atm.
-        bb_centres.poses.push_back(pose);
 
         // DetectedPerson for SPENCER
         spencer_tracking_msgs::DetectedPerson detected_person;
@@ -295,6 +329,7 @@ void callback(const ImageConstPtr &depth, const GroundPlane::ConstPtr &gp, const
 
 // Connection callback that unsubscribes from the tracker if no one is subscribed.
 void connectCallback(message_filters::Subscriber<CameraInfo> &sub_cam,
+                     message_filters::Subscriber<CameraInfo> &sub_rgb_cam,
                      message_filters::Subscriber<GroundPlane> &sub_gp,
                      boost::shared_ptr<image_transport::Subscriber> &sub_col,
                      image_transport::SubscriberFilter &sub_dep,
@@ -302,12 +337,14 @@ void connectCallback(message_filters::Subscriber<CameraInfo> &sub_cam,
     if(!pub_message.getNumSubscribers() && !pub_result_image.getNumSubscribers() && !pub_centres.getNumSubscribers() && !pub_detected_persons.getNumSubscribers()) {
         ROS_DEBUG("Upper Body Detector: No subscribers. Unsubscribing.");
         sub_cam.unsubscribe();
+        sub_rgb_cam.unsubscribe();
         sub_gp.unsubscribe();
         sub_col->shutdown();
         sub_dep.unsubscribe();
     } else {
         ROS_DEBUG("Upper Body Detector: New subscribers. Subscribing.");
         sub_cam.subscribe();
+        sub_rgb_cam.subscribe();
         sub_gp.subscribe();
         sub_dep.subscribe(it,sub_dep.getTopic().c_str(),1);
     }
@@ -348,8 +385,9 @@ int main(int argc, char **argv)
     private_node_handle_.param("ground_plane", topic_gp, string("/ground_plane"));
 
     topic_color_image = cam_ns + "/rgb/RgbImage";
-    string topic_depth_image = cam_ns + "/depth/DepthImage";
     string topic_camera_info = cam_ns + "/depth/camera_info";
+    string topic_depth_image = cam_ns + "/depth/DepthImage";
+    string topic_rgb_camera_info = cam_ns + "/rgb/camera_info";
 
     // New parameters for SPENCER
     private_node_handle_.param("detection_id_increment", detection_id_increment, 1);
@@ -386,23 +424,26 @@ int main(int argc, char **argv)
     boost::shared_ptr<image_transport::Subscriber> subscriber_color;
     subscriber_depth.subscribe(it, topic_depth_image.c_str(),1); subscriber_depth.unsubscribe();
     message_filters::Subscriber<CameraInfo> subscriber_camera_info(n, topic_camera_info.c_str(), 1); subscriber_camera_info.unsubscribe();
+    message_filters::Subscriber<CameraInfo> subscriber_rgb_camera_info(n, topic_rgb_camera_info.c_str(), 1); subscriber_rgb_camera_info.unsubscribe();
     message_filters::Subscriber<GroundPlane> subscriber_gp(n, topic_gp.c_str(), 1); subscriber_gp.unsubscribe();
 
     ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
                                                        boost::ref(subscriber_camera_info),
+                                                       boost::ref(subscriber_rgb_camera_info),
                                                        boost::ref(subscriber_gp),
                                                        boost::ref(subscriber_color),
                                                        boost::ref(subscriber_depth),
                                                        boost::ref(it));
     image_transport::SubscriberStatusCallback image_cb = boost::bind(&connectCallback,
                                                                      boost::ref(subscriber_camera_info),
+                                                                     boost::ref(subscriber_rgb_camera_info),
                                                                      boost::ref(subscriber_gp),
                                                                      boost::ref(subscriber_color),
                                                                      boost::ref(subscriber_depth),
                                                                      boost::ref(it));
 
     //The real queue size for synchronisation is set here.
-    sync_policies::ApproximateTime<Image, GroundPlane, CameraInfo> MySyncPolicy(queue_size);
+    sync_policies::ApproximateTime<Image, GroundPlane, CameraInfo, CameraInfo> MySyncPolicy(queue_size);
     MySyncPolicy.setAgePenalty(1000); //set high age penalty to publish older data faster even if it might not be correctly synchronized.
 
     // Initialise detector
@@ -411,13 +452,14 @@ int main(int argc, char **argv)
     detector = new Detector();
 
     // Create synchronization policy. Here: async because time stamps will never match exactly
-    const sync_policies::ApproximateTime<Image, GroundPlane, CameraInfo> MyConstSyncPolicy = MySyncPolicy;
-    Synchronizer< sync_policies::ApproximateTime<Image, GroundPlane, CameraInfo> > sync(MyConstSyncPolicy,
-                                                                                       subscriber_depth,
-                                                                                       subscriber_gp,
-                                                                                       subscriber_camera_info);
+    const sync_policies::ApproximateTime<Image, GroundPlane, CameraInfo, CameraInfo> MyConstSyncPolicy = MySyncPolicy;
+    Synchronizer< sync_policies::ApproximateTime<Image, GroundPlane, CameraInfo, CameraInfo> > sync(MyConstSyncPolicy,
+                                                                                                    subscriber_depth,
+                                                                                                    subscriber_gp,
+                                                                                                    subscriber_camera_info,
+                                                                                                    subscriber_rgb_camera_info);
     // Register one callback for all topics
-    sync.registerCallback(boost::bind(&callback, _1, _2, _3));
+    sync.registerCallback(boost::bind(&callback, _1, _2, _3, _4));
 
 
     // Create publisher
