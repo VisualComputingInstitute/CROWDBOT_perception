@@ -223,7 +223,7 @@ void callback(const ImageConstPtr &depth, const GroundPlane::ConstPtr &gp, const
     for(int i = 0; i < detected_bounding_boxes.getSize(); i++)
     {
         // Calculate centres and corner points of bounding boxes in IR, world and RGB
-	double depth_value = detected_bounding_boxes(i)(5);
+        double depth_value = detected_bounding_boxes(i)(5);
         double w_ir = detected_bounding_boxes(i)(2);
         double h_ir = detected_bounding_boxes(i)(3);
 
@@ -296,7 +296,7 @@ void callback(const ImageConstPtr &depth, const GroundPlane::ConstPtr &gp, const
     }
 
     // Creating a ros image with the detection results an publishing it
-    if(vis && abs((depth->header.stamp - color_image->header.stamp).toSec()) < 0.2) {  // only if color image is not outdated (not using a synchronizer!)
+    if(vis && color_image && abs((depth->header.stamp - color_image->header.stamp).toSec()) < 0.2) {  // only if color image is not outdated (not using a synchronizer!)
         // Check for suppported image format
         if(color_image->encoding == "rgb8" || color_image->encoding == "bgr8") {
             ROS_DEBUG("Publishing result image for upper-body detector");

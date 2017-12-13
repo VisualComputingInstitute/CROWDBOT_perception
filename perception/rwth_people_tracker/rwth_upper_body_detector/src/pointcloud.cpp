@@ -14,7 +14,7 @@ PointCloud::PointCloud(const Camera &camera, const Matrix<double> &depth_map)
     for(int i=0; i<depth_map.total_size(); ++i)
     {
         double z = depth_map.data()[i];
-        if(z>0.1 && z<Globals::freespace_max_depth_to_cons)
+        if((z>=0.1) && (z<Globals::freespace_max_depth_to_cons))
         {
             X[i] = z*(((i%width)-c20)/c00);
             Y[i] = z*(((i/width)-c21)/c11);

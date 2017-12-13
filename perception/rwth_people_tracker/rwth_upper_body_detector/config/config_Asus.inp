@@ -22,9 +22,9 @@ freespace_scaleX = 20;
 freespace_minX = -3;
 freespace_minZ = 0;
 freespace_maxX = 3;
-freespace_maxZ = 7;
+freespace_maxZ = 50;
 freespace_threshold = 500
-freespace_max_depth_to_cons = 7
+freespace_max_depth_to_cons = 50
 
 #====================================
 # Detector

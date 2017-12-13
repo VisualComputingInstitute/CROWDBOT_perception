@@ -21,9 +21,10 @@ void Detector::ProcessFrame(const Camera &camera_origin, const Matrix<double> &d
 
     Vector<ROI> all_ROIs;
     PreprocessROIs(labeledROIs, all_ROIs);
-
 //    Vector<Vector<Vector<double> > > points3D_in_ROIs(all_ROIs.getSize());
+    //std::cout << "extract" << std::endl;
     ExtractPointsInROIs(/*points3D_in_ROIs*/all_ROIs, mat_2D_pos_x, mat_2D_pos_y, point_cloud, labeledROIs);
+    //std::cout << "/extract" << std::endl;
 
     double scaleZ = Globals::freespace_scaleZ;
 
@@ -70,10 +71,9 @@ void Detector::ProcessFrame(const Camera &camera_origin, const Matrix<double> &d
             }
         }
     }
-
-
-
+    //std::cout << "det" << std::endl;
     detected_bounding_boxes = EvaluateTemplate(upper_body_template, depth_map, close_range_BBoxes, distances);
+    //std::cout << "/det" << std::endl;
 }
 
 void Detector::ComputeFreespace(const Camera& camera,
@@ -108,8 +108,6 @@ void Detector::ComputeFreespace(const Camera& camera,
     for(int j = 0; j < point_cloud.X.getSize(); j++)
     {
         double zj = point_cloud.Z(j);
-
-	std::cout << "zj: " << zj << std::endl;
         if((zj < Globals::freespace_max_depth_to_cons) && (zj >= 0.1))
         {
             double xj = point_cloud.X(j);
@@ -118,7 +116,7 @@ void Detector::ComputeFreespace(const Camera& camera,
             double distance_to_plane = plane_par_0*xj + plane_par_1*yj + plane_par_2*zj + plane_par_3;
 
             // Only accept points in upper_body height range (0.1m to 2.5m)
-            if(distance_to_plane < 2.5 && distance_to_plane > 0.1)
+            if(distance_to_plane < 2.3 && distance_to_plane > 0.3)
             {
                 double x = xj - min_x_;
                 double z = zj - min_z_;
@@ -126,6 +124,10 @@ void Detector::ComputeFreespace(const Camera& camera,
                 int pos_x = (int)round(x / step_x);
                 int pos_z = (int)round(z / step_z);
 
+
+                if (pos_x>2000 || pos_z>2000){
+                    std::cout << "pos_x: " << pos_x << ", pos_z " << pos_z << std::endl;
+                }
 //                occ_map(pos_x, pos_z) += z*(log(z) / log_2);
                 occ_map(pos_x, pos_z) += z;
 
@@ -185,18 +187,27 @@ void Detector::ExtractPointsInROIs(/*Vector<Vector<Vector<double> > > &all_point
 //    {
 //        all_points_in_ROIs(i).reserveCapacity(50000);
 //    }
-
     Vector<ROIBound> min_maxs(number_of_ROIs);
     ROIBound* roi_bound;
     int roi_ind;
     int mat_size = mat_2D_pos_x.x_size()*mat_2D_pos_x.y_size();
+    /*std::cout << "b44 " << std::endl;
+    std::cout << "mat_size " << mat_size << std::endl;
+    std::cout << "mat_2D_pos_x.x_size() " << mat_2D_pos_x.x_size() << std::endl;
+    std::cout << "mat_2D_pos_x.y_size() " << mat_2D_pos_x.y_size() << std::endl;
+    std::cout << "labeled_ROIs.x_size() " << labeled_ROIs.x_size() << std::endl;
+    std::cout << "labeled_ROIs.y_size() " << labeled_ROIs.y_size() << std::endl;*/
     for(int i = 0; i < mat_size; i++)
     {
         if(mat_2D_pos_x.data()[i] >= 0)
         {
+            //std::cout << "mat_2D_pos_x.data()[i] " << mat_2D_pos_x.data()[i] << std::endl;
+            //std::cout << "mat_2D_pos_y.data()[i] " << mat_2D_pos_y.data()[i] << std::endl;
             roi_ind = labeled_ROIs(mat_2D_pos_x.data()[i], mat_2D_pos_y.data()[i])-1;
-            if(roi_ind > -1)
+            if(roi_ind > -1 && roi_ind<number_of_ROIs)
             {
+                //std::cout << "roi_ind: " << roi_ind << std::endl;
+                //std::cout << "number_of_ROIs: " << number_of_ROIs << std::endl;
 //                all_points_in_ROIs(pos_in_proj).pushBack(Vector<double>(point_cloud.X(i), point_cloud.Y(i), point_cloud.Z(i)));
                 all_ROIs(roi_ind).has_any_point = true;
                 double x = point_cloud.X(i), y = point_cloud.Y(i), z = point_cloud.Z(i);
@@ -234,6 +245,7 @@ void Detector::ExtractPointsInROIs(/*Vector<Vector<Vector<double> > > &all_point
             }
         }
     }
+    //std::cout << "e44 " << std::endl;
 }
 
 Vector<Vector<double> >  Detector::EvaluateTemplate(const Matrix<double> &upper_body_template,
