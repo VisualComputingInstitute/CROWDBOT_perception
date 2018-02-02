@@ -44,6 +44,7 @@ int main(int argc, char **argv)
 
         tf::StampedTransform transform;
         try{
+          listener.waitForTransform(sensor_frame_id, odom_frame_id, ros::Time(), ros::Duration(1.0));
           listener.lookupTransform(sensor_frame_id, odom_frame_id, ros::Time(0), transform);
         }
         catch (tf::TransformException &ex) {

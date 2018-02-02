@@ -67,9 +67,9 @@ int main(int argc, char **argv)
         distancePointStamped.point.z = 0.0;
 
         try {
-            listener->waitForTransform(base_footprint, camera_frame, ros::Time(), ros::Duration(0.1));
+            listener->waitForTransform(base_footprint, camera_frame, ros::Time(), ros::Duration(1.0));
             listener->transformVector(camera_frame, normalVectorStamped, normalVectorStampedCamera);
-            listener->waitForTransform(camera_frame, base_footprint, ros::Time(), ros::Duration(0.1));
+            listener->waitForTransform(camera_frame, base_footprint, ros::Time(), ros::Duration(1.0));
             listener->transformPoint(base_footprint, distancePointStamped, distancePointStampedCamera);
 
             _normal.setX(normalVectorStampedCamera.vector.x);

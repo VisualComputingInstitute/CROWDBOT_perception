@@ -184,7 +184,10 @@ void callback(const ImageConstPtr &depth, const GroundPlane::ConstPtr &gp, const
         return;
 
     // Get depth image as matrix
-    cv_depth_ptr = cv_bridge::toCvCopy(depth);
+    cv_depth_ptr = cv_bridge::toCvCopy(depth, "32FC1");
+    if (depth->encoding == "16UC1") {
+    	cv_depth_ptr->image *= 0.001;
+    }
     img_depth_ = cv_depth_ptr->image;
     
 
@@ -384,10 +387,10 @@ int main(int argc, char **argv)
     private_node_handle_.param("camera_namespace", cam_ns, string("/camera"));
     private_node_handle_.param("ground_plane", topic_gp, string("/ground_plane"));
 
-    topic_color_image = cam_ns + "/rgb/RgbImage";
-    string topic_camera_info = cam_ns + "/depth/camera_info";
-    string topic_depth_image = cam_ns + "/depth/DepthImage";
-    string topic_rgb_camera_info = cam_ns + "/rgb/camera_info";
+    topic_color_image = cam_ns + "/hd/image_color_rect";
+    string topic_camera_info = cam_ns + "/sd/camera_info";
+    string topic_depth_image = cam_ns + "/sd/image_depth";
+    string topic_rgb_camera_info = cam_ns + "/hd/camera_info";
 
     // New parameters for SPENCER
     private_node_handle_.param("detection_id_increment", detection_id_increment, 1);

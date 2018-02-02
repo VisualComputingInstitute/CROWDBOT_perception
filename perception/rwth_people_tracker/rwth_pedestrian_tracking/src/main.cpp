@@ -1249,8 +1249,8 @@ int main(int argc, char **argv)
     private_node_handle_.param("upper_body_detections", topic_upperbody, string("/upper_body_detector/detections"));
     private_node_handle_.param("visual_odometry", topic_vo, string("/visual_odometry/motion_matrix"));
 
-    string topic_color_image = cam_ns + "/rgb/RgbImage";
-    string topic_camera_info = cam_ns + "/rgb/camera_info";
+    string topic_color_image = cam_ns + "/hd/image_color_rect";
+    string topic_camera_info = cam_ns + "/hd/camera_info";
 
     if(strcmp(config_file.c_str(),"") == 0) {
         ROS_ERROR("No config file specified.");

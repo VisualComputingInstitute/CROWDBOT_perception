@@ -1,22 +1,31 @@
 <launch>
     <!-- Global parameters -->
+    <!-- Nodes -->
+    <arg name="mira_ros_adapter" default="false" />
+    <arg name="kinect2_bridge" default="false" />
     <!-- VO -->
-    <arg name="motion_parameters" default="/motion_matrix" />
-    <arg name="sensor_frame_id" default="/hardware/depth/kinect2/Kinect2Frame" />
-    <arg name="odom_frame_id" default="/robot/OdometryFrame" />
+    <arg name="motion_parameters" value="/motion_matrix" />
+    <arg name="sensor_frame_id" value="/hardware/depth/kinect2/ColorImageFrame" />
+    <arg name="odom_frame_id" value="/robot/OdometryFrame" />
     <!-- GP -->
-    <arg name="ground_plane" default="/ground_plane" />
+    <arg name="ground_plane" value="/ground_plane" />
     <arg name="rate" default="30.0"/>
-    <arg name="base_footprint" default="/robot/BaseFrame" />
-    <arg name="camera_frame" default="/hardware/depth/kinect2/Kinect2Frame" />
+    <arg name="base_footprint" value="/robot/BaseFrame" />
+    <arg name="camera_frame" value="/hardware/depth/kinect2/ColorImageFrame" />
     <!-- detectors -->
     <arg name="upper_body" default="true"/>
     <arg name="hog" default="false"/>
-    <arg name="camera_namespace" default="/fromMira/kinect2"/>
+    <arg name="camera_namespace" value="/hardware/depth/kinect2"/>
     <arg name="upperbody_detections" default="/upper_body_detector/detections" />
     <arg name="groundHOG_detections" value="/groundHOG/detections" />
     <!-- tracker -->
     <!-- /Global parameters -->
+    
+    <!-- MIRA-ROS-Adapter -->
+    <include file="$(find mira_ros_adapter)/launch/mira_ros_adapter.launch" if="$(arg mira_ros_adapter)" />
+
+    <!-- kinect2_bridge -->
+    <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch" if="$(arg kinect2_bridge)" />
 
     <!-- Visual Odometry -->
     <include file="$(find odometry_to_motion_matrix)/launch/tf2visual.launch">
