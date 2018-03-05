@@ -60,14 +60,6 @@ ros::Publisher pub_message;
 image_transport::Publisher pub_image;
 ros::Publisher pub_tracked_persons;
 ros::Publisher pub_tracked_persons_2d;
-ros::Publisher m_averageProcessingRatePublisher, m_averageCycleTimePublisher, m_trackCountPublisher, m_averageLoadPublisher, m_timingMetricsPublisher;
-
-boost::circular_buffer<double> m_lastCycleTimes;
-clock_t m_startClock;
-clock_t m_clockBefore;
-ros::WallTime m_startWallTime;
-ros::WallTime m_wallTimeBefore;
-bool m_timingInitialized;
 
 cv::Mat img_depth_;
 cv_bridge::CvImagePtr cv_depth_ptr;	// cv_bridge for depth image
@@ -444,53 +436,6 @@ void writeImageAndCamInfoToFile(const ImageConstPtr &color, const CameraInfoCons
         camera.get_GP().appendToTXT(safe_string_char);
 }
 
-void publishStatistics(ros::Time currentRosTime, const unsigned int numberTracks)
-{
-    // Get walltime since start
-    ros::WallTime endTime = ros::WallTime::now();
-
-    // Get cpu time since start
-    clock_t endClock = clock();
-    double wallTimeSinceStart = (endTime - m_startWallTime).toSec();
-    double clockTimeSinceStart = ((double) (endClock - m_startClock)) / CLOCKS_PER_SEC;
-    double avgLoad = (clockTimeSinceStart/wallTimeSinceStart)*100.0;
-
-    double wallTimeCycle = (endTime - m_wallTimeBefore).toSec();
-    double clockTimeCycle = ((double) (endClock - m_clockBefore)) / CLOCKS_PER_SEC;
-    double currentLoad = (clockTimeCycle/wallTimeCycle)*100.0;
-
-    // Calculate average
-    double averageCycleTime = 0.0;
-    foreach(float cycleTime, m_lastCycleTimes) {
-        averageCycleTime += cycleTime;
-    }
-    averageCycleTime /= m_lastCycleTimes.size();
-
-    // Publish average cycle time
-    std_msgs::Float32 averageCycleTimeMsg;
-    averageCycleTimeMsg.data = averageCycleTime;
-    std_msgs::Float32 averageProcessingRateMsg;
-    averageProcessingRateMsg.data = 1.0 / averageCycleTime;
-
-    // Wait until buffer is full
-    if(m_lastCycleTimes.size() == m_lastCycleTimes.capacity())
-    {
-        m_averageCycleTimePublisher.publish(averageCycleTimeMsg);
-
-        // Publish average processing time
-        m_averageProcessingRatePublisher.publish(averageProcessingRateMsg);
-    }
-
-    // Publish average cpu load
-    std_msgs::Float32 averageLoadMsg;
-    averageLoadMsg.data = avgLoad;
-    m_averageLoadPublisher.publish(averageLoadMsg);
-
-
-    m_wallTimeBefore = endTime;
-    m_clockBefore = endClock;
-}
-
 Vector<double> projectPlaneToCam(Vector<double> p, Camera cam)
 {
     Vector<double> gpInCam(4, 0.0);
@@ -524,14 +469,6 @@ void callbackWithoutHOG(const ImageConstPtr &color,
               const UpperBodyDetector::ConstPtr &upper,
               const VisualOdometry::ConstPtr &vo)
 {
-    // for time benchmarking
-    if (!m_timingInitialized)
-    {
-        m_startWallTime = m_wallTimeBefore = ros::WallTime::now();
-        m_startClock = m_clockBefore =  clock();
-        m_timingInitialized = true;
-    }
-    ros::Time currentRosTime = upper->header.stamp; // to make sure that timestamps remain exactly the same up to nanosecond precision (for ExactTime sync policy)
 
     // ---update framerate + framerateVector---
     //printf("set new framerate to: %d / (%f-%f) \n", 1,color->header.stamp.toSec(),Globals::oldTimeForFPSUpdate);
@@ -608,16 +545,9 @@ void callbackWithoutHOG(const ImageConstPtr &color,
         cim.save(safe_string_char);
     }
 
-    // Save start time
-    ros::WallTime startTime = ros::WallTime::now();
-    clock_t startClock = clock();
     ///////////////////////////////////////////TRACKING///////////////////////////
     tracker.process_tracking_oneFrame(HyposAll, *det_comb, cnt, detected_bounding_boxes, cim, camera);
     ///////////////////////////////////////////TRACKING-END///////////////////////////
-    // Save end time
-    ros::WallTime endTime = ros::WallTime::now();
-    double cycleTime = (endTime - startTime).toSec();
-    m_lastCycleTimes.push_back( cycleTime );
 
     if (Globals::save_for_eval){
         // save processed image
@@ -804,7 +734,6 @@ void callbackWithoutHOG(const ImageConstPtr &color,
     pub_message.publish(allHypoMsg);
     pub_tracked_persons.publish(trackedPersons);
     pub_tracked_persons_2d.publish(trackedPersons2d);
-    publishStatistics(currentRosTime, trackedPersons.tracks.size());
     Globals::oldTimeForFPSUpdate = color->header.stamp.toSec(); //ros::Time::now().toSec();
     cnt++;
 }
@@ -816,15 +745,6 @@ void callbackWithHOG(const ImageConstPtr &color,
               const UpperBodyDetector::ConstPtr &upper,
               const VisualOdometry::ConstPtr &vo)
 {
-    // for time benchmarking
-    if (!m_timingInitialized)
-    {
-        m_startWallTime = m_wallTimeBefore = ros::WallTime::now();
-        m_startClock = m_clockBefore =  clock();
-        m_timingInitialized = true;
-    }
-    ros::Time currentRosTime = upper->header.stamp; // to make sure that timestamps remain exactly the same up to nanosecond precision (for ExactTime sync policy)
-
     // ---update framerate + framerateVector---
     //printf("set new framerate to: %d / (%f-%f) \n", 1,color->header.stamp.toSec(),Globals::oldTimeForFPSUpdate);
     //printf("result: %d\n", (int) (1 / (color->header.stamp.toSec()-Globals::oldTimeForFPSUpdate)));
@@ -926,16 +846,9 @@ void callbackWithHOG(const ImageConstPtr &color,
         cim.save(safe_string_char);
     }
 
-    // Save start time
-    ros::WallTime startTime = ros::WallTime::now();
-    clock_t startClock = clock();
     ///////////////////////////////////////////TRACKING///////////////////////////
     tracker.process_tracking_oneFrame(HyposAll, *det_comb, cnt, detected_bounding_boxes, cim, camera);
     ///////////////////////////////////////////TRACKING-END///////////////////////////
-    // Save end time
-    ros::WallTime endTime = ros::WallTime::now();
-    double cycleTime = (endTime - startTime).toSec();
-    m_lastCycleTimes.push_back( cycleTime );
 
     if (Globals::save_for_eval){
         // save processed image
@@ -1155,7 +1068,6 @@ void callbackWithHOG(const ImageConstPtr &color,
     pub_message.publish(allHypoMsg);
     pub_tracked_persons.publish(trackedPersons);
     pub_tracked_persons_2d.publish(trackedPersons2d);
-    publishStatistics(currentRosTime, trackedPersons.tracks.size());
     Globals::oldTimeForFPSUpdate = color->header.stamp.toSec(); //ros::Time::now().toSec();
     cnt++;
 }
@@ -1320,17 +1232,6 @@ int main(int argc, char **argv)
 
     private_node_handle_.param("tracked_persons_2d", pub_topic_tracked_persons_2d, (pub_topic_tracked_persons + "_2d"));
     pub_tracked_persons_2d = n.advertise<frame_msgs::TrackedPersons2d>(pub_topic_tracked_persons_2d, 10, con_cb, con_cb);
-
-    // For benchmarking
-    m_averageProcessingRatePublisher = private_node_handle_.advertise<std_msgs::Float32>("average_processing_rate", 1);
-    m_averageCycleTimePublisher = private_node_handle_.advertise<std_msgs::Float32>("average_cycle_time", 1);
-    m_trackCountPublisher = private_node_handle_.advertise<std_msgs::UInt16>("track_count", 1);
-    m_averageLoadPublisher = private_node_handle_.advertise<std_msgs::Float32>("average_cpu_load", 1);
-    m_timingMetricsPublisher = private_node_handle_.advertise<frame_msgs::TrackingTimingMetrics>("tracking_timing_metrics", 10);
-
-    // Set up circular buffer for benchmarking cycle times
-    //m_lastCycleTimes.set_capacity(Params::get<int>("cycle_time_buffer_length", 50)); // = size of window for averaging
-    m_lastCycleTimes.set_capacity(50); // = size of window for averaging
 
     ros::spin();
     return 0;
