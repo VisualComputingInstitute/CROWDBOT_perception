@@ -22,6 +22,8 @@ add_message_files(
 	DetectedPersons.msg
 	TrackedPerson.msg
 	TrackedPersons.msg
+	TrackedPerson2d.msg
+	TrackedPersons2d.msg
 	PersonTrajectoryEntry.msg
 	PersonTrajectory.msg
 	PersonTrajectories.msg
