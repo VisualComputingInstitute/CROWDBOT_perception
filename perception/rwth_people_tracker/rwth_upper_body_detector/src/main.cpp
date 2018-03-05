@@ -30,7 +30,7 @@
 #include <rwth_perception_people_msgs/UpperBodyDetector.h>
 #include <rwth_perception_people_msgs/GroundPlane.h>
 
-#include <spencer_tracking_msgs/DetectedPersons.h>
+#include <frame_msgs/DetectedPersons.h>
 
 #include <QImage>
 #include <QPainter>
@@ -53,8 +53,8 @@ string topic_color_image;
 Matrix<double> upper_body_template;
 Detector* detector;
 
-int detection_id_increment, detection_id_offset, current_detection_id; // added for multi-sensor use in SPENCER
-double pose_variance; // used in output spencer_tracking_msgs::DetectedPerson.pose.covariance
+int detection_id_increment, detection_id_offset, current_detection_id; // added for multi-sensor use
+double pose_variance; // used in output frame_msgs::DetectedPerson.pose.covariance
 
 
 void render_bbox_2D(UpperBodyDetector& detections, QImage& image,
@@ -217,7 +217,7 @@ void callback(const ImageConstPtr &depth, const GroundPlane::ConstPtr &gp, const
     // Generate messages
     UpperBodyDetector detection_msg;
     geometry_msgs::PoseArray bb_centres;
-    spencer_tracking_msgs::DetectedPersons detected_persons;
+    frame_msgs::DetectedPersons detected_persons;
 
     detection_msg.header = depth->header;
     bb_centres.header    = depth->header;
@@ -278,9 +278,9 @@ void callback(const ImageConstPtr &depth, const GroundPlane::ConstPtr &gp, const
         detection_msg.dist.push_back(detected_bounding_boxes(i)(4));
         detection_msg.median_depth.push_back(detected_bounding_boxes(i)(5));
 
-        // DetectedPerson for SPENCER
-        spencer_tracking_msgs::DetectedPerson detected_person;
-        detected_person.modality = spencer_tracking_msgs::DetectedPerson::MODALITY_GENERIC_RGBD;
+        // DetectedPerson for
+        frame_msgs::DetectedPerson detected_person;
+        detected_person.modality = frame_msgs::DetectedPerson::MODALITY_GENERIC_RGBD;
         detected_person.confidence = detected_bounding_boxes(i)(4); // FIXME: normalize
         detected_person.pose.pose = pose;
 
@@ -392,7 +392,7 @@ int main(int argc, char **argv)
     string topic_depth_image = cam_ns + "/sd/image_depth";
     string topic_rgb_camera_info = cam_ns + "/hd/camera_info";
 
-    // New parameters for SPENCER
+    // New parameters
     private_node_handle_.param("detection_id_increment", detection_id_increment, 1);
     private_node_handle_.param("detection_id_offset",    detection_id_offset, 0);
     private_node_handle_.param("pose_variance",    pose_variance, 0.05);
@@ -476,7 +476,7 @@ int main(int argc, char **argv)
     pub_result_image = it.advertise(pub_topic_result_image.c_str(), 1, image_cb, image_cb);
 
     private_node_handle_.param("detected_persons", pub_topic_detected_persons, string("/detected_persons"));
-    pub_detected_persons = n.advertise<spencer_tracking_msgs::DetectedPersons>(pub_topic_detected_persons, 10, con_cb, con_cb);
+    pub_detected_persons = n.advertise<frame_msgs::DetectedPersons>(pub_topic_detected_persons, 10, con_cb, con_cb);
 
     double min_expected_frequency, max_expected_frequency;
     private_node_handle_.param("min_expected_frequency", min_expected_frequency, 10.0);

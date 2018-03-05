@@ -46,9 +46,8 @@
 #include "rwth_perception_people_msgs/VisualOdometry.h"
 #include "rwth_perception_people_msgs/PedestrianTracking.h"
 #include "rwth_perception_people_msgs/PedestrianTrackingArray.h"
-#include "spencer_tracking_msgs/TrackedPersons.h"
-#include "spencer_tracking_msgs/TrackedPersons2d.h"
-#include <spencer_tracking_msgs/TrackingTimingMetrics.h>
+#include "frame_msgs/TrackedPersons.h"
+#include "frame_msgs/TrackedPersons2d.h"
 
 
 
@@ -399,7 +398,6 @@ void writeImageAndCamInfoToFile(const ImageConstPtr &color, const CameraInfoCons
         char safe_string_char[128];
         char nsec_int_char[128];
         ofstream aStream;
-        //static string path_to_results_image_info = "/home/stefan/results/spencer_tracker/image_info.txt";
         sprintf(safe_string_char, Globals::save_path_img_info.c_str());
         aStream.open(safe_string_char, std::ios_base::app);
         if (cnt == 0) aStream << "image_nr frame_id seq stamp_sec.stamp_nsec" << endl;
@@ -411,7 +409,6 @@ void writeImageAndCamInfoToFile(const ImageConstPtr &color, const CameraInfoCons
         aStream << nsec_int_char << endl;
         aStream.close();
 
-        //static string path_to_results_camera_info = "/home/stefan/results/spencer_tracker/camera_info.txt";
         sprintf(safe_string_char, Globals::save_path_cam_info.c_str());
         aStream.open(safe_string_char, std::ios_base::app);
         if (cnt == 0) aStream << "image_nr frame_id seq stamp_sec.stamp_nsec" << endl;
@@ -423,7 +420,6 @@ void writeImageAndCamInfoToFile(const ImageConstPtr &color, const CameraInfoCons
         aStream << nsec_int_char << endl;
         aStream.close();
 
-        //static string path_to_results_camera = "/home/stefan/results/spencer_tracker/camera/camera_%08d.txt";
         sprintf(safe_string_char, Globals::save_path_cam.c_str(), cnt);
 
         camera.get_K().appendToTXT(safe_string_char);
@@ -490,22 +486,6 @@ void publishStatistics(ros::Time currentRosTime, const unsigned int numberTracks
     averageLoadMsg.data = avgLoad;
     m_averageLoadPublisher.publish(averageLoadMsg);
 
-    // Publish timing metrics
-    spencer_tracking_msgs::TrackingTimingMetrics timingMetrics;
-    timingMetrics.header.seq = cnt;//m_tracker->getCurrentCycleNo();
-    timingMetrics.header.frame_id = "odom";
-    timingMetrics.header.stamp = currentRosTime;
-
-    timingMetrics.cycle_no = cnt;//m_tracker->getCurrentCycleNo();
-    timingMetrics.track_count = numberTracks;
-    timingMetrics.average_cycle_time = averageCycleTime;
-    timingMetrics.average_processing_rate = 1.0 / averageCycleTime;
-    timingMetrics.cycle_time = m_lastCycleTimes.back();
-    timingMetrics.elapsed_cpu_time = clockTimeSinceStart;
-    timingMetrics.elapsed_time = wallTimeSinceStart;
-    timingMetrics.cpu_load = currentLoad;
-    timingMetrics.average_cpu_load = avgLoad;
-    m_timingMetricsPublisher.publish(timingMetrics);
 
     m_wallTimeBefore = endTime;
     m_clockBefore = endClock;
@@ -653,9 +633,9 @@ void callbackWithoutHOG(const ImageConstPtr &color,
     PedestrianTrackingArray allHypoMsg;
     allHypoMsg.header = color->header;
 
-    // also prepare tracks in Spencer format (+2d)
-    spencer_tracking_msgs::TrackedPersons trackedPersons;
-    spencer_tracking_msgs::TrackedPersons2d trackedPersons2d;
+    // also prepare tracks
+    frame_msgs::TrackedPersons trackedPersons;
+    frame_msgs::TrackedPersons2d trackedPersons2d;
     trackedPersons.header.stamp = upper->header.stamp;
     trackedPersons.header.seq = ++track_seq;
     trackedPersons.header.frame_id = "/robot/OdometryFrame"; //FIXME: world frame, maybe should not be hardcoded
@@ -666,7 +646,7 @@ void callbackWithoutHOG(const ImageConstPtr &color,
 
     Vector<Vector<double> > trajPts;
     Vector<double> dir;
-    Vector<double> spencer_dir(3);
+    Vector<double> robot_frame_dir(3);
     for(int i = 0; i < hyposMDL.getSize(); i++)
     {
         PedestrianTracking oneHypoMsg;
@@ -694,7 +674,7 @@ void callbackWithoutHOG(const ImageConstPtr &color,
         oneHypoMsg.dir.push_back(dir(2));
         allHypoMsg.pedestrians.push_back(oneHypoMsg);
 
-        // Also publish tracks in Spencer format
+        // Also publish tracks
         geometry_msgs::PoseWithCovariance pose;
         geometry_msgs::TwistWithCovariance twist;
         int curr_idx = trajPts.getSize()-1;
@@ -704,8 +684,8 @@ void callbackWithoutHOG(const ImageConstPtr &color,
         //C(curr_idx).Show();
 
         // init one tracked person
-        spencer_tracking_msgs::TrackedPerson trackedPerson;
-        spencer_tracking_msgs::TrackedPerson2d trackedPerson2d;
+        frame_msgs::TrackedPerson trackedPerson;
+        frame_msgs::TrackedPerson2d trackedPerson2d;
         trackedPerson.track_id = hyposMDL(i).getHypoID();
         ros::Time currentCreationTime;
         hyposMDL(i).getCreationTime(currentCreationTime);
@@ -758,9 +738,9 @@ void callbackWithoutHOG(const ImageConstPtr &color,
         trackedPerson2d.h = bbox_bottomrightCornerInImage(1) - bbox_topleftCornerInImage(1);
         trackedPerson2d.depth = posInCamera(2);
 
-        spencer_dir(0) = dir(2);
-        spencer_dir(1) = -dir(0);
-        spencer_dir(2) = -dir(1);
+        robot_frame_dir(0) = dir(2);
+        robot_frame_dir(1) = -dir(0);
+        robot_frame_dir(2) = -dir(1);
 
         // Some constants for determining the pose
         //const double AVERAGE_ROTATION_VARIANCE = pow(10.0 / 180 * M_PI, 2); // FIXME: determine from vx, vy?
@@ -772,7 +752,7 @@ void callbackWithoutHOG(const ImageConstPtr &color,
         pose.pose.position.z = -trajPts(curr_idx)(1);
 
         // Set orientation
-        pose.pose.orientation = tf::createQuaternionMsgFromYaw(atan2(spencer_dir(1), spencer_dir(0))); // determine orientation from current velocity estimate
+        pose.pose.orientation = tf::createQuaternionMsgFromYaw(atan2(robot_frame_dir(1), robot_frame_dir(0))); // determine orientation from current velocity estimate
         pose.covariance.fill(0.0);
         pose.covariance[0 * 6 + 0] = C(curr_idx)(0,0); // variance of x position
         pose.covariance[1 * 6 + 1] = C(curr_idx)(1,1); // variance of y position
@@ -782,9 +762,9 @@ void callbackWithoutHOG(const ImageConstPtr &color,
         pose.covariance[5 * 6 + 5] = C(curr_idx)(2,2); // variance of z rotation
 
         // Set twist (=velocities)
-        twist.twist.linear.x = spencer_dir(0);
-        twist.twist.linear.y = spencer_dir(1);
-        twist.twist.linear.z = spencer_dir(2);
+        twist.twist.linear.x = robot_frame_dir(0);
+        twist.twist.linear.y = robot_frame_dir(1);
+        twist.twist.linear.z = robot_frame_dir(2);
 
         twist.covariance.fill(0.0);
         twist.covariance[0 * 6 + 0] = C(curr_idx)(3,3); // variance of x linear velocity
@@ -970,9 +950,9 @@ void callbackWithHOG(const ImageConstPtr &color,
     PedestrianTrackingArray allHypoMsg;
     allHypoMsg.header = color->header;
 
-    // also prepare tracks in Spencer format
-    spencer_tracking_msgs::TrackedPersons trackedPersons;
-    spencer_tracking_msgs::TrackedPersons2d trackedPersons2d;
+    // also prepare tracks
+    frame_msgs::TrackedPersons trackedPersons;
+    frame_msgs::TrackedPersons2d trackedPersons2d;
     trackedPersons.header.stamp = upper->header.stamp;
     trackedPersons.header.seq = ++track_seq;
     trackedPersons.header.frame_id = "/robot/OdometryFrame"; //FIXME: world frame, maybe should not be hardcoded
@@ -1012,7 +992,7 @@ void callbackWithHOG(const ImageConstPtr &color,
         oneHypoMsg.dir.push_back(dir(2));
         allHypoMsg.pedestrians.push_back(oneHypoMsg);
 
-        // Also publish tracks in Spencer format
+        // Also publish tracks
         geometry_msgs::PoseWithCovariance pose;
         geometry_msgs::TwistWithCovariance twist;
         int curr_idx = trajPts.getSize()-1;
@@ -1020,8 +1000,8 @@ void callbackWithHOG(const ImageConstPtr &color,
         hyposMDL(i).getStateCovMats(C);
 
         // init one tracked person
-        spencer_tracking_msgs::TrackedPerson trackedPerson;
-        spencer_tracking_msgs::TrackedPerson2d trackedPerson2d;
+        frame_msgs::TrackedPerson trackedPerson;
+        frame_msgs::TrackedPerson2d trackedPerson2d;
         trackedPerson.track_id = hyposMDL(i).getHypoID();
         ros::Time currentCreationTime;
         hyposMDL(i).getCreationTime(currentCreationTime);
@@ -1116,14 +1096,14 @@ void callbackWithHOG(const ImageConstPtr &color,
         pose.pose.position.z = -trajPts(curr_idx)(1);
 
         // Set orientation
-        Vector<double> spencer_dir(3, 0.0);
-        spencer_dir(0) = dir(2);
-        spencer_dir(1) = -dir(0);
-        spencer_dir(2) = -dir(1);
+        Vector<double> robot_frame_dir(3, 0.0);
+        robot_frame_dir(0) = dir(2);
+        robot_frame_dir(1) = -dir(0);
+        robot_frame_dir(2) = -dir(1);
         //unnormalize
-        spencer_dir = spencer_dir*hyposMDL(i).getSpeed();
+        robot_frame_dir = robot_frame_dir*hyposMDL(i).getSpeed();
 
-        pose.pose.orientation = tf::createQuaternionMsgFromYaw(atan2(spencer_dir(1), spencer_dir(0))); // determine orientation from current velocity estimate
+        pose.pose.orientation = tf::createQuaternionMsgFromYaw(atan2(robot_frame_dir(1), robot_frame_dir(0))); // determine orientation from current velocity estimate
         pose.covariance.fill(0.0);
         //printf("curr_idx: %i, size of C stateCov vector: %i, C:\n", curr_idx, C.getSize());
         //C(curr_idx).Show();
@@ -1135,9 +1115,9 @@ void callbackWithHOG(const ImageConstPtr &color,
         pose.covariance[5 * 6 + 5] = AVERAGE_ROTATION_VARIANCE; // variance of z rotation
 
         // Set twist (=velocities)
-        twist.twist.linear.x = spencer_dir(0);
-        twist.twist.linear.y = spencer_dir(1);
-        twist.twist.linear.z = spencer_dir(2);
+        twist.twist.linear.x = robot_frame_dir(0);
+        twist.twist.linear.y = robot_frame_dir(1);
+        twist.twist.linear.z = robot_frame_dir(2);
 
         twist.covariance.fill(0.0);
         twist.covariance[0 * 6 + 0] = C(curr_idx)(3,3); // variance of x linear velocity
@@ -1335,18 +1315,18 @@ int main(int argc, char **argv)
     private_node_handle_.param("pedestrian_image", pub_image_topic, string("/pedestrian_tracking/image"));
     pub_image = it.advertise(pub_image_topic.c_str(), 1, image_cb, image_cb);
 
-    private_node_handle_.param("tracked_persons", pub_topic_tracked_persons, string("/spencer/perception/tracked_persons"));
-    pub_tracked_persons = n.advertise<spencer_tracking_msgs::TrackedPersons>(pub_topic_tracked_persons, 10, con_cb, con_cb);
+    private_node_handle_.param("tracked_persons", pub_topic_tracked_persons, string("/frame/perception/tracked_persons"));
+    pub_tracked_persons = n.advertise<frame_msgs::TrackedPersons>(pub_topic_tracked_persons, 10, con_cb, con_cb);
 
     private_node_handle_.param("tracked_persons_2d", pub_topic_tracked_persons_2d, (pub_topic_tracked_persons + "_2d"));
-    pub_tracked_persons_2d = n.advertise<spencer_tracking_msgs::TrackedPersons2d>(pub_topic_tracked_persons_2d, 10, con_cb, con_cb);
+    pub_tracked_persons_2d = n.advertise<frame_msgs::TrackedPersons2d>(pub_topic_tracked_persons_2d, 10, con_cb, con_cb);
 
     // For benchmarking
     m_averageProcessingRatePublisher = private_node_handle_.advertise<std_msgs::Float32>("average_processing_rate", 1);
     m_averageCycleTimePublisher = private_node_handle_.advertise<std_msgs::Float32>("average_cycle_time", 1);
     m_trackCountPublisher = private_node_handle_.advertise<std_msgs::UInt16>("track_count", 1);
     m_averageLoadPublisher = private_node_handle_.advertise<std_msgs::Float32>("average_cpu_load", 1);
-    m_timingMetricsPublisher = private_node_handle_.advertise<spencer_tracking_msgs::TrackingTimingMetrics>("tracking_timing_metrics", 10);
+    m_timingMetricsPublisher = private_node_handle_.advertise<frame_msgs::TrackingTimingMetrics>("tracking_timing_metrics", 10);
 
     // Set up circular buffer for benchmarking cycle times
     //m_lastCycleTimes.set_capacity(Params::get<int>("cycle_time_buffer_length", 50)); // = size of window for averaging

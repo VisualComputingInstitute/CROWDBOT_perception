@@ -56,7 +56,7 @@
     </include>
 
     <!-- Ground HOG -->
-    <include file="$(find rwth_ground_hog)/launch/ground_hog_with_GP.launch" ns="rgbd_front_top" if="$(arg hog)">
+    <include file="$(find rwth_ground_hog)/launch/ground_hog_with_GP.launch" if="$(arg hog)">
         <arg name="world_scale" value="0.001"/>
         <arg name="score_thresh" value="0.1"/>
         <arg name="detected_persons" value="/detected_persons/groundHOG"/>

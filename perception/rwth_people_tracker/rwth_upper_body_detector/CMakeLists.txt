@@ -4,7 +4,7 @@ project(rwth_upper_body_detector)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp cv_bridge sensor_msgs std_msgs rwth_perception_people_msgs message_filters geometry_msgs image_transport spencer_tracking_msgs)
+find_package(catkin REQUIRED COMPONENTS roscpp cv_bridge sensor_msgs std_msgs rwth_perception_people_msgs message_filters geometry_msgs image_transport frame_msgs)
 
 find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
 include(${QT_USE_FILE})

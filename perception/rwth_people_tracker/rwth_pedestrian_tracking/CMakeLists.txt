@@ -4,7 +4,7 @@ project(rwth_pedestrian_tracking)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS cmake_modules cv_bridge message_filters roscpp sensor_msgs std_msgs rwth_perception_people_msgs spencer_tracking_msgs image_transport tf)
+find_package(catkin REQUIRED COMPONENTS cmake_modules cv_bridge message_filters roscpp sensor_msgs std_msgs rwth_perception_people_msgs frame_msgs image_transport tf)
 
 # If we can use C++11, we do want to make use of it.
 # Otherwise, currently, we implicitly fallback on boost.
