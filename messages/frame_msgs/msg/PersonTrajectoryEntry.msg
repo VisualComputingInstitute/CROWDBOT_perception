@@ -1,9 +1,9 @@
 # Message defining an entry of a person trajectory.
 #
 
-time     stamp           # age of the track
-bool     is_occluded     # if the track is currently not matched by a detection
-uint64   detection_id    # id of the corresponding detection in the current cycle (undefined if occluded)
+duration    age             # age of the track
+bool        is_occluded     # if the track is currently not matched by a detection
+uint64      detection_id    # id of the corresponding detection in the current cycle (undefined if occluded)
 
 # The following fields are extracted from the Kalman state x and its covariance C
 

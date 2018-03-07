@@ -1,0 +1,12 @@
+<launch>
+    <arg name="queue_size" default="10" />
+    <arg name="tracked_persons" default="/rwth_tracker/tracked_persons" />
+    <arg name="person_trajectories" default="/rwth_tracker/person_trajectories" />
+
+    <node pkg="rwth_pedestrian_trajectories" type="pedestrian_trajectories" name="pedestrian_trajectories" output="screen">
+        <param name="queue_size" value="$(arg queue_size)" type="int"/>
+        <param name="tracked_persons" value="$(arg tracked_persons)" type="string"/>
+        <param name="person_trajectories" value="$(arg person_trajectories)" type="string"/>
+    </node>
+
+</launch> 
