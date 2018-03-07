@@ -27,6 +27,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-O3")        ## Optimize
 endif()
 
+catkin_package()
 
 
 ###########
