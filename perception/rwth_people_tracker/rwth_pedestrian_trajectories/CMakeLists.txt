@@ -54,5 +54,3 @@ add_executable(pedestrian_trajectories src/main.cpp)
    ${QT_QTGUI_LIBRARY}
    X11
  )
-
-
