@@ -64,7 +64,6 @@ void connectCallback(message_filters::Subscriber<TrackedPersons> &sub_tra){
         sub_tra.unsubscribe();
     } else {
         ROS_DEBUG("Trajectories: New subscribers. Subscribing.");
-        //sub_tra = n.subscribe(topic.c_str(), qs, &callback);
         sub_tra.subscribe();
     }
 }
@@ -96,7 +95,7 @@ int main(int argc, char **argv)
     // Set queue size to 1 because generating a queue here will only pile up images and delay the output by the amount of queued images
     // The immediate unsubscribe is necessary to start without subscribing to any topic because message_filters does nor allow to do it another way.
     message_filters::Subscriber<TrackedPersons> subscriber_tracks(n, sub_topic_tracked_persons.c_str(), 1); subscriber_tracks.unsubscribe();
-    ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
+    ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback, boost::ref(subscriber_tracks));
     subscriber_tracks.registerCallback(boost::bind(&callback, _1));
 
     // Create a topic publisher
