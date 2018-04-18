@@ -27,7 +27,9 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-O3")        ## Optimize
 endif()
 
-
+catkin_package(
+    INCLUDE_DIRS include
+)
 
 ###########
 ## Build ##
@@ -52,3 +54,5 @@ add_executable(pedestrian_trajectories src/main.cpp)
    ${QT_QTGUI_LIBRARY}
    X11
  )
+
+

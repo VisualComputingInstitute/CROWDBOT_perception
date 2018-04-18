@@ -19,8 +19,6 @@ PersonTrajectories personTrajectories;
 
 void callback(const TrackedPersons::ConstPtr &tps)
 {
-    ROS_INFO("Trajectories cb entered!");
-
     personTrajectories.header = tps->header;
     TrackedPerson tp;
     
@@ -73,7 +71,7 @@ void connectCallback(message_filters::Subscriber<TrackedPersons> &sub_tra){
 int main(int argc, char **argv)
 {
     //init ROS
-    ros::init(argc, argv, "listener");
+    ros::init(argc, argv, "pedestrian_trajectories");
     ros::NodeHandle n;
 
     // Declare variables that can be modified by launch file or command line.
@@ -87,11 +85,12 @@ int main(int argc, char **argv)
     // while using different parameters.
     ros::NodeHandle private_node_handle_("~");
     private_node_handle_.param("queue_size", queue_size, int(10));
+    private_node_handle_.param("tracked_persons", sub_topic_tracked_persons, string("/rwth_tracker/tracked_persons"));
 
     ROS_DEBUG("pedestrian_trajectories: Queue size for synchronisation is set to: %i", queue_size);
 
     // Create a subscriber.
-    ros::Subscriber sub = n.subscribe("chatter", 1000, callback);
+    //ros::Subscriber sub = n.subscribe("chatter", 1000, callback);
  
     // Set queue size to 1 because generating a queue here will only pile up images and delay the output by the amount of queued images
     // The immediate unsubscribe is necessary to start without subscribing to any topic because message_filters does nor allow to do it another way.
@@ -99,6 +98,7 @@ int main(int argc, char **argv)
 
     ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
                                                        boost::ref(subscriber_tracks));
+    subscriber_tracks.registerCallback(boost::bind(&callback, _1));
 
     // Create a topic publisher
     private_node_handle_.param("person_trajectories", pub_topic_trajectories, string("/rwth_tracker/person_trajectories"));
