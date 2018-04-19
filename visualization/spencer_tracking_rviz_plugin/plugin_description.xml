@@ -2,16 +2,16 @@
 
   <class name="spencer_tracking_rviz_plugin/DetectedPersons" type="spencer_tracking_rviz_plugin::DetectedPersonsDisplay" base_class_type="rviz::Display">
     <description>
-      Displays detected persons from spencer_tracking_msgs/DetectedPersons messages.
+      Displays detected persons from frame_msgs/DetectedPersons messages.
     </description>
-    <message_type>spencer_tracking_msgs/DetectedPersons</message_type>
+    <message_type>frame_msgs/DetectedPersons</message_type>
   </class>
   
   <class name="spencer_tracking_rviz_plugin/TrackedPersons" type="spencer_tracking_rviz_plugin::TrackedPersonsDisplay" base_class_type="rviz::Display">
     <description>
-      Displays tracked persons from spencer_tracking_msgs/TrackedPersons messages.
+      Displays tracked persons from frame_msgs/TrackedPersons messages.
     </description>
-    <message_type>spencer_tracking_msgs/TrackedPersons</message_type>
+    <message_type>frame_msgs/TrackedPersons</message_type>
   </class>
 
 </library>
