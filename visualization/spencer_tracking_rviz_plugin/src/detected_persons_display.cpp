@@ -4,7 +4,9 @@
 
 #include "detected_persons_display.h"
 
+#ifndef Q_MOC_RUN
 #include <boost/foreach.hpp>
+#endif
 #define foreach BOOST_FOREACH
 
 namespace spencer_tracking_rviz_plugin

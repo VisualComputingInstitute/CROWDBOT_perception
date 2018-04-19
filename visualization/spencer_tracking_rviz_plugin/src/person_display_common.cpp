@@ -1,8 +1,10 @@
 #include "person_display_common.h"
 
+#ifndef Q_MOC_RUN
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/foreach.hpp>
+#endif
 #define foreach BOOST_FOREACH
 
 

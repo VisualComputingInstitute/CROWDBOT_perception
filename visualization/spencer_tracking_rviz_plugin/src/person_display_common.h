@@ -1,6 +1,7 @@
 #ifndef PERSON_DISPLAY_COMMON_H
 #define PERSON_DISPLAY_COMMON_H
 
+#ifndef Q_MOC_RUN
 #include <map>
 #include <set>
 #include <boost/circular_buffer.hpp>
@@ -26,6 +27,9 @@
 #include "visuals/person_visual.h"
 #include "visuals/text_node.h"
 #include "visuals/covariance_visual.h"
+#endif
+
+
 
 using namespace std;
 using namespace boost;

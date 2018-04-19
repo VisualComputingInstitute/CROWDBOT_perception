@@ -29,12 +29,16 @@
 #ifndef ADDITIONAL_TOPIC_SUBSCRIBER_H
 #define ADDITIONAL_TOPIC_SUBSCRIBER_H
 
-#include <OGRE/OgreSceneManager.h>
-#include <OGRE/OgreSceneNode.h>
+
 
 #ifndef Q_MOC_RUN
 #include <message_filters/subscriber.h>
 #include <tf/message_filter.h>
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
+#include <iostream>
+#include <OGRE/OgreSceneManager.h>
+#include <OGRE/OgreSceneNode.h>
 #endif
 
 #include <rviz/display.h>
@@ -42,10 +46,7 @@
 #include <rviz/frame_manager.h>
 #include <rviz/properties/ros_topic_property.h>
 
-#include <boost/bind.hpp>
-#include <boost/function.hpp>
 
-#include <iostream>
 using namespace boost;
 
 namespace rviz
