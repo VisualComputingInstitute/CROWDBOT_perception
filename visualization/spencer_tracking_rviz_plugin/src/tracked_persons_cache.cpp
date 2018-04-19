@@ -1,9 +1,7 @@
 #include "tracked_persons_cache.h"
 
-#ifndef Q_MOC_RUN
 #include <sstream>
 #include <boost/foreach.hpp>
-#endif
 #define foreach BOOST_FOREACH
 
 

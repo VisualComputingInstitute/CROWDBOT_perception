@@ -1,12 +1,10 @@
 #ifndef TRACKED_PERSONS_DISPLAY_H
 #define TRACKED_PERSONS_DISPLAY_H
 
-#ifndef Q_MOC_RUN
 #include <map>
 #include <boost/circular_buffer.hpp>
 #include <frame_msgs/TrackedPersons.h>
 #include "person_display_common.h"
-#endif
 
 namespace spencer_tracking_rviz_plugin
 {
