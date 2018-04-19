@@ -4,7 +4,7 @@
 #include <map>
 #include <geometry_msgs/PoseWithCovariance.h>
 #include <geometry_msgs/TwistWithCovariance.h>
-#include <spencer_tracking_msgs/TrackedPersons.h>
+#include <frame_msgs/TrackedPersons.h>
 
 #include "additional_topic_subscriber.h"
 
@@ -46,9 +46,9 @@ namespace spencer_tracking_rviz_plugin
 
     private:
         // Callback when a new TrackedPersons message has arrived
-        void processTrackedPersonsMessage(const spencer_tracking_msgs::TrackedPersons::ConstPtr& msg);
+        void processTrackedPersonsMessage(const frame_msgs::TrackedPersons::ConstPtr& msg);
 
-        rviz::AdditionalTopicSubscriber<spencer_tracking_msgs::TrackedPersons>* m_tracked_person_subscriber;
+        rviz::AdditionalTopicSubscriber<frame_msgs::TrackedPersons>* m_tracked_person_subscriber;
         rviz::Display* m_display;
         rviz::DisplayContext* m_context;
 

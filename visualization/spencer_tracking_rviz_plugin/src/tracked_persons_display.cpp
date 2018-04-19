@@ -219,7 +219,7 @@ void TrackedPersonsDisplay::personVisualTypeChanged()
 }
 
 // This is our callback to handle an incoming message.
-void TrackedPersonsDisplay::processMessage(const spencer_tracking_msgs::TrackedPersons::ConstPtr& msg)
+void TrackedPersonsDisplay::processMessage(const frame_msgs::TrackedPersons::ConstPtr& msg)
 {
     // Get transforms into fixed frame etc.
     if(!preprocessMessage(msg)) return;
@@ -237,13 +237,13 @@ void TrackedPersonsDisplay::processMessage(const spencer_tracking_msgs::TrackedP
     // Iterate over all tracks in this message, see if we have a cached visual (then update it) or create a new one.
     //
     set<unsigned int> encounteredTrackIds;
-    for (vector<spencer_tracking_msgs::TrackedPerson>::const_iterator trackedPersonIt = msg->tracks.begin(); trackedPersonIt != msg->tracks.end(); ++trackedPersonIt)
+    for (vector<frame_msgs::TrackedPerson>::const_iterator trackedPersonIt = msg->tracks.begin(); trackedPersonIt != msg->tracks.end(); ++trackedPersonIt)
     {
         shared_ptr<TrackedPersonVisual> trackedPersonVisual;
 
         // See if we encountered this track ID before in this loop (means duplicate track ID)
         if (encounteredTrackIds.find(trackedPersonIt->track_id) != encounteredTrackIds.end()) {
-            ROS_ERROR_STREAM("spencer_tracking_msgs::TrackedPersons contains duplicate track ID " << trackedPersonIt->track_id << "! Skipping duplicate track.");
+            ROS_ERROR_STREAM("frame_msgs::TrackedPersons contains duplicate track ID " << trackedPersonIt->track_id << "! Skipping duplicate track.");
             continue;
         }
         else {

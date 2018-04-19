@@ -19,7 +19,7 @@
 #include <OGRE/OgreSceneNode.h>
 #include <OGRE/OgreSceneManager.h>
 
-#include <spencer_tracking_msgs/TrackedPersons.h>
+#include <frame_msgs/TrackedPersons.h>
 #include <geometry_msgs/Twist.h>
 #include <rviz/message_filter_display.h>
 

@@ -20,7 +20,7 @@ void TrackedPersonsCache::initialize(rviz::Display* display, rviz::DisplayContex
     m_display = display;
     m_context = context;
 
-    m_tracked_person_subscriber = new rviz::AdditionalTopicSubscriber<spencer_tracking_msgs::TrackedPersons>("Tracked persons topic", display, context, update_nh,
+    m_tracked_person_subscriber = new rviz::AdditionalTopicSubscriber<frame_msgs::TrackedPersons>("Tracked persons topic", display, context, update_nh,
         boost::bind(&TrackedPersonsCache::processTrackedPersonsMessage, this, _1));
 }
 
@@ -36,7 +36,7 @@ const shared_ptr<CachedTrackedPerson> TrackedPersonsCache::lookup(track_id track
     else return entry->second;
 }
 
-void TrackedPersonsCache::processTrackedPersonsMessage(const spencer_tracking_msgs::TrackedPersons::ConstPtr& msg)
+void TrackedPersonsCache::processTrackedPersonsMessage(const frame_msgs::TrackedPersons::ConstPtr& msg)
 {
     // Get transform of person tracks into fixed frame
     Ogre::Vector3 frameOrigin; Ogre::Quaternion frameOrientation;
@@ -46,7 +46,7 @@ void TrackedPersonsCache::processTrackedPersonsMessage(const spencer_tracking_ms
 
     // Now iterate over all tracks and store their positions
     m_cachedTrackedPersons.clear();
-    foreach(spencer_tracking_msgs::TrackedPerson trackedPerson, msg->tracks)
+    foreach(frame_msgs::TrackedPerson trackedPerson, msg->tracks)
     {
         m_cachedTrackedPersons[trackedPerson.track_id] = shared_ptr<CachedTrackedPerson>(new CachedTrackedPerson);
         CachedTrackedPerson& cachedTrackedPerson = *m_cachedTrackedPersons[trackedPerson.track_id];

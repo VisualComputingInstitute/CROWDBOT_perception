@@ -114,7 +114,7 @@ void DetectedPersonsDisplay::stylesChanged()
 }
 
 // This is our callback to handle an incoming message.
-void DetectedPersonsDisplay::processMessage(const spencer_tracking_msgs::DetectedPersons::ConstPtr& msg)
+void DetectedPersonsDisplay::processMessage(const frame_msgs::DetectedPersons::ConstPtr& msg)
 {
     // Get transforms into fixed frame etc.
     if(!preprocessMessage(msg)) return;
@@ -128,7 +128,7 @@ void DetectedPersonsDisplay::processMessage(const spencer_tracking_msgs::Detecte
     //
     // Iterate over all detections in this message and create a visual representation
     //
-    for (vector<spencer_tracking_msgs::DetectedPerson>::const_iterator detectedPersonIt = msg->detections.begin(); detectedPersonIt != msg->detections.end(); ++detectedPersonIt)
+    for (vector<frame_msgs::DetectedPerson>::const_iterator detectedPersonIt = msg->detections.begin(); detectedPersonIt != msg->detections.end(); ++detectedPersonIt)
     {
         shared_ptr<DetectedPersonVisual> detectedPersonVisual;
 

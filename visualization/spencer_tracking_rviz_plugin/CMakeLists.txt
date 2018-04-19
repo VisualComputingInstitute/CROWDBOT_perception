@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(spencer_tracking_rviz_plugin)
 
-find_package(catkin REQUIRED COMPONENTS rviz spencer_tracking_msgs spencer_human_attribute_msgs spencer_social_relation_msgs)
+find_package(catkin REQUIRED COMPONENTS rviz frame_msgs)
 catkin_package()
 include_directories(${catkin_INCLUDE_DIRS})
 link_directories(${catkin_LIBRARY_DIRS})
@@ -13,21 +13,11 @@ add_definitions(-DQT_NO_KEYWORDS)
 qt4_wrap_cpp(MOC_FILES
   src/detected_persons_display.h
   src/tracked_persons_display.h
-  src/tracked_groups_display.h
-  src/social_relations_display.h
-  src/social_activities_display.h
-  src/human_attributes_display.h
-  src/person_display_common.h
-  src/additional_topic_subscriber.h
 )
 
 set(SOURCE_FILES
   src/detected_persons_display.cpp
   src/tracked_persons_display.cpp
-  src/tracked_groups_display.cpp
-  src/social_relations_display.cpp
-  src/social_activities_display.cpp
-  src/human_attributes_display.cpp
   src/person_display_common.cpp
   src/tracked_persons_cache.cpp
   src/visuals/person_visual.cpp

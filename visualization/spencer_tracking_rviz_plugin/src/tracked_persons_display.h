@@ -4,7 +4,7 @@
 #include <map>
 #include <boost/circular_buffer.hpp>
 
-#include <spencer_tracking_msgs/TrackedPersons.h>
+#include <frame_msgs/TrackedPersons.h>
 
 #include "person_display_common.h"
 
@@ -46,7 +46,7 @@ namespace spencer_tracking_rviz_plugin
 
     // The TrackedPersonsDisplay class itself just implements a circular buffer,
     // editable parameters, and Display subclass machinery.
-    class TrackedPersonsDisplay: public PersonDisplayCommon<spencer_tracking_msgs::TrackedPersons>
+    class TrackedPersonsDisplay: public PersonDisplayCommon<frame_msgs::TrackedPersons>
     {
     Q_OBJECT
     public:
@@ -84,7 +84,7 @@ namespace spencer_tracking_rviz_plugin
 
     private:
         // Function to handle an incoming ROS message.
-        void processMessage(const spencer_tracking_msgs::TrackedPersons::ConstPtr& msg);
+        void processMessage(const frame_msgs::TrackedPersons::ConstPtr& msg);
        
         // All currently active tracks, with unique track ID as map key
         typedef map<track_id, shared_ptr<TrackedPersonVisual> > track_map;
