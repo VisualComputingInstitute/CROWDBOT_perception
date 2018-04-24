@@ -396,9 +396,8 @@ int main(int argc, char **argv)
     private_node_handle_.param("pose_variance",    pose_variance, 0.05);
     current_detection_id = detection_id_offset;
 
-    string image_color = camera_ns + "/rgb/RgbImage";
-    string camera_info = camera_ns + "/rgb/camera_info";
-
+    string image_color = camera_ns + "/hd/image_color_rect";
+    string camera_info = camera_ns + "/hd/camera_info";
 
     //Initialise cudaHOG
     if(strcmp(conf.c_str(),"") == 0) {
