@@ -27,16 +27,10 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-O3")        ## Optimize
 endif()
 
-catkin_package(
-    INCLUDE_DIRS include
-)
 
 ###########
 ## Build ##
 ###########
-include_directories(include
-  ${catkin_INCLUDE_DIRS}
-)
 
 
 ## Declare a cpp executable
