@@ -27,6 +27,8 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-O3")        ## Optimize
 endif()
 
+include_directories(${catkin_INCLUDE_DIRS})
+
 
 ###########
 ## Build ##
