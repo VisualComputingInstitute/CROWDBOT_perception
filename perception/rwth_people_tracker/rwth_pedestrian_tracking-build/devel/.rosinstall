@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/nvidia/frame_ws/src/frame_soft/perception/rwth_people_tracker/rwth_pedestrian_tracking-build/devel/setup.sh

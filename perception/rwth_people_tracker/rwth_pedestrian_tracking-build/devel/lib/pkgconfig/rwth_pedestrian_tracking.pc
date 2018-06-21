@@ -1,0 +1,8 @@
+prefix=/home/nvidia/frame_ws/src/frame_soft/perception/rwth_people_tracker/rwth_pedestrian_tracking-build/devel
+
+Name: rwth_pedestrian_tracking
+Description: Description of rwth_pedestrian_tracking
+Version: 0.0.0
+Cflags: -I/home/nvidia/frame_ws/src/frame_soft/perception/rwth_people_tracker/rwth_pedestrian_tracking/include
+Libs: -L/home/nvidia/frame_ws/src/frame_soft/perception/rwth_people_tracker/rwth_pedestrian_tracking-build/devel/lib 
+Requires: 

@@ -850,6 +850,9 @@ void callbackWithHOG(const ImageConstPtr &color,
         detected_bounding_boxes.pushBack(single_detection);
     }
 
+    // basically, only change these two loop is enough, store new message into single_detection and pushback to detected_bounding_boxes
+    /*-------do not change code below----------------*/
+
     get_image((unsigned char*)(&color->data[0]),info->width,info->height,cim);
 
     writeImageAndCamInfoToFile(color,info,camera);

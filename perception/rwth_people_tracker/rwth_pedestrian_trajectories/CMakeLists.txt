@@ -6,6 +6,8 @@ project(rwth_pedestrian_trajectories)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS cmake_modules cv_bridge message_filters roscpp sensor_msgs std_msgs frame_msgs tf)
 
+include_directories(${catkin_INCLUDE_DIRS})
+
 # If we can use C++11, we do want to make use of it.
 # Otherwise, currently, we implicitly fallback on boost.
 include(CheckCXXCompilerFlag)
