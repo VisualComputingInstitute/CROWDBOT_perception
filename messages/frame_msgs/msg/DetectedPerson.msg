@@ -11,6 +11,12 @@ float64         confidence
 # check covariance to see which dimensions are actually set! unset dimensions shall have a covariance > 9999
 geometry_msgs/PoseWithCovariance    pose    
 
+# 2D bbox position (x and y is the top-left corner, width, height) 
+float64 bbox_x
+float64 bbox_y
+float64 bbox_w
+float64 bbox_h
+
 # Sensor modality / detector type, see example constants below. 
 # used e.g. later in tracking to check which tracks have been visually confirmed
 string          modality            

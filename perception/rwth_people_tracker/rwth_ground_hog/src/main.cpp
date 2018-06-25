@@ -22,7 +22,7 @@
 #include <rwth_perception_people_msgs/GroundHOGDetections.h>
 #include <rwth_perception_people_msgs/GroundPlane.h>
 
-#include <spencer_tracking_msgs/DetectedPersons.h>
+#include <frame_msgs/DetectedPersons.h>
 
 #include "Matrix.h"
 #include "Vector.h"
@@ -41,7 +41,7 @@ double worldScale; // for computing 3D positions from BBoxes
 double score_thresh; // threshold for HOG detections
 
 int detection_id_increment, detection_id_offset, current_detection_id; // added for multi-sensor use in SPENCER
-double pose_variance; // used in output spencer_tracking_msgs::DetectedPerson.pose.covariance
+double pose_variance; // used in output frame_msgs::DetectedPerson.pose.covariance
 
 
 void render_bbox_2D(GroundHOGDetections& detections, QImage& image, int r, int g, int b, int lineWidth)
@@ -286,7 +286,7 @@ void imageGroundPlaneCallback(const ImageConstPtr &color, const CameraInfoConstP
     // Now create 3D coordinates for SPENCER DetectedPersons msg
     //
     if(pub_detected_persons.getNumSubscribers()) {
-        spencer_tracking_msgs::DetectedPersons detected_persons;
+        frame_msgs::DetectedPersons detected_persons;
         detected_persons.header = color->header;
 
         for(unsigned int i=0;i<detHog.size();i++)
@@ -310,8 +310,8 @@ void imageGroundPlaneCallback(const ImageConstPtr &color, const CameraInfoConstP
             calc3DPosFromBBox(K, normal, GPd, x, y, width, height, worldScale, pos3D);       
 
             // DetectedPerson for SPENCER
-            spencer_tracking_msgs::DetectedPerson detected_person;
-            detected_person.modality = spencer_tracking_msgs::DetectedPerson::MODALITY_GENERIC_MONOCULAR_VISION;
+            frame_msgs::DetectedPerson detected_person;
+            detected_person.modality = frame_msgs::DetectedPerson::MODALITY_GENERIC_MONOCULAR_VISION;
             detected_person.confidence = detHog[i].score; // FIXME: normalize
             detected_person.pose.pose.position.x = -pos3D(0);
             detected_person.pose.pose.position.y = -pos3D(1);
@@ -328,6 +328,12 @@ void imageGroundPlaneCallback(const ImageConstPtr &color, const CameraInfoConstP
 
             detected_person.detection_id = current_detection_id;
             current_detection_id += detection_id_increment;
+
+            // also include 2d bounding box information for rwth_tracker
+            detected_person.bbox_x = x;
+            detected_person.bbox_y = y;
+            detected_person.bbox_w = width;
+            detected_person.bbox_h = height;
 
             detected_persons.detections.push_back(detected_person);  
         }
@@ -469,7 +475,7 @@ int main(int argc, char **argv)
     pub_result_image = it.advertise(pub_image_topic.c_str(), 1, image_cb, image_cb);
 
     private_node_handle_.param("detected_persons", pub_topic_detected_persons, string("/detected_persons"));
-    pub_detected_persons = n.advertise<spencer_tracking_msgs::DetectedPersons>(pub_topic_detected_persons, 10, con_cb, con_cb);
+    pub_detected_persons = n.advertise<frame_msgs::DetectedPersons>(pub_topic_detected_persons, 10, con_cb, con_cb);
 
     double min_expected_frequency, max_expected_frequency;
     private_node_handle_.param("min_expected_frequency", min_expected_frequency, 8.0);

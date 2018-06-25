@@ -295,6 +295,12 @@ void callback(const ImageConstPtr &depth, const GroundPlane::ConstPtr &gp, const
         detected_person.detection_id = current_detection_id;
         current_detection_id += detection_id_increment;
 
+        // also include 2d bounding box information for rwth_tracker
+        detected_person.bbox_x = x_left_rgb;
+        detected_person.bbox_y = y_top_rgb;
+        detected_person.bbox_w = w_rgb;
+        detected_person.bbox_h = h_rgb;
+
         detected_persons.detections.push_back(detected_person);  
     }
 
