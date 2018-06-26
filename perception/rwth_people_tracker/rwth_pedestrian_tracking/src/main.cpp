@@ -46,6 +46,7 @@
 #include "rwth_perception_people_msgs/VisualOdometry.h"
 #include "rwth_perception_people_msgs/PedestrianTracking.h"
 #include "rwth_perception_people_msgs/PedestrianTrackingArray.h"
+#include "frame_msgs/DetectedPersons.h"
 #include "frame_msgs/TrackedPersons.h"
 #include "frame_msgs/TrackedPersons2d.h"
 
@@ -55,6 +56,7 @@ using namespace std;
 using namespace sensor_msgs;
 using namespace message_filters;
 using namespace rwth_perception_people_msgs;
+using namespace frame_msgs;
 
 ros::Publisher pub_message;
 image_transport::Publisher pub_image;
@@ -466,7 +468,7 @@ Vector<double> projectPlaneToCam(Vector<double> p, Camera cam)
 void callbackWithoutHOG(const ImageConstPtr &color,
               const CameraInfoConstPtr &info,
               const GroundPlane::ConstPtr &gp,
-              const UpperBodyDetector::ConstPtr &upper,
+              const DetectedPersons::ConstPtr &upper,
               const VisualOdometry::ConstPtr &vo)
 {
 
@@ -517,17 +519,23 @@ void callbackWithoutHOG(const ImageConstPtr &color,
     Vector<double> single_detection(9);
     Vector<Vector< double > > detected_bounding_boxes;
 
-    for(int i = 0; i < upper->pos_x.size(); i++)
+    for(int i = 0; i < upper->detections.size(); i++)
     {
         single_detection(0) = cnt;
         single_detection(1) = i;
         single_detection(2) = 1;
-        single_detection(3) = 1 - upper->dist[i]; // make sure that the score is always positive
-        single_detection(4) = upper->pos_x[i];
-        single_detection(5) = upper->pos_y[i];
-        single_detection(6) = upper->width[i];
-        single_detection(7) = upper->height[i] * 3;
-        single_detection(8) = upper->median_depth[i];
+        //single_detection(3) = 1 - upper->dist[i]; // make sure that the score is always positive
+        single_detection(3) = upper->detections[i].confidence;
+        single_detection(4) = upper->detections[i].bbox_x;
+        single_detection(5) = upper->detections[i].bbox_y;
+        single_detection(6) = upper->detections[i].bbox_w;
+        single_detection(7) = upper->detections[i].bbox_h;
+        single_detection(8) = upper->detections[i].pose.pose.position.z;
+        // ROS_INFO("upper det %i bbox: (%f, %f ,%f ,%f): %f", i, single_detection(4), single_detection(5), single_detection(6), single_detection(7), single_detection(3) );
+        //ROS_INFO("Depth for upper det: %f", single_detection(8));
+        single_detection(9) = upper->detections[i].pose.pose.position.x;
+        single_detection(10) = upper->detections[i].pose.pose.position.y;
+        single_detection(11) = upper->detections[i].pose.pose.position.z;
         detected_bounding_boxes.pushBack(single_detection);
         //ROS_INFO("upper det %i bbox: (%f, %f ,%f ,%f): %f", i, single_detection(4), single_detection(5), single_detection(6), single_detection(7), single_detection(3) );
         //ROS_INFO("Depth for upper det: %f", single_detection(8));
@@ -741,8 +749,8 @@ void callbackWithoutHOG(const ImageConstPtr &color,
 void callbackWithHOG(const ImageConstPtr &color,
               const CameraInfoConstPtr &info,
               const GroundPlane::ConstPtr &gp,
-              const GroundHOGDetections::ConstPtr& groundHOGDet,
-              const UpperBodyDetector::ConstPtr &upper,
+              const DetectedPersons::ConstPtr& groundHOGDet,
+              const DetectedPersons::ConstPtr &upper,
               const VisualOdometry::ConstPtr &vo)
 {
     // ---update framerate + framerateVector---
@@ -800,36 +808,44 @@ void callbackWithHOG(const ImageConstPtr &color,
     Vector<double> single_detection(9);
     Vector<Vector< double > > detected_bounding_boxes;
 
-    for(int i = 0; i < groundHOGDet->pos_x.size(); i++)
+    for(int i = 0; i < groundHOGDet->detections.size(); i++)
     {
         single_detection(0) = cnt;
         single_detection(1) = i;
         single_detection(2) = 1;
-        single_detection(3) = groundHOGDet->score[i];
-        single_detection(4) = groundHOGDet->pos_x[i];
-        single_detection(5) = groundHOGDet->pos_y[i];
-        single_detection(6) = groundHOGDet->width[i];
-        single_detection(7) = groundHOGDet->height[i];
-        Vector<double> bbox(single_detection(4), single_detection(5), single_detection(6), single_detection(7));
+        single_detection(3) = groundHOGDet->detections[i].confidence;
+        single_detection(4) = groundHOGDet->detections[i].bbox_x;
+        single_detection(5) = groundHOGDet->detections[i].bbox_y;
+        single_detection(6) = groundHOGDet->detections[i].bbox_w;
+        single_detection(7) = groundHOGDet->detections[i].bbox_h;
+        //Vector<double> bbox(single_detection(4), single_detection(5), single_detection(6), single_detection(7));
         //ROS_INFO("HOG det %i bbox: (%f, %f ,%f ,%f): %f", i, single_detection(4), single_detection(5), single_detection(6), single_detection(7), single_detection(3) );
-        single_detection(8) = computeDepthInCam(bbox, camI);
+        //single_detection(8) = computeDepthInCam(bbox, camI);
+        single_detection(8) = groundHOGDet->detections[i].pose.pose.position.z;
+        //single_detection(9) = groundHOGDet->detections[i].pose.pose.position.x;
+        //single_detection(10) = groundHOGDet->detections[i].pose.pose.position.y;
+        //single_detection(11) = groundHOGDet->detections[i].pose.pose.position.z;
         //ROS_INFO("Depth for HOG det: %f", single_detection(8));
         detected_bounding_boxes.pushBack(single_detection);
     }
 
-    for(int i = 0; i < upper->pos_x.size(); i++)
+    for(int i = 0; i < upper->detections.size(); i++)
     {
         single_detection(0) = cnt;
-        single_detection(1) = groundHOGDet->pos_x.size()+i;
+        single_detection(1) = groundHOGDet->detections.size()+i;
         single_detection(2) = 1;
-        single_detection(3) = 1 - upper->dist[i]; // make sure that the score is always positive
-        single_detection(4) = upper->pos_x[i];
-        single_detection(5) = upper->pos_y[i];
-        single_detection(6) = upper->width[i];
-        single_detection(7) = upper->height[i] * 3;
-        single_detection(8) = upper->median_depth[i];
+        //single_detection(3) = 1 - upper->dist[i]; // make sure that the score is always positive
+        single_detection(3) = upper->detections[i].confidence;
+        single_detection(4) = upper->detections[i].bbox_x;
+        single_detection(5) = upper->detections[i].bbox_y;
+        single_detection(6) = upper->detections[i].bbox_w;
+        single_detection(7) = upper->detections[i].bbox_h;
+        single_detection(8) = upper->detections[i].pose.pose.position.z;
         // ROS_INFO("upper det %i bbox: (%f, %f ,%f ,%f): %f", i, single_detection(4), single_detection(5), single_detection(6), single_detection(7), single_detection(3) );
         //ROS_INFO("Depth for upper det: %f", single_detection(8));
+        //single_detection(9) = upper->detections[i].pose.pose.position.x;
+        //single_detection(10) = upper->detections[i].pose.pose.position.y;
+        //single_detection(11) = upper->detections[i].pose.pose.position.z;
 
         detected_bounding_boxes.pushBack(single_detection);
     }
@@ -1075,8 +1091,8 @@ void callbackWithHOG(const ImageConstPtr &color,
 // Connection callback that unsubscribes from the tracker if no one is subscribed.
 void connectCallback(message_filters::Subscriber<CameraInfo> &sub_cam,
                      message_filters::Subscriber<GroundPlane> &sub_gp,
-                     message_filters::Subscriber<GroundHOGDetections> &sub_hog,
-                     message_filters::Subscriber<UpperBodyDetector> &sub_ubd,
+                     message_filters::Subscriber<DetectedPersons> &sub_hog,
+                     message_filters::Subscriber<DetectedPersons> &sub_ubd,
                      message_filters::Subscriber<VisualOdometry> &sub_vo,
                      image_transport::SubscriberFilter &sub_col,
                      image_transport::ImageTransport &it){
@@ -1137,8 +1153,8 @@ int main(int argc, char **argv)
 
     private_node_handle_.param("camera_namespace", cam_ns, string("/head_xtion"));
     private_node_handle_.param("ground_plane", topic_gp, string("/ground_plane"));
-    private_node_handle_.param("ground_hog", topic_groundHOG, string("/groundHOG/detections"));
-    private_node_handle_.param("upper_body_detections", topic_upperbody, string("/upper_body_detector/detections"));
+    private_node_handle_.param("ground_hog", topic_groundHOG, string("/detected_persons/groundHOG"));
+    private_node_handle_.param("upper_body_detections", topic_upperbody, string("/detected_persons/upperbody"));
     private_node_handle_.param("visual_odometry", topic_vo, string("/visual_odometry/motion_matrix"));
 
     string topic_color_image = cam_ns + "/hd/image_color_rect";
@@ -1165,8 +1181,8 @@ int main(int argc, char **argv)
     subscriber_color.subscribe(it, topic_color_image.c_str(), 1); subscriber_color.unsubscribe(); //This subscribe and unsubscribe is just to set the topic name.
     message_filters::Subscriber<CameraInfo> subscriber_camera_info(n, topic_camera_info.c_str(), 1); subscriber_camera_info.unsubscribe();
     message_filters::Subscriber<GroundPlane> subscriber_gp(n, topic_gp.c_str(), 1); subscriber_gp.unsubscribe();
-    message_filters::Subscriber<GroundHOGDetections> subscriber_groundHOG(n, topic_groundHOG.c_str(), 1); subscriber_groundHOG.unsubscribe();
-    message_filters::Subscriber<UpperBodyDetector> subscriber_upperbody(n, topic_upperbody.c_str(), 1); subscriber_upperbody.unsubscribe();
+    message_filters::Subscriber<DetectedPersons> subscriber_groundHOG(n, topic_groundHOG.c_str(), 1); subscriber_groundHOG.unsubscribe();
+    message_filters::Subscriber<DetectedPersons> subscriber_upperbody(n, topic_upperbody.c_str(), 1); subscriber_upperbody.unsubscribe();
     message_filters::Subscriber<VisualOdometry> subscriber_vo(n, topic_vo.c_str(), 1); subscriber_vo.unsubscribe();
 
     ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
@@ -1191,14 +1207,14 @@ int main(int argc, char **argv)
     ///////////////////////////////////////////////////////////////////////////////////
     // With groundHOG
     sync_policies::ApproximateTime<Image, CameraInfo, GroundPlane,
-            GroundHOGDetections, UpperBodyDetector, VisualOdometry> MySyncPolicyHOG(queue_size); //The real queue size for synchronisation is set here.
+            DetectedPersons, DetectedPersons, VisualOdometry> MySyncPolicyHOG(queue_size); //The real queue size for synchronisation is set here.
     MySyncPolicyHOG.setAgePenalty(1000); //set high age penalty to publish older data faster even if it might not be correctly synchronized.
 
     const sync_policies::ApproximateTime<Image, CameraInfo, GroundPlane,
-            GroundHOGDetections, UpperBodyDetector, VisualOdometry> MyConstSyncPolicyHOG = MySyncPolicyHOG;
+            DetectedPersons, DetectedPersons, VisualOdometry> MyConstSyncPolicyHOG = MySyncPolicyHOG;
 
     Synchronizer< sync_policies::ApproximateTime<Image, CameraInfo, GroundPlane,
-            GroundHOGDetections, UpperBodyDetector, VisualOdometry> >
+            DetectedPersons, DetectedPersons, VisualOdometry> >
             syncHOG(MyConstSyncPolicyHOG, subscriber_color, subscriber_camera_info, subscriber_gp,
                  subscriber_groundHOG, subscriber_upperbody, subscriber_vo);
     if(strcmp(topic_groundHOG.c_str(),"") != 0)
@@ -1206,14 +1222,14 @@ int main(int argc, char **argv)
     ///////////////////////////////////////////////////////////////////////////////////
     // Without groundHOG
     sync_policies::ApproximateTime<Image, CameraInfo, GroundPlane,
-            UpperBodyDetector, VisualOdometry> MySyncPolicy(queue_size); //The real queue size for synchronisation is set here.
+            DetectedPersons, VisualOdometry> MySyncPolicy(queue_size); //The real queue size for synchronisation is set here.
     MySyncPolicy.setAgePenalty(1000); //set high age penalty to publish older data faster even if it might not be correctly synchronized.
 
     const sync_policies::ApproximateTime<Image, CameraInfo, GroundPlane,
-            UpperBodyDetector, VisualOdometry> MyConstSyncPolicy = MySyncPolicy;
+            DetectedPersons, VisualOdometry> MyConstSyncPolicy = MySyncPolicy;
 
     Synchronizer< sync_policies::ApproximateTime<Image, CameraInfo, GroundPlane,
-            UpperBodyDetector, VisualOdometry> >
+            DetectedPersons, VisualOdometry> >
             sync(MyConstSyncPolicy, subscriber_color, subscriber_camera_info, subscriber_gp,
                  subscriber_upperbody, subscriber_vo);
     if(strcmp(topic_groundHOG.c_str(),"") == 0)

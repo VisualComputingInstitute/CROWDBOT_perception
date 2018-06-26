@@ -16,8 +16,8 @@
     <arg name="upper_body" default="true"/>
     <arg name="hog" default="false"/>
     <arg name="camera_namespace" value="/hardware/depth/kinect2"/>
-    <arg name="upperbody_detections" default="/upper_body_detector/detections" />
-    <arg name="groundHOG_detections" value="/groundHOG/detections" />
+    <arg name="upperbody_detections" default="/upperbody/detections" />
+    <arg name="groundHOG_detections" default="/groundHOG/detections" />
     <!-- tracker -->
     <!-- /Global parameters -->
     
@@ -73,8 +73,8 @@
     <include if="$(arg hog)" file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking.launch">
         <arg name="camera_namespace" value="$(arg camera_namespace)" />
         <arg name="ground_plane" value="$(arg ground_plane)" />
-        <arg name="ground_hog" value="$(arg groundHOG_detections)" />
-        <arg name="upper_body_detections" value="$(arg upperbody_detections)" />
+        <arg name="ground_hog" value="/detected_persons/groundHOG" />
+        <arg name="upper_body_detections" value="/detected_persons/upper_body" />
         <arg name="visual_odometry" value="$(arg motion_parameters)" />
         <arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
         <arg name="pedestrian_image" value="/rwth_tracker/image" />
@@ -85,7 +85,7 @@
     <include unless="$(arg hog)" file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking_no_HOG.launch">
         <arg name="camera_namespace" value="$(arg camera_namespace)" />
         <arg name="ground_plane" value="$(arg ground_plane)" />
-        <arg name="upper_body_detections" value="$(arg upperbody_detections)" />
+        <arg name="upper_body_detections" value="/detected_persons/upper_body" />
         <arg name="visual_odometry" value="$(arg motion_parameters)" />
         <arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
         <arg name="pedestrian_image" value="/rwth_tracker/image" />
