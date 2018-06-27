@@ -185,7 +185,7 @@ void callback(const ImageConstPtr &depth, const GroundPlane::ConstPtr &gp, const
 
     // Get depth image as matrix
     cv_depth_ptr = cv_bridge::toCvCopy(depth, "32FC1");
-    if (depth->encoding == "16UC1") {
+    if (depth->encoding == "16UC1" || depth->encoding == "32FC1") {
     	cv_depth_ptr->image *= 0.001;
     }
     img_depth_ = cv_depth_ptr->image;
@@ -281,7 +281,7 @@ void callback(const ImageConstPtr &depth, const GroundPlane::ConstPtr &gp, const
         // DetectedPerson for
         frame_msgs::DetectedPerson detected_person;
         detected_person.modality = frame_msgs::DetectedPerson::MODALITY_GENERIC_RGBD;
-        detected_person.confidence = detected_bounding_boxes(i)(4); // FIXME: normalize
+        detected_person.confidence = 1 - detected_bounding_boxes(i)(4);
         detected_person.pose.pose = pose;
 
         const double LARGE_VARIANCE = 999999999;
