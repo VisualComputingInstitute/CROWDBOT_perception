@@ -9,37 +9,13 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   tf
   tf_conversions
-  message_generation sensor_msgs std_msgs message_filters
+  rwth_visual_odometry
 )
 
 # Include Eigen
 find_package(Eigen REQUIRED) 
 include_directories(${EIGEN_INCLUDE_DIRS}) 
 add_definitions(${EIGEN_DEFINITIONS})
-
-#######################################
-## Declare ROS messages and services ##
-#######################################
-
-## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  VisualOdometry.msg
-)
-
-## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
-
-## Generate added messages and services with any dependencies listed here
- generate_messages(
-   DEPENDENCIES
-   std_msgs
- )
-
 
 ###################################
 ## catkin specific configuration ##
@@ -51,6 +27,7 @@ catkin_package(
     roscpp
     tf
     tf_conversions
+    rwth_visual_odometry
 )
 
 ###########
@@ -59,6 +36,12 @@ catkin_package(
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
+)
+
+add_executable(odom2visual src/odom2visual/main.cpp)
+add_dependencies(odom2visual ${catkin_EXPORTED_TARGETS})
+target_link_libraries(odom2visual
+  ${catkin_LIBRARIES}
 )
 
 
@@ -74,7 +57,7 @@ target_link_libraries(tf2visual
 ## Install ##
 #############
 
-install(TARGETS tf2visual
+install(TARGETS odom2visual tf2visual
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

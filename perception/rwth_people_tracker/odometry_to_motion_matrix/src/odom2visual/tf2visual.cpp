@@ -9,7 +9,7 @@
 #include <Eigen/Geometry>
 
 
-#include "odometry_to_motion_matrix/VisualOdometry.h"
+#include "rwth_visual_odometry/VisualOdometry.h"
 
 ros::Publisher pub_message;
 
@@ -33,7 +33,7 @@ int main(int argc, char **argv)
     private_node_handle_.param("motion_parameters", pub_topic, std::string("/spencer/sensors/visual_odometry/motion_matrix"));
     private_node_handle_.param("sensor_frame_id", sensor_frame_id, std::string("rgbd_front_top_rgb_optical_frame"));
     private_node_handle_.param("odom_frame_id", odom_frame_id, std::string("odom"));
-    pub_message = n.advertise<odometry_to_motion_matrix::VisualOdometry>(pub_topic.c_str(), 3);
+    pub_message = n.advertise<rwth_visual_odometry::VisualOdometry>(pub_topic.c_str(), 3);
 
     tf::TransformListener listener;
 
@@ -79,7 +79,7 @@ int main(int argc, char **argv)
         //Eigen::Matrix4d reallyFinalMatrix = (finalMirrorTransform*rotatedFinalMatrix).matrix().transpose();
         Eigen::Matrix4d reallyFinalMatrix = rotatedFinalMatrix.transpose();
 
-        odometry_to_motion_matrix::VisualOdometry fovis_info_msg;
+        rwth_visual_odometry::VisualOdometry fovis_info_msg;
         fovis_info_msg.header.frame_id = sensor_frame_id;
         fovis_info_msg.header.stamp = transform.stamp_;
         fovis_info_msg.motion_estimate_valid = true;

@@ -115,17 +115,6 @@
         <arg name="localisations" value="$(arg pd_localisations)"/>
         <arg name="marker" value="$(arg pd_marker)"/>
     </include> -->
-    
 
 
-    <!-- for test!!! -->
-    <!-- adding rostopic tool relay -->
-    <node name="topic_relay1" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/sync/SyncDepthImage /hardware/depth/kinect2/sd/image_depth" respawn="true" />
-    <node name="topic_relay2" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/sync/SyncColorImage /hardware/depth/kinect2/hd/image_color_rect" respawn="true" />
-    <node name="topic_relay3" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/ColorIntrinsic /hardware/depth/kinect2/hd/camera_info" respawn="true" />
-    <node name="topic_relay4" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/DepthIntrinsic /hardware/depth/kinect2/sd/camera_info" respawn="true" />
-    
-
-    <!-- sim parameter -->
-    <arg name="use_sim_time" default="true" />
 </launch> 
