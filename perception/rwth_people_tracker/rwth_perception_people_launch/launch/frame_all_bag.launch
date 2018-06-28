@@ -4,23 +4,27 @@
     <arg name="mira_ros_adapter" default="false" />
     <arg name="kinect2_bridge" default="false" />
     <!-- VO -->
-    <arg name="motion_parameters" value="/motion_matrix" />
-    <arg name="sensor_frame_id" value="/hardware/depth/kinect2/ColorImageFrame" />
-    <arg name="odom_frame_id" value="/robot/OdometryFrame" />
+    <arg name="motion_parameters" default="/motion_matrix" />
+    <arg name="sensor_frame_id" default="/hardware/depth/kinect2/ColorImageFrame" />
+    <arg name="odom_frame_id" default="/robot/OdometryFrame" />
     <!-- GP -->
-    <arg name="ground_plane" value="/ground_plane" />
+    <arg name="ground_plane" default="/ground_plane" />
     <arg name="rate" default="30.0"/>
-    <arg name="base_footprint" value="/robot/BaseFrame" />
-    <arg name="camera_frame" value="/hardware/depth/kinect2/ColorImageFrame" />
+    <arg name="base_footprint" default="/robot/BaseFrame" />
+    <arg name="camera_frame" default="/hardware/depth/kinect2/ColorImageFrame" />
     <!-- detectors -->
     <arg name="upper_body" default="true"/>
     <arg name="hog" default="false"/>
-    <arg name="camera_namespace" value="/hardware/depth/kinect2"/>
-    <arg name="upperbody_detections" default="/upperbody/detections" />
+    <arg name="camera_namespace" default="/hardware/depth/kinect2"/>
+    <arg name="upperbody_detections" default="/upper_body_detector/detections" />
     <arg name="groundHOG_detections" default="/groundHOG/detections" />
     <arg name="detected_persons_upperbody" default="/detected_persons/upper_body" />
     <arg name="detected_persons_groundHOG" default="/detected_persons/groundHOG" />
     <!-- tracker -->
+    <arg name="tracked_persons" default="/rwth_tracker/tracked_persons" />
+    <!-- trajectories -->
+    <arg name="person_trajectories" default="/rwth_tracker/person_trajectories" />
+    <arg name="selected_person_trajectory" default="/rwth_tracker/selected_person_trajectory" />
     <!-- /Global parameters -->
     
     <!-- MIRA-ROS-Adapter -->
@@ -80,7 +84,7 @@
         <arg name="visual_odometry" value="$(arg motion_parameters)" />
         <arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
         <arg name="pedestrian_image" value="/rwth_tracker/image" />
-        <arg name="tracked_persons" value="/rwth_tracker/tracked_persons" />
+        <arg name="tracked_persons" value="$(arg tracked_persons)" />
         <arg name="queue_size" value="10" />
     </include>
 
@@ -91,8 +95,17 @@
         <arg name="visual_odometry" value="$(arg motion_parameters)" />
         <arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
         <arg name="pedestrian_image" value="/rwth_tracker/image" />
-        <arg name="tracked_persons" value="/rwth_tracker/tracked_persons" />
+        <arg name="tracked_persons" value="$(arg tracked_persons)" />
         <arg name="queue_size" value="10" />
+    </include>
+
+    <!-- Person Trajectories -->
+    <include file="$(find rwth_pedestrian_trajectories)/launch/pedestrian_trajectories.launch">
+        <arg name="tracked_persons" value="$(arg tracked_persons)" />
+        <arg name="person_trajectories" value="$(arg person_trajectories)" />
+        <arg name="selected_person_trajectory" value="$(arg selected_person_trajectory)" />
+        <arg name="queue_size" value="10" />
+        <arg name="camera_frame" value="$(arg camera_frame)" />
     </include>
 
     <!-- Pedestrian Localisation 
