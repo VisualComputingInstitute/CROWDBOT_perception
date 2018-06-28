@@ -533,9 +533,9 @@ void callbackWithoutHOG(const ImageConstPtr &color,
         single_detection(8) = upper->detections[i].pose.pose.position.z;
         // ROS_INFO("upper det %i bbox: (%f, %f ,%f ,%f): %f", i, single_detection(4), single_detection(5), single_detection(6), single_detection(7), single_detection(3) );
         //ROS_INFO("Depth for upper det: %f", single_detection(8));
-        single_detection(9) = upper->detections[i].pose.pose.position.x;
-        single_detection(10) = upper->detections[i].pose.pose.position.y;
-        single_detection(11) = upper->detections[i].pose.pose.position.z;
+        //single_detection(9) = upper->detections[i].pose.pose.position.x;
+        //single_detection(10) = upper->detections[i].pose.pose.position.y;
+        //single_detection(11) = upper->detections[i].pose.pose.position.z;
         detected_bounding_boxes.pushBack(single_detection);
         //ROS_INFO("upper det %i bbox: (%f, %f ,%f ,%f): %f", i, single_detection(4), single_detection(5), single_detection(6), single_detection(7), single_detection(3) );
         //ROS_INFO("Depth for upper det: %f", single_detection(8));

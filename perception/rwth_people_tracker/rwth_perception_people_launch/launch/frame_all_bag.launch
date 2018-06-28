@@ -15,11 +15,14 @@
     <!-- detectors -->
     <arg name="upper_body" default="true"/>
     <arg name="hog" default="false"/>
+    <arg name="yolo" default="false"/>
     <arg name="camera_namespace" default="/hardware/depth/kinect2"/>
     <arg name="upperbody_detections" default="/upper_body_detector/detections" />
     <arg name="groundHOG_detections" default="/groundHOG/detections" />
     <arg name="detected_persons_upperbody" default="/detected_persons/upper_body" />
     <arg name="detected_persons_groundHOG" default="/detected_persons/groundHOG" />
+    <arg name="detected_persons_yolo" default="/detected_persons/yolo" />
+    <arg name="detected_persons_all" default="/detected_persons/all" />
     <!-- tracker -->
     <arg name="tracked_persons" default="/rwth_tracker/tracked_persons" />
     <!-- trajectories -->
@@ -75,11 +78,37 @@
         <arg name="queue_size" value="10" />
     </include>
 
+    <!-- YOLO -->
+    <include if="$(arg yolo)" file="$(find darknet_ros)/launch/darknet_ros.launch"  />
+    <include if="$(arg yolo)" file="$(find yoloconvertor)/launch/yoloconvertorwith_GP.launch">
+        <arg name="ground_plane" value="$(arg ground_plane)" />
+        <arg name="queue_size" value="10" />
+        <arg name="camera_namespace" value="$(arg camera_namespace)" />
+        <arg name="detected_persons" value="$(arg detected_persons_yolo)"/>
+        <arg name="detection_id_offset" value="5"/>
+        <arg name="detection_id_increment" value="20"/>
+        <arg name="world_scale" value="0.001"/>
+        <arg name="bounding_boxes" value="darknet_ros/bounding_boxes"/>
+
+    </include>
+
     <!-- Pedestrian Tracking -->
-    <include if="$(arg hog)" file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking.launch">
+    <include file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking.launch">
         <arg name="camera_namespace" value="$(arg camera_namespace)" />
         <arg name="ground_plane" value="$(arg ground_plane)" />
-        <arg name="ground_hog" value="$(arg detected_persons_groundHOG)" />
+        <arg name="ground_hog" value="" />
+        <arg name="upper_body_detections" value="$(arg detected_persons_yolo)" />
+        <arg name="visual_odometry" value="$(arg motion_parameters)" />
+        <arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
+        <arg name="pedestrian_image" value="/rwth_tracker/image" />
+        <arg name="tracked_persons" value="$(arg tracked_persons)" />
+        <arg name="queue_size" value="10" />
+    </include>
+
+    <!--<include if="$(arg hog)" file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking.launch">
+        <arg name="camera_namespace" value="$(arg camera_namespace)" />
+        <arg name="ground_plane" value="$(arg ground_plane)" />
+        <arg name="ground_hog" value="$(arg detected_persons_yolo)" />
         <arg name="upper_body_detections" value="$(arg detected_persons_upperbody)" />
         <arg name="visual_odometry" value="$(arg motion_parameters)" />
         <arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
@@ -97,7 +126,7 @@
         <arg name="pedestrian_image" value="/rwth_tracker/image" />
         <arg name="tracked_persons" value="$(arg tracked_persons)" />
         <arg name="queue_size" value="10" />
-    </include>
+    </include> -->
 
     <!-- Person Trajectories -->
     <include file="$(find rwth_pedestrian_trajectories)/launch/pedestrian_trajectories.launch">
