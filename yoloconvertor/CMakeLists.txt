@@ -7,6 +7,9 @@ project(yoloconvertor)
 find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs sensor_msgs rwth_perception_people_msgs message_filters frame_msgs darknet_ros_msgs image_transport cv_bridge)
 
 
+find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
+include(${QT_USE_FILE})
+
 set(CMAKE_BUILD_TYPE Release)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
@@ -85,6 +88,15 @@ add_executable(convert_yolo src/main.cpp)
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 add_dependencies(convert_yolo ${catkin_EXPORTED_TARGETS})
+
+## Specify libraries to link a library or executable target against
+ target_link_libraries(convert_yolo
+   ${catkin_LIBRARIES}
+   ${QT_LIBRARIES}
+   ${QT_QTCORE_LIBRARY}
+   ${QT_QTGUI_LIBRARY}
+   X11
+ )
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(convert_yolo
