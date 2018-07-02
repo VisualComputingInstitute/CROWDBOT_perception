@@ -5,6 +5,7 @@
 #include <ros/time.h>
 #include <image_transport/subscriber_filter.h>
 #include <sensor_msgs/CameraInfo.h>
+#include <image_transport/image_transport.h>
 
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
@@ -99,7 +100,7 @@ void calc3DPosFromBBox(const Matrix<double>& K, const Vector<double>& GPN_, doub
 
 
 void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoConstPtr &camera_info,
-                              const GroundPlaneConstPtr &gp)
+                              const GroundPlaneConstPtr &gp, const ImageConstPtr &depth, const CameraInfoConstPtr &dep_info)
 {
     //    ROS_INFO("Entered yolo-convert callback");
 
@@ -202,13 +203,18 @@ void connectCallback(ros::Subscriber &sub_msg,
                      string gp_topic,
                      Subscriber<GroundPlane> &sub_gp,
                      Subscriber<CameraInfo> &sub_cam,
-		     Subscriber<BoundingBoxes> &sub_boxes){
+		             Subscriber<BoundingBoxes> &sub_boxes,
+                     image_transport::SubscriberFilter &sub_dep,
+                     message_filters::Subscriber<CameraInfo> &sub_d_cam,
+                     image_transport::ImageTransport &it){
     if(!pub_detected_persons.getNumSubscribers()) {
         ROS_DEBUG("yoloconvertor: No subscribers. Unsubscribing.");
         sub_msg.shutdown();
         sub_gp.unsubscribe();
         sub_cam.unsubscribe();
         sub_boxes.unsubscribe();
+        sub_dep.unsubscribe();
+        sub_d_cam.unsubscribe();
     } else {
         ROS_DEBUG("yoloconvertor: New subscribers. Subscribing.");
         if(strcmp(gp_topic.c_str(), "") == 0) {
@@ -216,7 +222,9 @@ void connectCallback(ros::Subscriber &sub_msg,
         }
         sub_cam.subscribe();
         sub_gp.subscribe();
-	sub_boxes.subscribe();
+    	sub_boxes.subscribe();
+        sub_dep.subscribe(it,sub_dep.getTopic().c_str(),1);
+        sub_d_cam.subscribe();
     }
 }
 
@@ -249,16 +257,17 @@ int main(int argc, char **argv)
     private_node_handle_.param("pose_variance",    pose_variance, 0.05);
     current_detection_id = detection_id_offset;
 
-    
-    // neng
     //string image_color = camera_ns + "/hd/image_color_rect";
     string camera_info = camera_ns + "/hd/camera_info";
+    string topic_depth_info = camera_ns + "/sd/camera_info";
+    string topic_depth_image = camera_ns + "/sd/image_depth";
 
 
 
-    ROS_DEBUG("groundHOG: Queue size for synchronisation is set to: %i", queue_size);
+    ROS_DEBUG("yoloconvertor: Queue size for synchronisation is set to: %i", queue_size);
 
-
+    // Image transport handle
+    image_transport::ImageTransport it(private_node_handle_);
 
     // Create a subscriber.
     // Name the topic, message queue, callback function with class name, and object containing callback function.
@@ -266,11 +275,13 @@ int main(int argc, char **argv)
     ros::Subscriber sub_message; //Subscribers have to be defined out of the if scope to have affect.
     Subscriber<GroundPlane> subscriber_ground_plane(n, ground_plane.c_str(), 1); subscriber_ground_plane.unsubscribe();
     
-    // I guess I dont need this, it is image transport, i dont need image, lets see.   Neng
 //    image_transport::SubscriberFilter subscriber_color;
 //    subscriber_color.subscribe(it, image_color.c_str(), 1); subscriber_color.unsubscribe();
     Subscriber<CameraInfo> subscriber_camera_info(n, camera_info.c_str(), 1); subscriber_camera_info.unsubscribe();
     Subscriber<BoundingBoxes> subscriber_bounding_boxes(n,boundingboxes.c_str(),1); subscriber_bounding_boxes.unsubscribe();
+    image_transport::SubscriberFilter subscriber_depth;
+    subscriber_depth.subscribe(it, topic_depth_image.c_str(),1); subscriber_depth.unsubscribe();
+    message_filters::Subscriber<CameraInfo> subscriber_depth_info(n, topic_depth_info.c_str(), 1); subscriber_depth_info.unsubscribe();
 
     // Neng, why we need this line? what is this for? also connectCallback
     ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
@@ -279,25 +290,30 @@ int main(int argc, char **argv)
                                                        ground_plane,
                                                        boost::ref(subscriber_ground_plane),
                                                        boost::ref(subscriber_camera_info),
-                                                       boost::ref(subscriber_bounding_boxes));
+                                                       boost::ref(subscriber_bounding_boxes),
+                                                       boost::ref(subscriber_depth),
+                                                       boost::ref(subscriber_depth_info),
+                                                       boost::ref(it));
 
 
 
     //The real queue size for synchronisation is set here.
-    sync_policies::ApproximateTime<BoundingBoxes, CameraInfo, GroundPlane> MySyncPolicy(queue_size);
+    sync_policies::ApproximateTime<BoundingBoxes, CameraInfo, GroundPlane, Image, CameraInfo> MySyncPolicy(queue_size);
     MySyncPolicy.setAgePenalty(1000); //set high age penalty to publish older data faster even if it might not be correctly synchronized.
 
-    const sync_policies::ApproximateTime<BoundingBoxes, CameraInfo, GroundPlane> MyConstSyncPolicy = MySyncPolicy;
-    Synchronizer< sync_policies::ApproximateTime<BoundingBoxes, CameraInfo, GroundPlane> > sync(MyConstSyncPolicy,
+    const sync_policies::ApproximateTime<BoundingBoxes, CameraInfo, GroundPlane, Image, CameraInfo> MyConstSyncPolicy = MySyncPolicy;
+    Synchronizer< sync_policies::ApproximateTime<BoundingBoxes, CameraInfo, GroundPlane, Image, CameraInfo> > sync(MyConstSyncPolicy,
                                                                                         subscriber_bounding_boxes,
                                                                                         subscriber_camera_info,
-                                                                                        subscriber_ground_plane);
+                                                                                        subscriber_ground_plane,
+                                                                                        subscriber_depth,
+                                                                                        subscriber_depth_info);
 
     // Decide which call back should be used.
     if(strcmp(ground_plane.c_str(), "") == 0) {
         ROS_FATAL("ground_plane: need ground_plane to produce 3d information");
     } else {
-        sync.registerCallback(boost::bind(&yoloConvertorCallback, _1, _2, _3));
+        sync.registerCallback(boost::bind(&yoloConvertorCallback, _1, _2, _3, _4, _5));
     }
 
     // Create publishers
