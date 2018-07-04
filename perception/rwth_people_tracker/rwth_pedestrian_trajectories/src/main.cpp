@@ -109,6 +109,10 @@ void callback(const TrackedPersons::ConstPtr &tps)
     // publish "selected" (right now: closest) trajectory on a seperate topic
     if(personTrajectories.trajectories.size()>0 && tps->tracks.size()>0){
         pub_selected_person_trajectory.publish(personTrajectories.trajectories.at(selected_trajectory_idx));
+    }else{
+        PersonTrajectory empty_pt;
+        empty_pt.track_id = 0;
+        pub_selected_person_trajectory.publish(empty_pt);
     }
     
 }
