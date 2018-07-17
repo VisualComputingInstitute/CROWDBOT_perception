@@ -150,7 +150,7 @@
     <node name="topic_relay2" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/sync/SyncColorImage /hardware/depth/kinect2/hd/image_color_rect" respawn="true" />
     <node name="topic_relay3" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/ColorIntrinsic /hardware/depth/kinect2/hd/camera_info" respawn="true" />
     <node name="topic_relay4" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/DepthIntrinsic /hardware/depth/kinect2/sd/camera_info" respawn="true" />
-    
+    <node name="topic_relay5" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/sync/SyncRegisteredDepthImage /hardware/depth/kinect2/hd/image_depth_rect" respawn="true" />
     <!-- sim parameter -->
     <arg name="use_sim_time" default="true" />
 
