@@ -355,11 +355,11 @@ int main(int argc, char **argv)
     
 //    image_transport::SubscriberFilter subscriber_color;
 //    subscriber_color.subscribe(it, image_color.c_str(), 1); subscriber_color.unsubscribe();
-    Subscriber<CameraInfo> subscriber_camera_info(n, camera_info.c_str(), 10); subscriber_camera_info.unsubscribe();
-    Subscriber<BoundingBoxes> subscriber_bounding_boxes(n,boundingboxes.c_str(),10); subscriber_bounding_boxes.unsubscribe();
+    Subscriber<CameraInfo> subscriber_camera_info(n, camera_info.c_str(), 1); subscriber_camera_info.unsubscribe();
+    Subscriber<BoundingBoxes> subscriber_bounding_boxes(n,boundingboxes.c_str(),1); subscriber_bounding_boxes.unsubscribe();
     image_transport::SubscriberFilter subscriber_depth;
-    subscriber_depth.subscribe(it, topic_depth_image.c_str(),10); subscriber_depth.unsubscribe();
-    message_filters::Subscriber<CameraInfo> subscriber_depth_info(n, topic_depth_info.c_str(), 10); subscriber_depth_info.unsubscribe();
+    subscriber_depth.subscribe(it, topic_depth_image.c_str(),1); subscriber_depth.unsubscribe();
+    message_filters::Subscriber<CameraInfo> subscriber_depth_info(n, topic_depth_info.c_str(), 1); subscriber_depth_info.unsubscribe();
 
     // Neng, why we need this line? what is this for? also connectCallback
     ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
