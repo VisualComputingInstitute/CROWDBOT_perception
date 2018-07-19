@@ -166,8 +166,16 @@ double Globals::sysUncRot;
 double Globals::sysUncVel;
 double Globals::sysUncAcc;
 
+/* P - the initial state covariance */
+double Globals::initPX;
+double Globals::initPY;
+double Globals::initPVX;
+double Globals::initPVY;
+
 double Globals::kalmanObsMotionModelthresh;
 double Globals::kalmanObsColorModelthresh;
+
+int Globals::accepted_frames_without_det;
 
 
 ////////////////////////GP Estimator/////////////////////////

@@ -161,7 +161,7 @@ dMaxPedVel = 5
 #====================================
 # Trajectory
 #====================================
-threshLengthTraj = 4
+threshLengthTraj = 2
 dSameIdThresh = 0.49
 
 #=========================
@@ -177,22 +177,30 @@ dTau = 35
 #==========================
 # Time horizon for event cone search
 #==========================
-coneTimeHorizon = 500
-maxHoleLen = 10
+coneTimeHorizon = 200
+maxHoleLen = 60
 dHolePenalty = 0.3
 
 #==============================
 # Kalman Filter
 #==============================
-# Q - the system covariance
+# Q - the system covariance (not used anymore)
 sysUncX = 0.5
 sysUncY = 0.5
 sysUncRot = 1.0
 sysUncVel = 1.0
 sysUncAcc = 1
 
-kalmanObsMotionModelthresh = 0.93
-kalmanObsColorModelthresh = 0.92
+# P-init - the initial state covariance
+initPX = 0.5
+initPY = 0.5
+initPVX = 0.7
+initPVY = 0.7
+
+kalmanObsMotionModelthresh = 0.5
+kalmanObsColorModelthresh = 0.5
+
+accepted_frames_without_det = 60
 
 
 #=======GP-Estimation========================================================================================================================

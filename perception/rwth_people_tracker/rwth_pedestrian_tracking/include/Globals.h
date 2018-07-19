@@ -179,8 +179,17 @@ public:
     static  double sysUncVel;
     static  double sysUncAcc;
 
+    /* P_init - the initial state covariance */
+    static double initPX;
+    static double initPY;
+    static double initPVX;
+    static double initPVY;
+
+
     static double kalmanObsMotionModelthresh;
     static double kalmanObsColorModelthresh;
+
+    static int accepted_frames_without_det;
 
 
     /////////////////////////GP estimator//////////////////////

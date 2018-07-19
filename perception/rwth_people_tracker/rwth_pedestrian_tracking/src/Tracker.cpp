@@ -961,8 +961,7 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
     int nrFramesWithInlier;
     Vector<double> vMeanPoint3D(3, 0.0);
 
-    Matrix<double> Rot4D;
-
+    //Matrix<double> Rot4D;
 
     int numberHypos = vHypos.getSize();
     Hypo* auxHypo;
@@ -970,18 +969,18 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
 
     Matrix<double> mAllXnewUp;
     Vector<FrameInlier> vvIdxUp;
-    Vector<double>  vRUp;
-    Vector<double>  vVUp;
+    Vector<double>  vVXUp;
+    Vector<double>  vVYUp;
 
     Matrix<double> mNewAllX;
     Vector<FrameInlier> vvNewIdx;
-    Vector<double>  vNewR;
-    Vector<double>  vNewV;
+    Vector<double>  vNewVX;
+    Vector<double>  vNewVY;
 
     Matrix<double> mCurrAllX;
     Vector<FrameInlier> vvCurrIdx;
-    Vector<double>  vCurrR;
-    Vector<double>  vCurrV;
+    Vector<double>  vCurrVX;
+    Vector<double>  vCurrVY;
 
     Volume<double> volHMean;
     int pointPos;
@@ -1019,10 +1018,10 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
             continue;
         }
         auxHypo->getIdx(vvCurrIdx);
-        auxHypo->getV(vCurrV);
-        auxHypo->getR(vCurrR);
+        auxHypo->getVX(vCurrVX);
+        auxHypo->getVY(vCurrVY);
         auxHypo->getXProj(mCurrAllX);
-        auxHypo->getRot4D(Rot4D);
+        //auxHypo->getRot4D(Rot4D);
         n_HypoId = auxHypo->getHypoID();
 
         nrFramesWithInlier = vvCurrIdx.getSize();
@@ -1074,8 +1073,8 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
         Vector<Vector<double> > vvTrajPTS;
         auxHypo->getTrajPts(vvTrajPTS);
 
-        Vector<double> rotation;
-        auxHypo->getR(rotation);
+        Vector<double> vX;
+        auxHypo->getVX(vX);
 
 
         if(vvTrajPTS.getSize() < 2) continue;
@@ -1085,28 +1084,24 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
 
         xInit(0) = mXProj(0, mXProj.y_size()-1);
         xInit(1) = mXProj(1, mXProj.y_size()-1);
+        xInit(2) = vCurrVX(vCurrVX.getSize()-1);
+        xInit(3) = vCurrVY(vCurrVY.getSize()-1);
 
-        double dir, vel;
-
-
-
-        getCurrentSmoothDirection(mXProj, 12, dir, vel);
-//                        xInit(2) = rotation(rotation.getSize()-1);
-//                        xInit(3) = vCurrV(vCurrV.getSize()-1);
-
-        xInit(2) = dir;
-        xInit(3) = vel*Globals::frameRate;
-       // printf("dir: %.4f, vel: %.4f\n",dir,vel*Globals::frameRate);
-
-//        if(vel < Globals::minvel*3)
-//            xInit(3) = 0;
+        //double dir, vel;
+        //getCurrentSmoothDirection(mXProj, 12, dir, vel);
+        //xInit(2) = rotation(rotation.getSize()-1);
+        //xInit(3) = vCurrV(vCurrV.getSize()-1);
+        //xInit(2) = dir;
+        //xInit(3) = vel*Globals::frameRate;
+        //printf("dir: %.4f, vel: %.4f\n",dir,vel*Globals::frameRate);
+        //if(vel < Globals::minvel*3) xInit(3) = 0;
 
         auxHypo->getColHists(colHistsOld);
         auxHypo->getStateCovMats(stateCovMatsOld);
 
         EKalman kalman;
         kalman.init(xInit, stateCovMatsOld(stateCovMatsOld.getSize()-1), 1.0/Globals::frameRate);
-        kalman.runKalmanUp(det, t-1, t, mAllXnewUp, vvIdxUp, vRUp, vVUp, volHMean,
+        kalman.runKalmanUp(det, t-1, t, mAllXnewUp, vvIdxUp, vVXUp, vVYUp, volHMean,
                            stateCovMatsNew, colHistsOld(colHistsOld.getSize()-1), colHistsNew,
                            mXProj(3, mXProj.y_size()-1), bbox);
 
@@ -1126,8 +1121,8 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
         int newSize = mXProj.y_size() + 1;
 
         mNewAllX.set_size(4, newSize);
-        vNewR.setSize(newSize);
-        vNewV.setSize(newSize);
+        vNewVX.setSize(newSize);
+        vNewVY.setSize(newSize);
 
         // get the part of the original trajectory up to, but excluding, the last detection
         // and add the newly appened part
@@ -1135,14 +1130,14 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
 
         for(int j = 0; j < mXProj.y_size(); j++)
         {
-            vNewR(j) = vCurrR(j);
-            vNewV(j) = vCurrV(j);
+            vNewVX(j) = vCurrVX(j);
+            vNewVY(j) = vCurrVY(j);
         }
 
         for(int j = mXProj.y_size(); j < newSize; j++)
         {
-            vNewR(j) = vRUp(j -  (mXProj.y_size()));
-            vNewV(j) = vVUp(j -  (mXProj.y_size()));
+            vNewVX(j) = vVXUp(j -  (mXProj.y_size()));
+            vNewVY(j) = vVYUp(j -  (mXProj.y_size()));
         }
 
 
@@ -1193,12 +1188,12 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
 //            vNewR.swap();
 //            vNewR.resize(max_length);
 //            vNewR.swap();
-            vNewR.resize_from_end(max_length);
+            vNewVX.resize_from_end(max_length);
 
 //            vNewV.swap();
 //            vNewV.resize(max_length);
 //            vNewV.swap();
-            vNewV.resize_from_end(max_length);
+            vNewVY.resize_from_end(max_length);
 
             int first_frame = mNewAllX(2, 0);
 
@@ -1223,7 +1218,7 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
         }
 
 
-        compute_hypo_entries(mNewAllX, vNewR, vNewV, vvNewIdx, det, newHypo, normfct, t);
+        compute_hypo_entries(mNewAllX, vNewVX, vNewVY, vvNewIdx, det, newHypo, normfct, t);
         newHypo.setParentID(n_HypoId);
         newHypo.setStateCovMats(stateCovMatsOld);
         newHypo.setColHists(colHistsOld);
@@ -1256,24 +1251,26 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
     PInit.set_size(4,4, 0.0);
 
     // FIXME: better not hardcoded (e.g. in config file)
-    PInit(0,0) = 0.7; //0.4
-    PInit(1,1) = 0.7; //1.2
-    PInit(2,2) = 2.0; //0.2
-    PInit(3,3) = 2.0; //0.2
+    PInit(0,0) = Globals::initPX; // 0.5; //0.4
+    PInit(1,1) = Globals::initPY; // 0.5; //1.2
+    PInit(2,2) = Globals::initPVX; // 1.0; //0.2
+    PInit(3,3) = Globals::initPVY; //1.0; //0.2
 
 
     Matrix<double> mAllXnewDown;
     Volume<double> volHMean;
     Vector<FrameInlier> vvIdxDown;
-    Vector<double>  vRDown;
-    Vector<double>  vVDown;
+    Vector<double>  vvXDown;
+    Vector<double>  vvYDown;
 
     Vector<Matrix<double> > stateCovMats;
     Vector<Volume<double> > colHists;
 
-    double v = 0.5;//Globals::dMaxPedVel/3.0;
+    //double v = 0.5;//Globals::dMaxPedVel/3.0;
+    //double r = M_PI; // Assume as Prior that the persons are front orientated.
 
-    double r = M_PI; // Assume as Prior that the persons are front orientated.
+    double vx_init = 0.0;
+    double vy_init = 0.0;
 
     hypos.clearContent();
 
@@ -1294,17 +1291,17 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
         xInit.setSize(4);
         xInit(0) = pos3d(0);
         xInit(1) = pos3d(2);
-        xInit(2) = r;
-        xInit(3) = v;
+        xInit(2) = vx_init;
+        xInit(3) = vy_init;
 
         EKalman kalman;
         kalman.init(xInit, PInit, 1.0/Globals::frameRate);
-        kalman.runKalmanDown(det, endFrame, j, tmin, mAllXnewDown, vvIdxDown, vRDown, vVDown, volHMean, stateCovMats, colHists);
+        kalman.runKalmanDown(det, endFrame, j, tmin, mAllXnewDown, vvIdxDown, vvXDown, vvYDown, volHMean, stateCovMats, colHists);
         //*********************************
         // swap data to make it consistent
         //*********************************
-        vRDown.swap();
-        vVDown.swap();
+        vvXDown.swap();
+        vvYDown.swap();
         vvIdxDown.sortV();
         mAllXnewDown.swap();
         AncillaryMethods::swapVectorMatrix(stateCovMats);
@@ -1321,15 +1318,15 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
         //vVDown.show();
         xInit(0) = mAllXnewDown(0,0);
         xInit(1) = mAllXnewDown(1,0);
-        xInit(2) = vRDown(0);
-        xInit(3) = vVDown(0);
+        xInit(2) = vvXDown(0);
+        xInit(3) = vvYDown(0);
         Volume<double> colHistsInit = colHists(0);
         Vector<double> bboxInit(4,0.0);
 
         EKalman kalmanBi;
         kalmanBi.init(xInit, stateCovMats(0), 1.0/Globals::frameRate);
         //kalmanBi.runKalmanUp(det, endFrame, j, tmin, mAllXnewDown, vvIdxDown, vRDown, vVDown, volHMean, stateCovMats, colHists);
-        kalmanBi.runKalmanUp(det, tmin-1, endFrame, mAllXnewDown, vvIdxDown, vRDown, vVDown, volHMean,
+        kalmanBi.runKalmanUp(det, tmin-1, endFrame, mAllXnewDown, vvIdxDown, vvXDown, vvYDown, volHMean,
                               stateCovMats, colHistsInit, colHists,
                               xInit(1), bboxInit);
         //*********************************
@@ -1358,7 +1355,7 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
         hypo.setStateCovMats(stateCovMats);
         hypo.setColHists(colHists);
 
-        compute_hypo_entries(mAllXnewDown, vRDown, vVDown, vvIdxDown, det, hypo, normfct, endFrame);
+        compute_hypo_entries(mAllXnewDown, vvXDown, vvYDown, vvIdxDown, det, hypo, normfct, endFrame);
         hypo.setParentID(-1);
 
         if (hypo.getCategory() != -1)
@@ -1370,7 +1367,7 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
     }
 }
 
-void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& R, Vector<double>& V, Vector <FrameInlier >& Idx, Detections& det, Hypo& hypo, double normfct, int frame)
+void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Vector<double>& vY, Vector <FrameInlier >& Idx, Detections& det, Hypo& hypo, double normfct, int frame)
 {
     // ***********************************************************************
     //   Init
@@ -1399,24 +1396,22 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& R, Vec
         //        if (true)
     {
 
-        hypo.setV(V);
-        hypo.setR(R);
+        hypo.setVY(vY);
+        hypo.setVX(vX);
         hypo.setXProj(allX);
         hypo.setHypoID(-1);
 
         // ***********************************************************************
         //   Rotation 4D
         // ***********************************************************************
-
-        Matrix<double> rot4D(3, V.getSize(), 0.0);
-
+        // Warnin: outdated (and not used?)
+        /*Matrix<double> rot4D(3, vY.getSize(), 0.0);
         for(int i = 0; i < V.getSize(); i++)
         {
             rot4D(0,i) = cos(R(i));
             rot4D(1,i) = sin(R(i));
         }
-
-        hypo.setRot4D(rot4D);
+        hypo.setRot4D(rot4D);*/
 
         // ***********************************************************************
         //   Weight, ScoreW, Height

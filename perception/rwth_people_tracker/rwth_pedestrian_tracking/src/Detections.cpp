@@ -541,9 +541,9 @@ void Detections::addHOGdetOneFrame(Vector<Vector <double> >& det, int frame, CIm
             //covariance.Show();
 
             // DEBUG COVARIANCE:
-            covariance(0,0) = 2.0;
-            covariance(1,1) = 2.0;
-            covariance(2,2) = 2.0;
+            covariance(0,0) = 0.1;
+            covariance(1,1) = 0.1;
+            covariance(2,2) = 0.1;
             covariance(0,1) = 0;
             covariance(0,2) = 0;
             covariance(1,0) = 0;

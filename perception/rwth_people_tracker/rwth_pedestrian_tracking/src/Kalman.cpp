@@ -28,13 +28,15 @@ void Kalman::predict()
 
     Matrix<double> mF = makeF(m_xpost, m_dt);
 
-    Matrix<double> mW = makeW();
+    //Matrix<double> mW = makeW();
 
-    m_xprio = non_lin_state_equation(m_xpost, m_dt);
+    //m_xprio = non_lin_state_equation(m_xpost, m_dt);
+    m_xprio = mF*m_xpost;
 
     m_Pprio = mF*m_Ppost*Transpose(mF);
 
-    m_Pprio += mW*mQ*Transpose(mW);
+    //m_Pprio += mW*mQ*Transpose(mW);
+    m_Pprio += mQ;
 
 }
 
@@ -66,6 +68,7 @@ void Kalman::showDeg(double a)
 
 void Kalman::update()
 {
+
     //**************************************************
     // S = H*P_pred*H' + V*R*V';
     // Sinv = inv(S);
@@ -78,20 +81,23 @@ void Kalman::update()
     {
         Matrix<double> mR = makeR();
 
-        Matrix<double> mS = m_Pprio + mR;
+        Matrix<double> mH = makeH();
 
-        if(!mS.inv())
+        Matrix<double> mS_inv = mH*m_Pprio*Transpose(mH);
+        mS_inv += mR;
+        Matrix<double> mS = mS_inv;
+        if(!mS_inv.inv())
            cerr << "Matrix mS is singular!" << endl;
+        Matrix<double> K = m_Pprio*Transpose(mH)*mS_inv;
 
-        Matrix<double> K = m_Pprio*mS;
+        //Vector<double> angdiff = angleMinus(m_measurement, m_xprio);
+        Vector<double> residual = m_measurement - (mH*m_xprio);
+        m_xpost = m_xprio + (K*residual);
 
-        Vector<double> angdiff = angleMinus(m_measurement, m_xprio);
-        m_xpost = m_xprio + (K*(angdiff));
+        //if(m_xpost(2) < -M_PI) m_xpost(2) += 2*M_PI;
+        //else if(m_xpost(2) > M_PI) m_xpost(2) -= 2*M_PI;
 
-        if(m_xpost(2) < -M_PI) m_xpost(2) += 2*M_PI;
-        else if(m_xpost(2) > M_PI) m_xpost(2) -= 2*M_PI;
-
-        m_Ppost = m_Pprio - (K*m_Pprio);
+        m_Ppost = m_Pprio - (K*mS*Transpose(K));
 
     }
     else
@@ -99,6 +105,7 @@ void Kalman::update()
         m_xpost = m_xprio;
         m_Ppost = m_Pprio;
     }
+
 }
 
 void Kalman::init(Vector<double> xInit, Matrix<double> Pinit, double dt)

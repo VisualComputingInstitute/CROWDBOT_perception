@@ -331,8 +331,16 @@ void ReadConfigFile(string path_config_file)
     Globals::sysUncVel = config.read<double>("sysUncVel");
     Globals::sysUncAcc = config.read<double>("sysUncAcc");
 
+    /* P_init - the initial state covariance */
+    Globals::initPX = config.read<double>("initPX");
+    Globals::initPY = config.read<double>("initPY");
+    Globals::initPVX = config.read<double>("initPVX");
+    Globals::initPVY = config.read<double>("initPVY");
+
     Globals::kalmanObsMotionModelthresh = config.read<double>("kalmanObsMotionModelthresh");
     Globals::kalmanObsColorModelthresh = config.read<double>("kalmanObsColorModelthresh");
+
+    Globals::accepted_frames_without_det = config.read<int>("accepted_frames_without_det");
 
     /////////////////////////////////GP Estimator/////////////////////////
     Globals::nrInter_ransac = config.read<int>("nrInter_ransac");

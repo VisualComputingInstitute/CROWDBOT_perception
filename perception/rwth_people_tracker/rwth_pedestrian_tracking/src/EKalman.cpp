@@ -22,7 +22,7 @@ double randdouble()
 
 EKalman::EKalman()
 {
-    m_R.set_size(4,4, 0.0);
+    m_R.set_size(2, 2, 0.0);
     m_dt = 1.0 / Globals::frameRate;
     m_height = 1.7;
 }
@@ -46,18 +46,21 @@ Matrix<double> EKalman::makeQ(Vector<double> /*x*/, double dt)
     Matrix<double> Q;
 
     Q.set_size(4,4, 0.0);
-    Q(0,0) = Globals::sysUncX*Globals::sysUncX;
+    /*Q(0,0) = Globals::sysUncX*Globals::sysUncX;
     Q(1,1) = Globals::sysUncY*Globals::sysUncY;
     Q(2,2) = Globals::sysUncRot*Globals::sysUncRot;
-    Q(3,3) = Globals::sysUncVel*Globals::sysUncVel;
-    /*Q(0,0) = (dt*dt*dt)/3;
+    Q(3,3) = Globals::sysUncVel*Globals::sysUncVel;*/
+    Q(0,0) = (dt*dt*dt)/3;
     Q(1,1) = (dt*dt*dt)/3;
     Q(2,2) = dt;
     Q(3,3) = dt;
     Q(0,2) = (dt*dt)/2;
     Q(2,0) = (dt*dt)/2;
     Q(1,3) = (dt*dt)/2;
-    Q(3,1) = (dt*dt)/2;*/
+    Q(3,1) = (dt*dt)/2;
+
+    double q_l = 0.035;//0.267;
+    Q *= q_l;
 
     return Q;
 }
@@ -68,12 +71,19 @@ Matrix<double> EKalman::makeF(Vector<double> x, double dt)
 
     F.set_size(4,4, 0.0);
 
-    F(0,0) = 1.0;
+    /*F(0,0) = 1.0;
     F(1,1) = 1.0;
     F(2,0) = -sin(x(2))*x(3)*dt;
     F(3,0) = cos(x(2))*dt;
     F(2,1) = cos(x(2))*x(3)*dt;
     F(3,1) = sin(x(2))*dt;
+    F(2,2) = 1.0;
+    F(3,3) = 1.0;*/
+
+    F(0,0) = 1.0;
+    F(1,1) = 1.0;
+    F(2,0) = dt;
+    F(3,1) = dt;
     F(2,2) = 1.0;
     F(3,3) = 1.0;
 
@@ -89,14 +99,14 @@ Matrix<double> EKalman::makeW()
 
 Matrix<double> EKalman::makeH()
 {
-    // Jac for update step
+    // state-to-observation space mapping
     Matrix<double> H;
 
-    H.set_size(4,4,0.0);
+    H.set_size(4,2,0.0);
     H(0,0) = 1.0;
     H(1,1) = 1.0;
-    H(2,2) = 1.0;
-    H(3,3) = 1.0;
+    //H(2,2) = 1.0;
+    //H(3,3) = 1.0;
 
     return H;
 }
@@ -115,8 +125,8 @@ void EKalman::saveData(int i)
     pos.pushBack(m_yPos(1));
 
     m_allXnew.pushBack(pos);
-    m_Rot.pushBack(m_xpost(2));
-    m_Vel.pushBack(min(Globals::dMaxPedVel, m_xpost(3)));
+    m_vX.pushBack(min(Globals::dMaxPedVel, m_xpost(2)));
+    m_vY.pushBack(min(Globals::dMaxPedVel, m_xpost(3)));
     m_CovMats.pushBack(m_Ppost);
     m_colHists.pushBack(m_colHist);
 }
@@ -217,7 +227,11 @@ bool EKalman::findObservation(Detections& det, int frame, int /*detPos*/, int /*
         //}
 
         //3D POSITION BASED
-        if(weight > Globals::kalmanObsMotionModelthresh /*&& colScore > Globals::kalmanObsColorModelthresh*/)
+        //if(pDiff.norm() < Globals::kalmanObsMotionModelthresh /*&& colScore > Globals::kalmanObsColorModelthresh*/)
+        /*std::cout << "pDiff.norm(): " << pDiff.norm() << std::endl;
+        std::cout << "weight: " << weight << std::endl;
+        std::cout << "colScore: " << colScore << std::endl;*/
+        if(weight > Globals::kalmanObsMotionModelthresh && colScore > Globals::kalmanObsColorModelthresh)
         {
             allInlierInOneFrame.pushBack(i);
             weightOfAllInliersInOneFrame.pushBack(weight*colScore);
@@ -271,15 +285,15 @@ bool EKalman::findObservation(Detections& det, int frame, int /*detPos*/, int /*
         newInlier.addWeight(weights(0)*det.getScore(frame, inl(0)));
         m_Idx.pushBack(newInlier);
 
-        m_R.set_size(4,4, 0.0);
+        m_R.set_size(2,2, 0.0);
         //FIXED: not take sqrt again
         //m_R(0,0) = sqrt(covMatrix(0,0));
         //m_R(1,1) = sqrt(covMatrix(2,2));
         m_R(0,0) = covMatrix(0,0);
         m_R(1,1) = covMatrix(2,2);
 
-        m_R(2,2) = 0.2*0.2;
-        m_R(3,3) = 0.2*0.2;
+        //m_R(2,2) = 0.2*0.2;
+        //m_R(3,3) = 0.2*0.2;
     }
 
     return m_measurement_found;
@@ -291,30 +305,29 @@ Vector<double> EKalman::makeMeasurement()
 
     double xo = m_yPos(0);
     double yo = m_yPos(2);
-    double xp = m_xprio(0);
-    double yp = m_xprio(1);
+    //double xp = m_xprio(0);
+    //double yp = m_xprio(1);
 
-    double dirp = m_xprio(2);
-    double velp = m_xprio(3);
+    //double dirp = m_xprio(2);
+    //double velp = m_xprio(3);
 
-    double diffx = (xo - (xp - m_dt*velp*cos(dirp)));
-    double diffy = (yo - (yp - m_dt*velp*sin(dirp)));
+    //double diffx = (xo - (xp - m_dt*velp*cos(dirp)));
+    //double diffy = (yo - (yp - m_dt*velp*sin(dirp)));
 
-    measurement.setSize(4, 0.0);
+    measurement.setSize(2, 0.0);
     measurement(0) = xo;
     measurement(1) = yo;
-    measurement(2) = atan2(diffy, diffx);
-    measurement(3) = min(double(Globals::dMaxPedVel),  sqrt(diffx*diffx + diffy*diffy)*m_dt);
+    //measurement(2) = atan2(diffy, diffx);
+    //measurement(3) = min(double(Globals::dMaxPedVel),  sqrt(diffx*diffx + diffy*diffy)*m_dt);
 //    measurement(3) = Globals::minvel;
 
     return measurement;
 }
 
 void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Matrix<double>& allXnew, Vector<FrameInlier>& Idx,
-                            Vector<double>& R, Vector<double>& Vel, Volume<double>& hMean, Vector<Matrix<double> >& stateCovMats,
+                            Vector<double>& vX, Vector<double>& vY, Volume<double>& hMean, Vector<Matrix<double> >& stateCovMats,
                             Vector<Volume<double> >& colHists)
 {
-
     m_Up = false;
 
     det.getColorHist(frame, pointPos, m_colHist);
@@ -334,8 +347,8 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
     m_R(0,0) = covMatrix(0,0);
     m_R(1,1) = covMatrix(2,2);
 
-    m_R(2,2) = 0.2*0.2;
-    m_R(3,3) = 0.2*0.2;
+    //m_R(2,2) = 0.2*0.2;
+    //m_R(3,3) = 0.2*0.2;
 
     int tLastSupport = 0;
 
@@ -343,10 +356,9 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
     m_yPos.pushBack(startingDet(1));
     m_yPos.pushBack(m_xpost(1));
 
-    int accepted_frames_without_det = 20;
     for(int i = frame+1; i > t; i--)
     {
-        if(tLastSupport > accepted_frames_without_det)
+        if(tLastSupport > Globals::accepted_frames_without_det)
             break;
 
         //take framerate from past
@@ -385,16 +397,19 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
 
     }
 
-    if(m_Rot.getSize() > 1) {
+    if(m_vX.getSize() > 1) {
         // As this is kalman-DOWN, we start with an unassociated detection (InitState)
-        // The position is fine, but we fix the rotation by copying the one from the successor state
-        m_Rot(0) = m_Rot(1);
+        // The position is fine, but we fix the velocities by copying the one from the successor state
+        m_vX(0) = m_vX(1);
+        m_vY(0) = m_vY(1);
     }
 
-    Vel = m_Vel;
+    //Vel = m_vY;
     // turn rotations 180 degree/+pi (so "flip") in order to adjust the
     // rotations from the "backwards in time parse" to "forward in time"
-    turnRotations(R, m_Rot);
+    //turnRotations(R, m_vX);
+    turnVelocities(vX, m_vX);
+    turnVelocities(vY, m_vY);
     Idx = m_Idx;
 
     allXnew = Matrix<double>(m_allXnew);
@@ -416,8 +431,19 @@ void EKalman::turnRotations(Vector<double> &dest,Vector<double> &src)
     }
 }
 
+void EKalman::turnVelocities(Vector<double> &dest,Vector<double> &src)
+{
+    int srclen = src.getSize();
+    dest.setSize(srclen);
+
+    // turning velocities by simply negating them
+    for(int i = 0; i < srclen; i++) {
+        dest(i) = -src(i);
+    }
+}
+
 void EKalman::runKalmanUp(Detections& det, int frame, int t, Matrix<double>& allXnew, Vector<FrameInlier>& Idx,
-                          Vector<double>& R, Vector<double>& Vel, Volume<double>& hMean,  Vector<Matrix<double> >& stateCovMats, Volume<double>& colHistInit,
+                          Vector<double>& vX, Vector<double>& vY, Volume<double>& hMean,  Vector<Matrix<double> >& stateCovMats, Volume<double>& colHistInit,
                           Vector<Volume<double> >& colHists, double yPosOfStartingPoint, Vector<double>& bbox)
 {
     m_bbox = bbox;
@@ -454,8 +480,9 @@ void EKalman::runKalmanUp(Detections& det, int frame, int t, Matrix<double>& all
         }
     }
 
-    Vel = m_Vel;
-    R = m_Rot;
+    vX = m_vX;
+    vY = m_vY;
+
     Idx = m_Idx;
 
     allXnew = Matrix<double>(m_allXnew);

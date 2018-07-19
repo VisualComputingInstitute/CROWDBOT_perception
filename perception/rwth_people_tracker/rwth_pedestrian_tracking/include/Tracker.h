@@ -48,7 +48,7 @@ class Tracker
     void remove_duplicates(Vector<Hypo>& hypos);
     Vector<int> remove_ID_duplicates(Vector<Hypo>& hypos, Vector<int>& hypoIdx);
     void prepare_hypos(Vector<Hypo>& vHypos);
-    void compute_hypo_entries(Matrix<double>& allX,  Vector<double>& R, Vector<double>& V, Vector<FrameInlier>& Idx, Detections& det, Hypo& hypo, double normfct, int frame);
+    void compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Vector<double>& vY, Vector<FrameInlier>& Idx, Detections& det, Hypo& hypo, double normfct, int frame);
     void make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hypo >& hypos,  double normfct, Vector<int>& extendUsedDet);
     //--------------------------------------------------------------------------------------------------------------------------------------------------------------------
 

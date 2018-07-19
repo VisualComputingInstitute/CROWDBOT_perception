@@ -16,8 +16,8 @@ Hypo& Hypo::operator=(const Hypo &hypo)
 //    m_mP4D = hypo.m_mP4D;
     m_vvIdxC = hypo.m_vvIdxC;
     m_nCateg = hypo.m_nCateg;
-    m_vV = hypo.m_vV;
-    m_vR = hypo.m_vR;
+    m_vVY = hypo.m_vVY;
+    m_vVX = hypo.m_vVX;
 //    m_dScore = hypo.m_dScore;
     m_dScoreW = hypo.m_dScoreW;
     m_dScoreMDL = hypo.m_dScoreMDL;
@@ -30,7 +30,7 @@ Hypo& Hypo::operator=(const Hypo &hypo)
 //    m_vSize = hypo.m_vSize;
 //    m_vXt = hypo.m_vXt;
     m_mXProj = hypo.m_mXProj;
-    m_mRot4D = hypo.m_mRot4D;
+//    m_mRot4D = hypo.m_mRot4D;
 //    m_vvW = hypo.m_vvW;
 //    m_vX = hypo.m_vX;
 //    m_vX4D = hypo.m_vX4D;
@@ -76,8 +76,8 @@ Hypo::Hypo(const Hypo& hypo)
 //    m_mP4D = hypo.m_mP4D;
     m_vvIdxC = hypo.m_vvIdxC;
     m_nCateg = hypo.m_nCateg;
-    m_vV = hypo.m_vV;
-    m_vR = hypo.m_vR;
+    m_vVY = hypo.m_vVY;
+    m_vVX = hypo.m_vVX;
 //    m_dScore = hypo.m_dScore;
     m_dScoreW = hypo.m_dScoreW;
     m_dScoreMDL = hypo.m_dScoreMDL;
@@ -90,7 +90,7 @@ Hypo::Hypo(const Hypo& hypo)
 //    m_vSize = hypo.m_vSize;
 //    m_vXt = hypo.m_vXt;
     m_mXProj = hypo.m_mXProj;
-    m_mRot4D = hypo.m_mRot4D;
+//    m_mRot4D = hypo.m_mRot4D;
 //    m_vvW = hypo.m_vvW;
 //    m_vX = hypo.m_vX;
 //    m_vX4D = hypo.m_vX4D;
@@ -302,28 +302,28 @@ int Hypo::getCategory()
 //   V
 // ***********************************************************************
 
-void Hypo::setV(const Vector<double>& srcO)
+void Hypo::setVY(const Vector<double>& srcO)
 {
-    m_vV = srcO;
+    m_vVY = srcO;
 }
 
-void Hypo::getV(Vector<double>& targetO)
+void Hypo::getVY(Vector<double>& targetO)
 {
-    targetO = m_vV;
+    targetO = m_vVY;
 }
 
 // ***********************************************************************
 //   R
 // ***********************************************************************
 
-void Hypo::setR(const Vector<double>& srcO)
+void Hypo::setVX(const Vector<double>& srcO)
 {
-    m_vR = srcO;
+    m_vVX = srcO;
 }
 
-void Hypo::getR(Vector<double>& targetO)
+void Hypo::getVX(Vector<double>& targetO)
 {
-    targetO = m_vR;
+    targetO = m_vVX;
 }
 
 // ***********************************************************************
@@ -386,7 +386,7 @@ void Hypo::getXProj(Matrix<double>& targetO)
 //   Rot4D
 // ***********************************************************************
 
-void Hypo::setRot4D(const Matrix<double>& srcO)
+/*void Hypo::setRot4D(const Matrix<double>& srcO)
 {
     m_mRot4D = srcO;
 }
@@ -394,7 +394,7 @@ void Hypo::setRot4D(const Matrix<double>& srcO)
 void Hypo::getRot4D(Matrix<double>& targetO)
 {
     targetO = m_mRot4D;
-}
+}*/
 
 // ***********************************************************************
 //   W

@@ -60,6 +60,7 @@ public:
     void getStateCovMatrices(Vector<Matrix<double> >& stateCovMats);
 
     void turnRotations(Vector<double> &dest,Vector<double> &src);
+    void turnVelocities(Vector<double> &dest,Vector<double> &src);
 
 protected:
 
@@ -69,8 +70,8 @@ protected:
 
     Vector< Vector<double> > m_allXnew;
     Vector<FrameInlier> m_Idx;
-    Vector<double> m_Rot;
-    Vector<double> m_Vel;
+    Vector<double> m_vX;
+    Vector<double> m_vY;
     Vector< Matrix <double> > m_CovMats;
     Vector< Volume <double> > m_colHists;
     Volume<double> m_colHist;

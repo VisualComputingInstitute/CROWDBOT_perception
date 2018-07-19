@@ -68,11 +68,11 @@ public:
     void setCategory(int categO);
     int getCategory();
 
-    void setV(const Vector<double>& srcO);
-    void getV(Vector<double>& targetO);
+    void setVY(const Vector<double>& srcO);
+    void getVY(Vector<double>& targetO);
 
-    void setR(const Vector<double>& srcO);
-    void getR(Vector<double>& targetO);
+    void setVX(const Vector<double>& srcO);
+    void getVX(Vector<double>& targetO);
 
     void setStart(const Vector<double>& srcO);
     void getStart(Vector<double>& targetO);
@@ -86,8 +86,8 @@ public:
     void setXProj(const Matrix<double>& srcO);
     void getXProj(Matrix<double>& targetO);
 
-    void setRot4D(const Matrix<double>& srcO);
-    void getRot4D(Matrix<double>& targetO);
+//    void setRot4D(const Matrix<double>& srcO);
+//    void getRot4D(Matrix<double>& targetO);
 
 //    void setW(const Vector<Vector <double> >& srcO);
 //    void getW(Vector<Vector <double> >& targetO);
@@ -181,8 +181,8 @@ protected:
 //    Matrix<double> m_mP4D;
     Vector <FrameInlier> m_vvIdxC;
     int m_nCateg;
-    Vector <double> m_vV;
-    Vector <double> m_vR;
+    Vector <double> m_vVY;
+    Vector <double> m_vVX;
 //    double m_dScore;
     double m_dScoreW;
     double m_dScoreMDL;
