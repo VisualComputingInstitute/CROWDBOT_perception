@@ -13,9 +13,9 @@
     <arg name="base_footprint" default="/robot/BaseFrame" />
     <arg name="camera_frame" default="/hardware/depth/kinect2/ColorImageFrame" />
     <!-- detectors -->
-    <arg name="upper_body" default="true"/>
+    <arg name="upper_body" default="false"/>
     <arg name="hog" default="false"/>
-    <arg name="yolo" default="false"/>
+    <arg name="yolo" default="true"/>
     <arg name="camera_namespace" default="/hardware/depth/kinect2"/>
     <arg name="upperbody_detections" default="/upper_body_detector/detections" />
     <arg name="groundHOG_detections" default="/groundHOG/detections" />
