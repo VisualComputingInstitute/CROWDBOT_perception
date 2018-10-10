@@ -1,0 +1,25 @@
+<launch>
+    <arg name="queue_size" default="10" />
+    <arg name="pano_image" default="/hardware/video/valeo/rectificationNIKRLeft/PanoramaImage" />
+    <arg name="ground_plane" default="/ground_plane" />
+    <arg name="detected_persons" default="/yoloconvertor_pano/detected_persons"/>
+    <arg name="detection_id_offset" default="0"/>
+    <arg name="detection_id_increment" default="1"/>
+    <arg name="world_scale" default="0.001"/>
+    <arg name="bounding_boxes" default="darknet_ros/bounding_boxes"/>
+    <arg name="node_name" default="convert_yolo_panorama" />
+	
+    <node pkg="yoloconvertor_panorama" type="convert_yolo_panorama" name="$(arg node_name)" output="screen">
+        <param name="world_scale" value="$(arg world_scale)"/>
+        <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
+        <param name="queue_size" value="$(arg queue_size)" type="int"/>
+        <param name="pano_image" value="$(arg pano_image)" type="string"/>
+        <param name="detected_persons" value="$(arg detected_persons)" type="string"/>
+        <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
+        <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
+        <param name="bounding_boxes" value="$(arg bounding_boxes)"/>
+    </node>
+
+
+
+</launch> 	

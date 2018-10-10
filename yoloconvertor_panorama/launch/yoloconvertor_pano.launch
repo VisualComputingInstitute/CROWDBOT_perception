@@ -1,0 +1,43 @@
+<launch>
+
+    <!-- GP -->
+    <arg name="rate" default="10.0"/>
+    <arg name="base_footprint" value="/robot/BaseFrame" />
+    <arg name="camera_frame" value="/hardware/video/valeo/ValeoLeftImageFrame" />
+    <arg name="ground_plane" default="/ground_plane" />
+
+    <!-- yoloconvertor_panorama -->
+    <arg name="queue_size" default="10" />
+    <arg name="pano_image" default="/hardware/video/valeo/rectificationNIKRLeft/PanoramaImage" />
+    <arg name="detected_persons" default="/yoloconvertor_pano/detected_persons"/>
+    <arg name="detection_id_offset" default="0"/>
+    <arg name="detection_id_increment" default="1"/>
+    <arg name="world_scale" default="0.001"/>
+    <arg name="bounding_boxes" default="darknet_ros/bounding_boxes"/>
+    <arg name="depth_image" default="/hardware/depth/kinect2/sd/image_depth"/>
+    <arg name="node_name" default="convert_yolo_panorama"/>
+
+    <node pkg="yoloconvertor_panorama" type="convert_yolo_panorama" name="convert_yolo_pano" output="screen">
+        <param name="world_scale" value="$(arg world_scale)"/>
+        <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
+        <param name="queue_size" value="$(arg queue_size)" type="int"/>
+   
+        <param name="pano_image" value="$(arg pano_image)" type="string"/>
+        <param name="detected_persons" value="$(arg detected_persons)" type="string"/>
+        <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
+        <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
+        <param name="bounding_boxes" value="$(arg bounding_boxes)"/>
+    </node>
+
+
+    <!-- Ground Plane -->
+    <include file="$(find rwth_ground_plane)/launch/ground_plane_tf_based_fixed.launch">
+        <arg name="base_footprint" value="$(arg base_footprint)" />
+        <arg name="camera_frame" value="$(arg camera_frame)" />
+        <arg name="ground_plane" value="$(arg ground_plane)" />
+        <arg name="rate" value="$(arg rate)"/>
+    </include>
+
+
+
+</launch> 	
