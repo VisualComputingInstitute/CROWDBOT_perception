@@ -1,0 +1,122 @@
+<launch>
+
+    <!-- this launch file should like, run 3 yolov3, run 3 yolo convertor, and run 3 ground plane... -->
+    <!-- GP -->
+    <arg name="rate" default="30.0"/>
+    <arg name="base_footprint" value="/robot/BaseFrame" />
+    <arg name="camera_frame" value="/hardware/video/valeo/ValeoLeftImageFrame" />
+    <arg name="ground_plane" default="/ground_plane" />
+
+    <!-- general yolo-v3 arg -->
+    <!-- Console launch prefix -->
+    <arg name="launch_prefix" default=""/>
+    <!-- Config and weights folder. -->
+    <arg name="yolo_weights_path"          default="$(find darknet_ros)/yolo_network_config/weights"/>
+    <arg name="yolo_config_path"           default="$(find darknet_ros)/yolo_network_config/cfg"/>
+
+    <!-- general yoloconvertor_panorama arg-->
+    <arg name="detection_id_offset" default="0"/>
+    <arg name="detection_id_increment" default="1"/>
+    <arg name="world_scale" default="0.001"/>
+    <arg name="queue_size" default="10" />
+
+    <!-- yolofusion -->
+    <arg name="overlap_thresh" default="0.05"/>
+
+    <!-- left yoloconvertor and yolo arg-->
+    <arg name="pano_image_left" default="/hardware/video/valeo/rectificationNIKRLeft/PanoramaImage" />
+    <arg name="detected_persons_left" default="/yoloconvertor_pano/detected_persons_left"/>
+    <arg name="bounding_boxes_left" default="darknet_ros/bounding_boxes_left"/>
+    <!-- right yoloconvertor and yolo arg-->
+    <arg name="pano_image_right" default="/hardware/video/valeo/rectificationNIKRRight/PanoramaImage" />
+    <arg name="detected_persons_right" default="/yoloconvertor_pano/detected_persons_right"/>
+    <arg name="bounding_boxes_right" default="darknet_ros/bounding_boxes_right"/>
+    <!-- rear yoloconvertor and yolo arg-->
+    <arg name="pano_image_rear" default="/hardware/video/valeo/rectificationNIKRRear/PanoramaImage" />
+    <arg name="detected_persons_rear" default="/yoloconvertor_pano/detected_persons_rear"/>
+    <arg name="bounding_boxes_rear" default="darknet_ros/bounding_boxes_rear"/>
+
+    <!-- left yoloconvertor and yolo-->
+    <!-- Start darknet and ros wrapper -->
+    <!-- Load parameters for left -->
+    <rosparam command="load" ns="darknet_ros_left" file="$(find darknet_ros)/config/ros_pano_left.yaml"/>
+    <rosparam command="load" ns="darknet_ros_left" file="$(find darknet_ros)/config/yolov3.yaml"/>
+    <node pkg="darknet_ros" type="darknet_ros" name="darknet_ros_left" output="screen" launch-prefix="$(arg launch_prefix)">
+      <param name="weights_path"          value="$(arg yolo_weights_path)" />
+      <param name="config_path"           value="$(arg yolo_config_path)" />
+    </node>
+    <!-- Load parameters for right -->
+    <rosparam command="load" ns="darknet_ros_right" file="$(find darknet_ros)/config/ros_pano_right.yaml"/>
+    <rosparam command="load" ns="darknet_ros_right" file="$(find darknet_ros)/config/yolov3.yaml"/>
+    <node pkg="darknet_ros" type="darknet_ros" name="darknet_ros_right" output="screen" launch-prefix="$(arg launch_prefix)">
+      <param name="weights_path"          value="$(arg yolo_weights_path)" />
+      <param name="config_path"           value="$(arg yolo_config_path)" />
+    </node>
+    <!-- Load parameters for rear -->
+    <rosparam command="load" ns="darknet_ros_rear" file="$(find darknet_ros)/config/ros_pano_rear.yaml"/>
+    <rosparam command="load" ns="darknet_ros_rear" file="$(find darknet_ros)/config/yolov3.yaml"/>
+    <node pkg="darknet_ros" type="darknet_ros" name="darknet_ros_rear" output="screen" launch-prefix="$(arg launch_prefix)">
+      <param name="weights_path"          value="$(arg yolo_weights_path)" />
+      <param name="config_path"           value="$(arg yolo_config_path)" />
+    </node>
+
+    <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_panorama_left" output="screen">
+        <param name="world_scale" value="$(arg world_scale)"/>
+        <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
+        <param name="queue_size" value="$(arg queue_size)" type="int"/>
+        <param name="pano_image" value="$(arg pano_image_left)" type="string"/>
+        <param name="detected_persons" value="$(arg detected_persons_left)" type="string"/>
+        <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
+        <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
+        <param name="bounding_boxes" value="$(arg bounding_boxes_left)"/>
+    </node>
+
+    <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_panorama_right" output="screen">
+        <param name="world_scale" value="$(arg world_scale)"/>
+        <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
+        <param name="queue_size" value="$(arg queue_size)" type="int"/>
+        <param name="pano_image" value="$(arg pano_image_right)" type="string"/>
+        <param name="detected_persons" value="$(arg detected_persons_right)" type="string"/>
+        <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
+        <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
+        <param name="bounding_boxes" value="$(arg bounding_boxes_right)"/>
+    </node>
+
+    <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_panorama_rear" output="screen">
+        <param name="world_scale" value="$(arg world_scale)"/>
+        <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
+        <param name="queue_size" value="$(arg queue_size)" type="int"/>
+        <param name="pano_image" value="$(arg pano_image_rear)" type="string"/>
+        <param name="detected_persons" value="$(arg detected_persons_rear)" type="string"/>
+        <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
+        <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
+        <param name="bounding_boxes" value="$(arg bounding_boxes_rear)"/>
+    </node>
+
+    <!-- Ground Plane -->
+    <include file="$(find rwth_ground_plane)/launch/ground_plane_tf_based_fixed.launch">
+        <arg name="base_footprint" value="$(arg base_footprint)" />
+        <arg name="camera_frame" value="$(arg camera_frame)" />
+        <arg name="ground_plane" value="$(arg ground_plane)" />
+        <arg name="rate" value="$(arg rate)"/>
+    </include>
+
+   <!-- run yolofusion-->
+   <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion" output="screen">
+       <param name="world_scale" value="$(arg world_scale)"/>
+       <param name="queue_size" value="$(arg queue_size)" type="int"/>
+       <param name="detection_id_offset" value="0"/>
+       <param name="detection_id_increment" value="1"/>
+       <param name="pose_variance" value="0.05"/>
+       <param name="overlap_thresh" value="$(arg overlap_thresh)"/>
+       <param name="total_detected_persons" value="yolofusion/detected_persons" type="string"/>
+       <param name="detected_persons_left" value="$(arg detected_persons_left)" type="string"/>
+       <param name="detected_persons_right" value="$(arg detected_persons_right)" type="string"/>
+       <param name="detected_persons_rear" value="$(arg detected_persons_rear)" type="string"/>
+       <param name="left_camera_frame" value="/hardware/video/valeo/ValeoLeftImageFrame" type="string"/>
+       <param name="right_camera_frame" value="/hardware/video/valeo/ValeoRightImageFrame" type="string"/>
+       <param name="rear_camera_frame" value="/hardware/video/valeo/ValeoRearImageFrame" type="string"/>
+       <param name="world_frame" value="/GlobalFrame" type="string"/>
+   </node>
+
+</launch> 	

@@ -8,7 +8,7 @@
     <arg name="world_scale" default="0.001"/>
     <arg name="bounding_boxes" default="darknet_ros/bounding_boxes"/>
 
-    <node pkg="yoloconvertor" type="convert_yolo" name="convert_yolo" output="screen">
+    <node pkg="yoloconvertor" type="yoloconvertor_standard" name="yoloconvertor_standard" output="screen">
         <param name="world_scale" value="$(arg world_scale)"/>
         <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
         <param name="queue_size" value="$(arg queue_size)" type="int"/>

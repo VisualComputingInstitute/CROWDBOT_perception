@@ -2,16 +2,16 @@
 <package>
   <name>yoloconvertor</name>
   <version>0.0.0</version>
-  <description>conver 2d yolo detection to 3d detection</description>
+  <description>convert 2d yolo detection to 3d detection, also supporting panorama cameras and fusing multiple cameras</description>
 
-  <maintainer email="cdondrup@lincoln.ac.uk">Christian Dondrup</maintainer>
+  <maintainer email="breuers@vision.rwth-aachen.de">Stefan Breuers</maintainer>
 
   <license>TODO</license>
 
   <url type="website">http://www.vision.rwth-aachen.de/</url>
 
-  <author email="cdondrup@lincoln.ac.uk">Christian Dondrup</author>
-  <author email="mitzel@umic.rwth-aachen.de">Dennis Mitzel</author>
+  <author email="neng.qian@lincoln.ac.uk">Neng Qian</author>
+  <author email="breuers@vision.rwth-aachen.de">Stefan Breuers</author>
 
   <buildtool_depend>catkin</buildtool_depend>
 
@@ -24,6 +24,8 @@
   <build_depend>darknet_ros_msgs</build_depend>
   <build_depend>image_transport</build_depend>
   <build_depend>cv_bridge</build_depend>
+  <build_depend>libqt4-dev</build_depend>
+  <build_depend>tf</build_depend>
 
 
   <run_depend>rospy</run_depend>
@@ -34,6 +36,8 @@
   <run_depend>frame_msgs</run_depend>
   <run_depend>darknet_ros_msgs</run_depend>
   <run_depend>cv_bridge</run_depend>
+  <run_depend>libqt4-dev</run_depend>
+  <run_depend>tf</run_depend>
 
 
 

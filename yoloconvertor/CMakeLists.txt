@@ -4,7 +4,7 @@ project(yoloconvertor)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs sensor_msgs rwth_perception_people_msgs message_filters frame_msgs darknet_ros_msgs image_transport cv_bridge)
+find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs sensor_msgs rwth_perception_people_msgs message_filters frame_msgs darknet_ros_msgs image_transport cv_bridge tf)
 
 
 find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
@@ -83,14 +83,32 @@ include_directories( include
 
 
 ## Declare a cpp executable
-add_executable(convert_yolo src/main.cpp)
+add_executable(yoloconvertor_standard src/main_standard.cpp)
+add_executable(yoloconvertor_panorama src/main_panorama.cpp)
+add_executable(yoloconvertor_fusion src/main_fusion.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-add_dependencies(convert_yolo ${catkin_EXPORTED_TARGETS})
+add_dependencies(yoloconvertor_standard ${catkin_EXPORTED_TARGETS})
+add_dependencies(yoloconvertor_panorama ${catkin_EXPORTED_TARGETS})
+add_dependencies(yoloconvertor_fusion ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(convert_yolo
+ target_link_libraries(yoloconvertor_standard
+   ${catkin_LIBRARIES}
+   ${QT_LIBRARIES}
+   ${QT_QTCORE_LIBRARY}
+   ${QT_QTGUI_LIBRARY}
+   X11
+ )
+ target_link_libraries(yoloconvertor_panorama
+   ${catkin_LIBRARIES}
+   ${QT_LIBRARIES}
+   ${QT_QTCORE_LIBRARY}
+   ${QT_QTGUI_LIBRARY}
+   X11
+ )
+ target_link_libraries(yoloconvertor_fusion
    ${catkin_LIBRARIES}
    ${QT_LIBRARIES}
    ${QT_QTCORE_LIBRARY}
@@ -98,10 +116,11 @@ add_dependencies(convert_yolo ${catkin_EXPORTED_TARGETS})
    X11
  )
 
+
 ## Specify libraries to link a library or executable target against
- target_link_libraries(convert_yolo
-   ${catkin_LIBRARIES}
- )
+# target_link_libraries(yoloconvertor_standard
+#   ${catkin_LIBRARIES}
+# )
 
 #############
 ## Install ##

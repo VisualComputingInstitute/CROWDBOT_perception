@@ -29,6 +29,7 @@ double worldScale; // for computing 3D positions from BBoxes
 
 int detection_id_increment, detection_id_offset, current_detection_id; // added for multi-sensor use in SPENCER
 double pose_variance; // used in output frame_msgs::DetectedPerson.pose.covariance
+double overlap_thresh;
 string left_camera_frame;
 string right_camera_frame;
 string rear_camera_frame;
@@ -80,7 +81,7 @@ void transfer_detected_persons_to_world_cord(const DetectedPersonsConstPtr &sub_
     }
 }
 
-bool is_overlaping(const DetectedPerson& dp1,const DetectedPerson& dp2)
+bool is_overlapping(const DetectedPerson& dp1,const DetectedPerson& dp2, double thresh)
 {
     Vector<double> pos1;
     Vector<double> pos2;
@@ -95,7 +96,7 @@ bool is_overlaping(const DetectedPerson& dp1,const DetectedPerson& dp2)
     pos2[2] = dp2.pose.pose.position.z;
 
     bool flag = false;
-    if(abs(pos1.norm() - pos2.norm()) < 0.05 )   // set 0.05, if two people is closer than 5 cm, we say they should be exactly the same person
+    if(abs(pos1.norm() - pos2.norm()) < thresh )   // set 0.05, if two people is closer than 5 cm, we say they should be exactly the same person
         flag = true;
     else
         flag = false;
@@ -106,6 +107,7 @@ bool is_overlaping(const DetectedPerson& dp1,const DetectedPerson& dp2)
 
 void yolofusioncallback(const DetectedPersonsConstPtr &dp_left, const DetectedPersonsConstPtr &dp_right, const DetectedPersonsConstPtr &dp_rear )
 {
+
     // debug output, to show latency from yolo_v3
     ROS_DEBUG_STREAM("current time:" << ros::Time::now());
 
@@ -126,7 +128,7 @@ void yolofusioncallback(const DetectedPersonsConstPtr &dp_left, const DetectedPe
             bool overlaping_flag = false;
             for(int j=0; j < detected_persons.detections.size(); j++)
             {
-                if(is_overlaping(detected_person, detected_persons.detections[j]))
+                if(is_overlapping(detected_person, detected_persons.detections[j], overlap_thresh))
                 {
                     overlaping_flag = true;
                     break;
@@ -185,8 +187,6 @@ void connectCallback(ros::Subscriber &sub_msg,
 
 int main(int argc, char **argv)
 {
-
-
     // Set up ROS.
     ros::init(argc, argv, "fuse_yolo");
     ros::NodeHandle n;
@@ -201,9 +201,6 @@ int main(int argc, char **argv)
     string detected_persons_rear;
     string pub_topic_detected_persons;
 
-
-
-
     // Initialize node parameters from launch file or command line.
     // Use a private node handle so that multiple instances of the node can be run simultaneously
     // while using different parameters.
@@ -217,16 +214,16 @@ int main(int argc, char **argv)
     private_node_handle_.param("world_scale", worldScale, 1.0); // default for ASUS sensors
     private_node_handle_.param("detection_id_increment", detection_id_increment, 1);
     private_node_handle_.param("detection_id_offset",    detection_id_offset, 0);
-    private_node_handle_.param("pose_variance",    pose_variance, 0.05);
+    private_node_handle_.param("pose_variance", pose_variance, 0.05);
+
+    private_node_handle_.param("overlap_tresh", overlap_thresh, 0.05);
 
     private_node_handle_.param("left_camera_frame", left_camera_frame, string("oops!need param for left camera frame"));
     private_node_handle_.param("right_camera_frame", right_camera_frame, string("oops!need param for right camera frame"));
     private_node_handle_.param("rear_camera_frame", rear_camera_frame, string("oops!need param for rear camera frame"));
     private_node_handle_.param("world_frame", world_frame, string("oops!need param for world frame"));
 
-
     current_detection_id = detection_id_offset;
-
 
     // Create a subscriber.
     // Name the topic, message queue, callback function with class name, and object containing callback function.
@@ -236,16 +233,12 @@ int main(int argc, char **argv)
     Subscriber<DetectedPersons> subscriber_detected_persons_right(n, detected_persons_right.c_str(),1); subscriber_detected_persons_right.unsubscribe();
     Subscriber<DetectedPersons> subscriber_detected_persons_rear(n, detected_persons_rear.c_str(),1); subscriber_detected_persons_rear.unsubscribe();
 
-
-
     ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
                                                        boost::ref(sub_message),
                                                        boost::ref(n),
                                                        boost::ref(subscriber_detected_persons_left),
                                                        boost::ref(subscriber_detected_persons_right),
                                                        boost::ref(subscriber_detected_persons_rear));
-
-
 
 
     //The real queue size for synchronisation is set here.
@@ -259,7 +252,6 @@ int main(int argc, char **argv)
                                                                                         subscriber_detected_persons_right,
                                                                                         subscriber_detected_persons_rear);
     sync.registerCallback(boost::bind(&yolofusioncallback, _1, _2, _3));
-
 
     // Create publishers
     private_node_handle_.param("total_detected_persons", pub_topic_detected_persons, string("/total_detected_persons"));

@@ -17,7 +17,7 @@
     <arg name="depth_image" default="/hardware/depth/kinect2/sd/image_depth"/>
     <arg name="node_name" default="convert_yolo_panorama" />
 
-    <node pkg="yoloconvertor_panorama" type="convert_yolo_panorama" name="$(arg node_name)" output="screen">
+    <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconverter_panorama" output="screen">
         <param name="world_scale" value="$(arg world_scale)"/>
         <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
         <param name="queue_size" value="$(arg queue_size)" type="int"/>
@@ -44,7 +44,7 @@
 
 
    <!-- run yolofusion-->
-   <node pkg="yolofusion" type="fuse_yolo" name="fuse_yolo" output="screen">
+   <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion" output="screen">
        <param name="world_scale" value="$(arg world_scale)"/>
        <param name="queue_size" value="$(arg queue_size)" type="int"/>
        <param name="detection_id_offset" value="0"/>
