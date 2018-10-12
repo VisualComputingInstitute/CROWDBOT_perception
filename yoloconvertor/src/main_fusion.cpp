@@ -95,11 +95,17 @@ bool is_overlapping(const DetectedPerson& dp1,const DetectedPerson& dp2, double 
     pos2[1] = dp2.pose.pose.position.y;
     pos2[2] = dp2.pose.pose.position.z;
 
+    double dist = (pos1 - pos2).norm();
+    //std::cout << "dets: " << dp1.detection_id << ", " << dp2.detection_id <<" dist: " << dist << std::endl;
+
     bool flag = false;
-    if(abs(pos1.norm() - pos2.norm()) < thresh )   // set 0.05, if two people is closer than 5 cm, we say they should be exactly the same person
+    if(dist < thresh ){   // set 0.05, if two people is closer than 5 cm, we say they should be exactly the same person
         flag = true;
-    else
+        //std::cout << "overlapping!" << std::endl;
+    }
+    else{
         flag = false;
+    }
 
     return flag;
 }
@@ -113,54 +119,57 @@ void yolofusioncallback(const DetectedPersonsConstPtr &dp_left, const DetectedPe
 
     if(pub_detected_persons.getNumSubscribers()) {
         frame_msgs::DetectedPersons total_detected_persons;
-//        total_detected_persons.header = dp_left->header; // which actually header should we get? We may do a comparsion, to get the latest time stamp, and take its header.
-//        total_detected_persons.header.frame_id = world_frame;
+        //total_detected_persons.header = dp_left->header; // which actually header should we get? We may do a comparsion, to get the latest time stamp, and take its header.
+        total_detected_persons.header.stamp = ros::Time::now();
+        total_detected_persons.header.frame_id = world_frame;
 
         transfer_detected_persons_to_world_cord(dp_left,total_detected_persons,left_camera_frame);  // this function will write the detected_persons into total_detected_persons
         transfer_detected_persons_to_world_cord(dp_right,total_detected_persons, right_camera_frame);
         transfer_detected_persons_to_world_cord(dp_rear,total_detected_persons, rear_camera_frame);
 
-        // remove the overlaping detection
-        frame_msgs::DetectedPersons detected_persons;
+        // remove the overlapping detection
+        frame_msgs::DetectedPersons fused_detected_persons;
+        fused_detected_persons.header = total_detected_persons.header;
         for(int i = 0; i < total_detected_persons.detections.size();i++)
         {
             DetectedPerson detected_person(total_detected_persons.detections[i]);
-            bool overlaping_flag = false;
-            for(int j=0; j < detected_persons.detections.size(); j++)
+            bool overlapping_flag = false;
+            for(int j=0; j < fused_detected_persons.detections.size(); j++)
             {
-                if(is_overlapping(detected_person, detected_persons.detections[j], overlap_thresh))
+                if(is_overlapping(detected_person, fused_detected_persons.detections[j], overlap_thresh))
                 {
-                    overlaping_flag = true;
+                    overlapping_flag = true;
                     break;
                 }
             }
-            if(overlaping_flag == false)
+            if(overlapping_flag == false)
             {
                 detected_person.detection_id = current_detection_id;    //set the detection id
                 current_detection_id += detection_id_increment;
-                detected_persons.detections.push_back(detected_person);
+                fused_detected_persons.detections.push_back(detected_person);
 	
             }
         }
 
         // take the latest time stamp
-        if(dp_left->header.stamp.toSec() > dp_rear->header.stamp.toSec() )
+        /*if(dp_left->header.stamp.toSec() > dp_rear->header.stamp.toSec() )
         {
             if(dp_left->header.stamp.toSec() > dp_right->header.stamp.toSec())
-                detected_persons.header.stamp = dp_left->header.stamp;
+                fused_detected_persons.header.stamp = dp_left->header.stamp;
             else
-                detected_persons.header.stamp = dp_right->header.stamp;
+                fused_detected_persons.header.stamp = dp_right->header.stamp;
         }
         else
         {
             if(dp_rear->header.stamp.toSec() > dp_right->header.stamp.toSec())
-                detected_persons.header.stamp = dp_rear->header.stamp;
+                fused_detected_persons.header.stamp = dp_rear->header.stamp;
             else
-                detected_persons.header.stamp = dp_right->header.stamp;
+                fused_detected_persons.header.stamp = dp_right->header.stamp;
         }
-        detected_persons.header.frame_id = world_frame;
+        fused_detected_persons.header.stamp = ros::Time::now();
+        fused_detected_persons.header.frame_id = world_frame;*/ 
         // Publish
-        pub_detected_persons.publish(detected_persons);
+        pub_detected_persons.publish(fused_detected_persons);
     }
 }
 
@@ -216,7 +225,7 @@ int main(int argc, char **argv)
     private_node_handle_.param("detection_id_offset",    detection_id_offset, 0);
     private_node_handle_.param("pose_variance", pose_variance, 0.05);
 
-    private_node_handle_.param("overlap_tresh", overlap_thresh, 0.05);
+    private_node_handle_.param("overlap_thresh", overlap_thresh, 0.05);
 
     private_node_handle_.param("left_camera_frame", left_camera_frame, string("oops!need param for left camera frame"));
     private_node_handle_.param("right_camera_frame", right_camera_frame, string("oops!need param for right camera frame"));
