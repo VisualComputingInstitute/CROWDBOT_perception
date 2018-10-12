@@ -27,18 +27,20 @@
 
 #include <ros/ros.h>
 
+#include <frame_msgs/DetectedPersons.h>
+
 class Tracker
 {
 
     public:
 #ifdef cim_v
-       void process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allDet, int frame, Vector<Vector<double> >& foundDetInFrame,
+       void process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allDet, int frame, const frame_msgs::DetectedPersons::ConstPtr& foundDetInFrame,
                                       CImg<unsigned char>& im, Camera& cam);
 
        Vector<Hypo> getHyposMDL(){return HyposMDL;}
 
 #else
-       void process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allDet, int frame, Vector<Vector<double> > foundDetInFrame,
+       void process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allDet, int frame, const frame_msgs::DetectedPersons::ConstPtr& foundDetInFrame,
                                       QImage& im, Camera cam,Matrix<double> depthMap);
 #endif
        Tracker();

@@ -49,7 +49,8 @@ void transfer_detected_persons_to_world_cord(const DetectedPersonsConstPtr &sub_
     ros::Time detection_time(sub_dp->header.stamp);
     tf::StampedTransform transform;
     try {
-        listener->lookupTransform(world_frame,camera_frame,detection_time, transform);  //from camera_frame to world_frame
+        listener->waitForTransform(world_frame, camera_frame, detection_time, ros::Duration(1.0));
+        listener->lookupTransform(world_frame, camera_frame, detection_time, transform);  //from camera_frame to world_frame
         // it may cannot find the tf in exact the same time as the input image.. so, maybe someway, lets see
     }
     catch (tf::TransformException ex){

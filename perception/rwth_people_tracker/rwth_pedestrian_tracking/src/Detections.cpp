@@ -166,8 +166,8 @@ Detections::~Detections()
     cov3d.clearContent();
 }
 
-int Detections::prepareDet(Vector<double> &detContent, Vector<Vector <double> >& det,
-                           int i/*, int frame*/, bool leftDet, Camera cam/*, Matrix<double>& depthMap*/, Matrix<double>& covariance)
+int Detections::prepareDet(Vector<double> &detContent, const frame_msgs::DetectedPersons::ConstPtr & det,
+                           int i, int frame, bool leftDet, Camera cam/*, Matrix<double>& depthMap*/, Matrix<double>& covariance)
 {
     int img_num_hog = 0;
     int hypo_num_hog = 1;
@@ -178,14 +178,16 @@ int Detections::prepareDet(Vector<double> &detContent, Vector<Vector <double> >&
 
     detContent.setSize(24, 0.0);
 
-    detContent(score) = det(i)(score_hog);
-    detContent(scale) = det(i)(scale_hog) ;
-    detContent(img_num) = det(i)(img_num_hog);
-    detContent(hypo_num) = det(i)(hypo_num_hog);
-    detContent(bbox) = floor(det(i)(bbox_hog) );
-    detContent(bbox + 1) = floor(det(i)(bbox_hog + 1) );
-    detContent(bbox + 2) = floor(det(i)(bbox_hog + 2) );
-    detContent(bbox + 3) = floor(det(i)(bbox_hog + 3));
+    frame_msgs::DetectedPerson currentDetection = det->detections[i];
+
+    detContent(score) = currentDetection.confidence; //det(i)(score_hog);
+    detContent(scale) = 1;//det(i)(scale_hog) ;
+    detContent(img_num) = frame;//det(i)(img_num_hog);
+    detContent(hypo_num) = i;//det(i)(hypo_num_hog);
+    detContent(bbox) = currentDetection.bbox_x;//floor(det(i)(bbox_hog) );
+    detContent(bbox + 1) = currentDetection.bbox_y;//floor(det(i)(bbox_hog + 1) );
+    detContent(bbox + 2) = currentDetection.bbox_w;//floor(det(i)(bbox_hog + 2) );
+    detContent(bbox + 3) = currentDetection.bbox_h;//floor(det(i)(bbox_hog + 3));
     if(leftDet)
     {
         detContent(22) = 0;
@@ -194,95 +196,44 @@ int Detections::prepareDet(Vector<double> &detContent, Vector<Vector <double> >&
         detContent(22) = 1;
     }
 
-    Matrix<double> camRot = Eye<double>(3);
+    //TODO: cam cord / world cord, here? dets in world? find solution! (use tf!)
+    /*Matrix<double> camRot = Eye<double>(3);
     Vector<double> camPos(3, 0.0);
-
     Vector<double> gp = cam.get_GP();
-
-    //printf("gp of cam (***):\n");
-    //gp.show();
-
     Matrix<double> camInt = cam.get_K();
-
     Vector<double> planeInCam = projectPlaneToCam(gp, cam);
     Camera camI(camInt, camRot, camPos, planeInCam);
-    //printf("gp of IcamI:\n");
-    //planeInCam.show();
-
-//    compute3DPosition(detContent, camI);
-
     Vector<double> posInCamCord(3,1.0);
-
     double c20 = camI.K()(2,0);
     double c00 = camI.K()(0,0);
     double c21 = camI.K()(2,1);
     double c11 = camI.K()(1,1);
-
     Vector<double> v_bbox(4);
     v_bbox(0) = (detContent(bbox));
     v_bbox(1) = (detContent(bbox+1));
     v_bbox(2) = (detContent(bbox+2));
-    v_bbox(3) = (detContent(bbox+3)/3); // Use only upper body for histogram calculation
-
-//            X[i] = z*(((i%width)-c20)/c00);
-//            Y[i] = z*(((i/width)-c21)/c11);
-
+    v_bbox(3) = (detContent(bbox+3));
     posInCamCord(0) = (det(i)(distance_z)*(v_bbox(0)+v_bbox(2)/2.0 - c20) / c00);
     posInCamCord(1) = (det(i)(distance_z)*(v_bbox(1) - c21) / c11);
     posInCamCord(2) = det(i)(distance_z);//+0.35; // Move from hull of cylinder to the center of mass of a pedestrian
-
     Vector<double>cp_posInCamCord = posInCamCord;
     camI.ProjectToGP(posInCamCord, 1, posInCamCord);
-
-    /*DEBUG
-    printf("v_bbox\n");
-    v_bbox.show();
-    printf("posinCamCord\n");
-    cp_posInCamCord.show();
-    //DEBUG-END*/
-
     cp_posInCamCord -= posInCamCord;
     detContent(height) = cp_posInCamCord.norm();
-
     posInCamCord.pushBack(1);
-
     if(posInCamCord(2) < 0)
     {
-//        if(Globals::verbose)
-//        {
-//            cout << "Detection rejected due to inconsistency with DEPTH!!!" << endl;
-//        }
-        ROS_DEBUG("Detection rejected due to inconsistency with DEPTH!!!");
-        return 0;
-    }
+       ROS_DEBUG("Detection rejected due to inconsistency with DEPTH!!!");
+       return 0;
+    }*/
+    detContent(height) = 1.75; //TODO: de-hc height (with tf)
 
-    //DEBUG
-    //printf("posinCamCord (projected on GP)\n");
-    //posInCamCord.show();
-    //DEBUG-END
+    //Vector<double> posInWorld = fromCamera2World(posInCamCord, cam);
+    //compute3DCov(posInCamCord, covariance, camI, camI);
 
-    Vector<double> posInWorld = fromCamera2World(posInCamCord, cam);
-
-    //DEBUG
-    //printf("posinWorld\n");
-    //posInWorld.show();
-    //DEBUG-END
-
-    compute3DCov(posInCamCord, covariance, camI, camI);
-
-    detContent(pos) = posInWorld(0);
-    detContent(pos+1) = posInWorld(1);
-    detContent(pos+2) = posInWorld(2);
-
-    //DEBUG
-    //char safe_string_char[128];
-    //static string path_to_world_pos = "/home/stefan/results/spencer_tracker/world_pos.txt";
-    //static string path_to_cam_pos = "/home/stefan/results/spencer_tracker/cam_pos.txt";
-    //sprintf(safe_string_char, path_to_world_pos.c_str());
-    //posInWorld.appendToTXT(safe_string_char);
-    //sprintf(safe_string_char, path_to_cam_pos.c_str());
-    //posInCamCord.appendToTXT(safe_string_char);
-    //DEBUG-END
+    detContent(pos) = currentDetection.pose.pose.position.x; //posInWorld(0);
+    detContent(pos+1) = currentDetection.pose.pose.position.y; //posInWorld(1);
+    detContent(pos+2) = currentDetection.pose.pose.position.z; //posInWorld(2);
 
     if(detContent(0) < 0) return 0;
 
@@ -496,7 +447,7 @@ bool Detections::improvingBBoxAlignment_libelas(Vector<double>& vbbox, double va
 }
 
 #ifdef cim_v
-void Detections::addHOGdetOneFrame(Vector<Vector <double> >& det, int frame, CImg<unsigned char>& imageLeft, Camera cam/*, Matrix<double>& depthMap*/)
+void Detections::addHOGdetOneFrame(const frame_msgs::DetectedPersons::ConstPtr & det, int frame, CImg<unsigned char>& imageLeft, Camera cam/*, Matrix<double>& depthMap*/)
 {
 
     // FIXME find a different approach for determing a 3D cov.
@@ -510,9 +461,9 @@ void Detections::addHOGdetOneFrame(Vector<Vector <double> >& det, int frame, CIm
 
     Vector<double>detContent;
 
-    for ( int i = 0; i < det.getSize(); i++)
+    for ( int i = 0; i < det->detections.size(); i++)
     {
-        if(prepareDet(detContent, det, i, true, cam, covariance))
+        if(prepareDet(detContent, det, i, frame, true, cam, covariance))
         {
             pos3d(0) = (detContent(pos));
             pos3d(1) = (detContent(pos+1));

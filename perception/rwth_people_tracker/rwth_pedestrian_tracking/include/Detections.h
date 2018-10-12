@@ -15,6 +15,8 @@
 
 #include <ros/ros.h>
 
+#include "frame_msgs/DetectedPersons.h"
+
 #ifndef cim_v
 #include <QImage>
 #include <QColor>
@@ -71,12 +73,12 @@ public:
     //*************************************************************
 
 #ifdef cim_v
-    void addHOGdetOneFrame(Vector<Vector <double> >& det, int frame, CImg<unsigned char>& imageLeft, Camera cam);
+    void addHOGdetOneFrame(const frame_msgs::DetectedPersons::ConstPtr & det, int frame, CImg<unsigned char>& imageLeft, Camera cam);
 #else
-    void addHOGdetOneFrame(Vector<Vector <double> >& det, int frame, QImage& imageLeft, Camera cam, Matrix<double>& depth);
+    void addHOGdetOneFrame(const frame_msgs::DetectedPersons::ConstPtr & det, int frame, QImage& imageLeft, Camera cam, Matrix<double>& depth);
 #endif
 
-    int prepareDet(Vector<double> &detContent, Vector<Vector <double> >& det, int i, bool leftDet,
+    int prepareDet(Vector<double> &detContent, const frame_msgs::DetectedPersons::ConstPtr & det, int i, int frame, bool leftDet,
                    Camera cam, Matrix<double> &covariance);
 
     //*****************************************************************

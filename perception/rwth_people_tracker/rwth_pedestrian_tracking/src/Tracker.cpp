@@ -324,7 +324,7 @@ void Tracker::process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allD
 }
 #else
 void Tracker::process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allDet, int frame,
-                                        Vector<Vector<double> > &foundDetInFrame, CImg<unsigned char>& im, Camera &cam/*, Matrix<double> &depthMap*/)
+                                        const frame_msgs::DetectedPersons::ConstPtr &foundDetInFrame, CImg<unsigned char>& im, Camera &cam/*, Matrix<double> &depthMap*/)
 {
 
 //    Vector<double> camPos = cam.get_t();
@@ -1250,7 +1250,6 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
 
     PInit.set_size(4,4, 0.0);
 
-    // FIXME: better not hardcoded (e.g. in config file)
     PInit(0,0) = Globals::initPX; // 0.5; //0.4
     PInit(1,1) = Globals::initPY; // 0.5; //1.2
     PInit(2,2) = Globals::initPVX; // 1.0; //0.2
@@ -1269,6 +1268,7 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
     //double v = 0.5;//Globals::dMaxPedVel/3.0;
     //double r = M_PI; // Assume as Prior that the persons are front orientated.
 
+    // if we can get velocity out of a detection, set here (otherwise best guess to assume no velocity)
     double vx_init = 0.0;
     double vy_init = 0.0;
 

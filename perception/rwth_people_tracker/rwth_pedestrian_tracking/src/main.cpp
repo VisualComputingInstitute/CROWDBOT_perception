@@ -473,10 +473,10 @@ Vector<double> projectPlaneToCam(Vector<double> p, Camera cam)
     return gpInCam;
 }
 
-void callbackWithoutHOG(const ImageConstPtr &color,
+void callback(const ImageConstPtr &color,
               const CameraInfoConstPtr &info,
               const GroundPlane::ConstPtr &gp,
-              const DetectedPersons::ConstPtr &upper,
+              const DetectedPersons::ConstPtr &detections,
               const VisualOdometry::ConstPtr &vo)
 {
 
@@ -510,8 +510,7 @@ void callbackWithoutHOG(const ImageConstPtr &color,
     //printf("---\n");
     // ---end update framerate+frameRatevector---
 
-    //printf("set!\n");
-    ROS_DEBUG("Entered callback without groundHOG data");
+    ROS_DEBUG("Entered tracking callback");
     Globals::render_bbox3D = (pub_image.getNumSubscribers() > 0) || (Globals::save_for_eval);
 
     // safe strings for eval
@@ -524,9 +523,10 @@ void callbackWithoutHOG(const ImageConstPtr &color,
     Camera camera = createCamera(GP, vo, info);
 
     // Get detections from upper body
-    Vector<double> single_detection(9);
-    Vector<Vector< double > > detected_bounding_boxes;
+    //Vector<double> single_detection(9);
+    //Vector<Vector< double > > detected_bounding_boxes;
 
+    /*
     for(int i = 0; i < upper->detections.size(); i++)
     {
         single_detection(0) = cnt;
@@ -548,6 +548,7 @@ void callbackWithoutHOG(const ImageConstPtr &color,
         //ROS_INFO("upper det %i bbox: (%f, %f ,%f ,%f): %f", i, single_detection(4), single_detection(5), single_detection(6), single_detection(7), single_detection(3) );
         //ROS_INFO("Depth for upper det: %f", single_detection(8));
     }
+    */
 
     get_image((unsigned char*)(&color->data[0]),info->width,info->height,cim);
 
@@ -562,7 +563,7 @@ void callbackWithoutHOG(const ImageConstPtr &color,
     }
 
     ///////////////////////////////////////////TRACKING///////////////////////////
-    tracker.process_tracking_oneFrame(HyposAll, *det_comb, cnt, detected_bounding_boxes, cim, camera);
+    tracker.process_tracking_oneFrame(HyposAll, *det_comb, cnt, detections, cim, camera);
     ///////////////////////////////////////////TRACKING-END///////////////////////////
 
     if (Globals::save_for_eval){
@@ -582,11 +583,11 @@ void callbackWithoutHOG(const ImageConstPtr &color,
     // also prepare tracks
     frame_msgs::TrackedPersons trackedPersons;
     frame_msgs::TrackedPersons2d trackedPersons2d;
-    trackedPersons.header.stamp = upper->header.stamp;
+    trackedPersons.header.stamp = detections->header.stamp;
     trackedPersons.header.seq = ++track_seq;
     trackedPersons.header.frame_id = "/robot/OdometryFrame"; //FIXME: world frame, maybe should not be hardcoded
 
-    trackedPersons2d.header.stamp = upper->header.stamp;
+    trackedPersons2d.header.stamp = detections->header.stamp;
     trackedPersons2d.header.seq = track_seq;
     trackedPersons2d.header.frame_id = color->header.frame_id;
 
@@ -684,18 +685,18 @@ void callbackWithoutHOG(const ImageConstPtr &color,
         trackedPerson2d.h = bbox_bottomrightCornerInImage(1) - bbox_topleftCornerInImage(1);
         trackedPerson2d.depth = posInCamera(2);
 
-        robot_frame_dir(0) = dir(2);
-        robot_frame_dir(1) = -dir(0);
-        robot_frame_dir(2) = -dir(1);
+        robot_frame_dir(0) = dir(0);//dir(2);
+        robot_frame_dir(1) = dir(1);//-dir(0);
+        robot_frame_dir(2) = dir(2);//-dir(1);
 
         // Some constants for determining the pose
         //const double AVERAGE_ROTATION_VARIANCE = pow(10.0 / 180 * M_PI, 2); // FIXME: determine from vx, vy?
         const double INFINITE_VARIANCE = 9999999; // should not really use infinity here because then the covariance matrix cannot be rotated (singularities!)
 
         // Set pose (=position + orientation)
-        pose.pose.position.x = trajPts(curr_idx)(2);
-        pose.pose.position.y = -trajPts(curr_idx)(0);
-        pose.pose.position.z = -trajPts(curr_idx)(1);
+        pose.pose.position.x = trajPts(curr_idx)(0);//trajPts(curr_idx)(2);
+        pose.pose.position.y = trajPts(curr_idx)(1);//-trajPts(curr_idx)(0);
+        pose.pose.position.z = trajPts(curr_idx)(2);//-trajPts(curr_idx)(1);
 
         // Set orientation
         pose.pose.orientation = tf::createQuaternionMsgFromYaw(atan2(robot_frame_dir(1), robot_frame_dir(0))); // determine orientation from current velocity estimate
@@ -705,7 +706,7 @@ void callbackWithoutHOG(const ImageConstPtr &color,
         pose.covariance[2 * 6 + 2] = INFINITE_VARIANCE; // variance of z position
         pose.covariance[3 * 6 + 3] = INFINITE_VARIANCE; // variance of x rotation
         pose.covariance[4 * 6 + 4] = INFINITE_VARIANCE; // variance of y rotation
-        pose.covariance[5 * 6 + 5] = C(curr_idx)(2,2); // variance of z rotation
+        pose.covariance[5 * 6 + 5] = INFINITE_VARIANCE; // variance of z rotation
 
         // Set twist (=velocities)
         twist.twist.linear.x = robot_frame_dir(0);
@@ -713,11 +714,11 @@ void callbackWithoutHOG(const ImageConstPtr &color,
         twist.twist.linear.z = robot_frame_dir(2);
 
         twist.covariance.fill(0.0);
-        twist.covariance[0 * 6 + 0] = C(curr_idx)(3,3); // variance of x linear velocity
+        twist.covariance[0 * 6 + 0] = C(curr_idx)(2,2); // variance of x linear velocity
         twist.covariance[1 * 6 + 1] = C(curr_idx)(3,3); // variance of y linear velocity
         twist.covariance[2 * 6 + 2] = INFINITE_VARIANCE; // variance of z linear velocity
         twist.covariance[3 * 6 + 3] = C(curr_idx)(2,2); // variance of x angular velocity
-        twist.covariance[4 * 6 + 4] = C(curr_idx)(2,2); // variance of y angular velocity
+        twist.covariance[4 * 6 + 4] = C(curr_idx)(3,3); // variance of y angular velocity
         twist.covariance[5 * 6 + 5] = INFINITE_VARIANCE; // variance of z angular velocity
 
 
@@ -737,348 +738,6 @@ void callbackWithoutHOG(const ImageConstPtr &color,
         res_img.height = cim._height;
         res_img.width = cim._width;
         res_img.step   = color->step;
-        for (std::size_t i = 0; i != cim._height*cim._width; ++i) {
-            res_img.data.push_back(cim.data()[i+0*cim._height*cim._width]);
-            res_img.data.push_back(cim.data()[i+1*cim._height*cim._width]);
-            res_img.data.push_back(cim.data()[i+2*cim._height*cim._width]);
-        }
-        res_img.encoding = color->encoding;
-
-        pub_image.publish(res_img);
-    }
-
-    pub_message.publish(allHypoMsg);
-    pub_tracked_persons.publish(trackedPersons);
-    pub_tracked_persons_2d.publish(trackedPersons2d);
-    Globals::oldTimeForFPSUpdate = color->header.stamp.toSec(); //ros::Time::now().toSec();
-    cnt++;
-}
-
-void callbackWithHOG(const ImageConstPtr &color,
-              const CameraInfoConstPtr &info,
-              const GroundPlane::ConstPtr &gp,
-              const DetectedPersons::ConstPtr& groundHOGDet,
-              const DetectedPersons::ConstPtr &upper,
-              const VisualOdometry::ConstPtr &vo)
-{
-    // ---update framerate + framerateVector---
-    //printf("set new framerate to: %d / (%f-%f) \n", 1,color->header.stamp.toSec(),Globals::oldTimeForFPSUpdate);
-    //printf("result: %d\n", (int) (1 / (color->header.stamp.toSec()-Globals::oldTimeForFPSUpdate)));
-    // update framerate first after some tracking cycles, before use framerate from config file
-    if (cnt>0) {
-        double dt = color->header.stamp.toSec() - Globals::oldTimeForFPSUpdate;
-        double fps = 1.0 / dt;
-
-        if(!std::isfinite(fps) || fps < 1) {
-            ROS_WARN("Abnormal frame rate detected: %f, dt: %f. Set to 1", fps, dt);
-            Globals::frameRate = 1;
-        }
-        else {
-            Globals::frameRate = (int) fps;
-        }
-        Globals::frameRateVector.swap();
-        Globals::frameRateVector.pushBack(Globals::frameRate);
-        Globals::frameRateVector.swap();
-        Globals::frameRateVector.resize(min(cnt+1,100));
-    }
-    else{
-        //first cycle, setup frameRateVector
-        Globals::frameRateVector.setSize(1,0.0);
-        Globals::frameRateVector(0) = Globals::frameRate;
-    }
-    //printf("---\n");
-    //Globals::frameRateVector.show();
-    //printf("---\n");
-    // ---end update framerate+frameRatevector---
-
-    ROS_DEBUG("Entered callback with groundHOG data");
-    Globals::render_bbox3D = (pub_image.getNumSubscribers() > 0) || (Globals::save_for_eval);
-
-    // safe strings for eval
-    std::string safe_string;
-    char safe_string_char[128];
-
-    // Get camera from VO and GP
-    Vector<double> GP(3, (double*) &gp->n[0]);
-    GP.pushBack((double) gp->d);
-
-    Camera camera = createCamera(GP, vo, info);
-
-    //initial cam to compute HOG-depth
-    Matrix<double> camRot_i = Eye<double>(3);
-    Vector<double> camPos_i(3, 0.0);
-    Vector<double> gp_i = camera.get_GP();
-    Matrix<double> camInt_i = camera.get_K();
-    Vector<double> planeInCam_i = projectPlaneToCam(gp_i, camera);
-    Camera camI(camInt_i, camRot_i, camPos_i, planeInCam_i);
-
-    // Get detections from HOG and upper body
-    Vector<double> single_detection(9);
-    Vector<Vector< double > > detected_bounding_boxes;
-
-    for(int i = 0; i < groundHOGDet->detections.size(); i++)
-    {
-        single_detection(0) = cnt;
-        single_detection(1) = i;
-        single_detection(2) = 1;
-        single_detection(3) = groundHOGDet->detections[i].confidence;
-        single_detection(4) = groundHOGDet->detections[i].bbox_x;
-        single_detection(5) = groundHOGDet->detections[i].bbox_y;
-        single_detection(6) = groundHOGDet->detections[i].bbox_w;
-        single_detection(7) = groundHOGDet->detections[i].bbox_h;
-        //Vector<double> bbox(single_detection(4), single_detection(5), single_detection(6), single_detection(7));
-        //ROS_INFO("HOG det %i bbox: (%f, %f ,%f ,%f): %f", i, single_detection(4), single_detection(5), single_detection(6), single_detection(7), single_detection(3) );
-        //single_detection(8) = computeDepthInCam(bbox, camI);
-        single_detection(8) = groundHOGDet->detections[i].pose.pose.position.z;
-        //single_detection(9) = groundHOGDet->detections[i].pose.pose.position.x;
-        //single_detection(10) = groundHOGDet->detections[i].pose.pose.position.y;
-        //single_detection(11) = groundHOGDet->detections[i].pose.pose.position.z;
-        //ROS_INFO("Depth for HOG det: %f", single_detection(8));
-        detected_bounding_boxes.pushBack(single_detection);
-    }
-
-    for(int i = 0; i < upper->detections.size(); i++)
-    {
-        single_detection(0) = cnt;
-        single_detection(1) = groundHOGDet->detections.size()+i;
-        single_detection(2) = 1;
-        //single_detection(3) = 1 - upper->dist[i]; // make sure that the score is always positive
-        single_detection(3) = upper->detections[i].confidence;
-        single_detection(4) = upper->detections[i].bbox_x;
-        single_detection(5) = upper->detections[i].bbox_y;
-        single_detection(6) = upper->detections[i].bbox_w;
-        single_detection(7) = upper->detections[i].bbox_h;
-        single_detection(8) = upper->detections[i].pose.pose.position.z;
-        // ROS_INFO("upper det %i bbox: (%f, %f ,%f ,%f): %f", i, single_detection(4), single_detection(5), single_detection(6), single_detection(7), single_detection(3) );
-        //ROS_INFO("Depth for upper det: %f", single_detection(8));
-        //single_detection(9) = upper->detections[i].pose.pose.position.x;
-        //single_detection(10) = upper->detections[i].pose.pose.position.y;
-        //single_detection(11) = upper->detections[i].pose.pose.position.z;
-
-        detected_bounding_boxes.pushBack(single_detection);
-    }
-
-    get_image((unsigned char*)(&color->data[0]),info->width,info->height,cim);
-
-    writeImageAndCamInfoToFile(color,info,camera);
-
-    if (Globals::save_for_eval){
-        // save color image, going to be processed
-        safe_string = Globals::save_path_img;
-        safe_string.append("img_%08d.jpg");
-        sprintf(safe_string_char, safe_string.c_str(), cnt);
-        cim.save(safe_string_char);
-    }
-
-    ///////////////////////////////////////////TRACKING///////////////////////////
-    tracker.process_tracking_oneFrame(HyposAll, *det_comb, cnt, detected_bounding_boxes, cim, camera);
-    ///////////////////////////////////////////TRACKING-END///////////////////////////
-
-    if (Globals::save_for_eval){
-        // save processed image
-        safe_string = Globals::save_path_img;
-        safe_string.append("track_%08d.jpg");
-        sprintf(safe_string_char, safe_string.c_str(), cnt);
-        cim.save(safe_string_char);
-    }
-    // publish tracks
-    Vector<Hypo> hyposMDL = tracker.getHyposMDL();
-    double currentTime = color->header.stamp.toSec();
-    PedestrianTrackingArray allHypoMsg;
-    allHypoMsg.header = color->header;
-
-    // also prepare tracks
-    frame_msgs::TrackedPersons trackedPersons;
-    frame_msgs::TrackedPersons2d trackedPersons2d;
-    trackedPersons.header.stamp = upper->header.stamp;
-    trackedPersons.header.seq = ++track_seq;
-    trackedPersons.header.frame_id = "/robot/OdometryFrame"; //FIXME: world frame, maybe should not be hardcoded
-
-    trackedPersons2d.header.stamp = upper->header.stamp;
-    trackedPersons2d.header.seq = track_seq;
-    trackedPersons2d.header.frame_id = color->header.frame_id;
-    
-    Vector<Vector<double> > trajPts;
-    Vector<double> dir;
-    for(int i = 0; i < hyposMDL.getSize(); i++)
-    {
-        PedestrianTracking oneHypoMsg;
-        oneHypoMsg.header = color->header;
-
-        hyposMDL(i).getTrajPts(trajPts);
-        for(int j = 0; j < trajPts.getSize(); j++)
-        {
-            oneHypoMsg.traj_x.push_back(trajPts(j)(0));
-            oneHypoMsg.traj_y.push_back(trajPts(j)(1));
-            oneHypoMsg.traj_z.push_back(trajPts(j)(2));
-            Vector<double> posInCamera = AncillaryMethods::fromWorldToCamera(trajPts(j), camera);
-            
-            oneHypoMsg.traj_x_camera.push_back(posInCamera(0));
-            oneHypoMsg.traj_y_camera.push_back(posInCamera(1));
-            oneHypoMsg.traj_z_camera.push_back(posInCamera(2));
-            
-        }
-
-        oneHypoMsg.id = hyposMDL(i).getHypoID();
-        oneHypoMsg.score = hyposMDL(i).getScoreMDL();
-        oneHypoMsg.speed = hyposMDL(i).getSpeed();
-        hyposMDL(i).getDir(dir);
-
-        oneHypoMsg.dir.push_back(dir(0));
-        oneHypoMsg.dir.push_back(dir(1));
-        oneHypoMsg.dir.push_back(dir(2));
-        allHypoMsg.pedestrians.push_back(oneHypoMsg);
-
-        // Also publish tracks
-        geometry_msgs::PoseWithCovariance pose;
-        geometry_msgs::TwistWithCovariance twist;
-        int curr_idx = trajPts.getSize()-1;
-        Vector<Matrix<double> > C;
-        hyposMDL(i).getStateCovMats(C);
-
-        // init one tracked person
-        frame_msgs::TrackedPerson trackedPerson;
-        frame_msgs::TrackedPerson2d trackedPerson2d;
-        trackedPerson.track_id = hyposMDL(i).getHypoID();
-        ros::Time currentCreationTime;
-        hyposMDL(i).getCreationTime(currentCreationTime);
-        trackedPerson.age = ros::Duration(ros::Time::now()-currentCreationTime);
-        trackedPerson.is_occluded = false; // FIXME: available for mht tracker, yet?
-        Vector<FrameInlier> frameInlier;
-        hyposMDL(i).getIdx(frameInlier);
-        //printf("hypo %i, number of inliers: %i\n", trackedPerson.track_id, frameInlier(frameInlier.getSize()-1).getNumberInlier());
-        //printf("first:\n");
-        //frameInlier(0).showFrameInlier();
-        //printf("last:\n");
-        //frameInlier(frameInlier.getSize()-1).showFrameInlier();
-        Vector<int> currentInlier = frameInlier(frameInlier.getSize()-1).getInlier();
-        if (currentInlier(0) > 0){
-            trackedPerson.is_matched = true;
-        }
-        else{
-            trackedPerson.is_matched = false;
-        }
-        trackedPerson.detection_id = 1; // FIXME: available for mht tracker, yet?
-
-        trackedPerson2d.track_id = hyposMDL(i).getHypoID();
-        trackedPerson2d.person_height = hyposMDL(i).getHeight();
-
-        // prepare position and velocity of tracked person
-        Vector<double> posInCamera = AncillaryMethods::fromWorldToCamera(trajPts(curr_idx), camera);
-
-        Vector<double> bbox_topleftCornerInCam = posInCamera;
-        Vector<double> bbox_bottomrightCornerInCam = posInCamera;
-        bbox_topleftCornerInCam.pushBack(1);
-        bbox_bottomrightCornerInCam.pushBack(1);
-        bbox_topleftCornerInCam(0) -= Globals::pedSizeWVis/2.0;
-        bbox_bottomrightCornerInCam(0) += Globals::pedSizeWVis/2.0;
-        Vector<double> bbox_topleftCornerInWorld = AncillaryMethods::fromCameraToWorld(bbox_topleftCornerInCam, camera);
-        Vector<double> bbox_bottomrightCornerInWorld = AncillaryMethods::fromCameraToWorld(bbox_bottomrightCornerInCam, camera);
-        bbox_topleftCornerInWorld *= 1/bbox_topleftCornerInWorld(3);
-        bbox_topleftCornerInWorld.resize(3);
-        bbox_bottomrightCornerInWorld *= 1/bbox_bottomrightCornerInWorld(3);
-        bbox_bottomrightCornerInWorld.resize(3);
-        bbox_topleftCornerInWorld(1) -= hyposMDL(i).getHeight();
-
-        Vector<double> bbox_topleftCornerInImage;
-        Vector<double> bbox_bottomrightCornerInImage;
-        camera.WorldToImage(bbox_topleftCornerInWorld, Globals::WORLD_SCALE, bbox_topleftCornerInImage);
-        camera.WorldToImage(bbox_bottomrightCornerInWorld, Globals::WORLD_SCALE, bbox_bottomrightCornerInImage);
-        trackedPerson2d.x = bbox_topleftCornerInImage(0);
-        trackedPerson2d.y = bbox_topleftCornerInImage(1);
-        trackedPerson2d.w = bbox_bottomrightCornerInImage(0) - bbox_topleftCornerInImage(0);
-        trackedPerson2d.h = bbox_bottomrightCornerInImage(1) - bbox_topleftCornerInImage(1);
-
-        geometry_msgs::PoseStamped tempPoseStamped;
-        geometry_msgs::PoseStamped tempPoseStampedWorld;
-        geometry_msgs::Vector3Stamped tempVVectorStamped;
-        geometry_msgs::Vector3Stamped tempVVectorStampedWorld;
-        tempPoseStamped.header.stamp = ros::Time();
-        tempPoseStamped.header.frame_id = upper->header.frame_id; //camera frame from upperbody
-        tempPoseStamped.pose.position.x = posInCamera(0);
-        tempPoseStamped.pose.position.y = posInCamera(1);
-        tempPoseStamped.pose.position.z = posInCamera(2);
-        tempVVectorStamped.header = tempPoseStamped.header;
-        tempVVectorStamped.vector.x = dir(0);
-        tempVVectorStamped.vector.y = dir(1);
-        tempVVectorStamped.vector.z = dir(2);
-        tempPoseStamped.pose.orientation = tf::createQuaternionMsgFromYaw(atan2(dir(2), dir(0))); // only dummy orientation, correct one is set below
-
-        //Transform pose and velocity vector
-        string target_frame = trackedPersons.header.frame_id;
-        try {
-            ROS_DEBUG("Transforming received position into %s coordinate system.", target_frame.c_str());
-            listener->waitForTransform(tempPoseStamped.header.frame_id, target_frame, ros::Time(), ros::Duration(0.05));
-            listener->transformPose(target_frame, tempPoseStamped, tempPoseStampedWorld);
-            //listener->transformVector(target_frame, tempVVectorStamped, tempVVectorStampedWorld);
-        }
-        catch(tf::TransformException ex) {
-            ROS_WARN("Failed transform: %s", ex.what());
-            return;
-        }
-        //dir(0) = tempVVectorStampedWorld.vector.x;
-        //dir(1) = tempVVectorStampedWorld.vector.y;
-        //dir(2) = tempVVectorStampedWorld.vector.z;
-
-        // Some constants for determining the pose
-        const double AVERAGE_ROTATION_VARIANCE = pow(10.0 / 180 * M_PI, 2); // FIXME: determine from vx, vy?
-        const double INFINITE_VARIANCE = 9999999; // should not really use infinity here because then the covariance matrix cannot be rotated (singularities!)
-
-        // Set pose (=position + orientation)
-        //pose.pose.position.x = tempPoseStampedWorld.pose.position.x;
-        //pose.pose.position.y = tempPoseStampedWorld.pose.position.y;
-        //pose.pose.position.z = 0.67;//tempPoseStampedWorld.pose.position.z; //FIXME: hard-coded groundplane height (also a bit off)
-        pose.pose.position.x = trajPts(curr_idx)(2);
-        pose.pose.position.y = -trajPts(curr_idx)(0);
-        pose.pose.position.z = -trajPts(curr_idx)(1);
-
-        // Set orientation
-        Vector<double> robot_frame_dir(3, 0.0);
-        robot_frame_dir(0) = dir(2);
-        robot_frame_dir(1) = -dir(0);
-        robot_frame_dir(2) = -dir(1);
-        //unnormalize
-        robot_frame_dir = robot_frame_dir*hyposMDL(i).getSpeed();
-
-        pose.pose.orientation = tf::createQuaternionMsgFromYaw(atan2(robot_frame_dir(1), robot_frame_dir(0))); // determine orientation from current velocity estimate
-        pose.covariance.fill(0.0);
-        //printf("curr_idx: %i, size of C stateCov vector: %i, C:\n", curr_idx, C.getSize());
-        //C(curr_idx).Show();
-        pose.covariance[0 * 6 + 0] = C(curr_idx)(0,0); // variance of x position
-        pose.covariance[1 * 6 + 1] = C(curr_idx)(1,1); // variance of y position
-        pose.covariance[2 * 6 + 2] = INFINITE_VARIANCE; //C(curr_idx)(1,1); // variance of z position
-        pose.covariance[3 * 6 + 3] = INFINITE_VARIANCE; // variance of x rotation
-        pose.covariance[4 * 6 + 4] = INFINITE_VARIANCE; // variance of y rotation
-        pose.covariance[5 * 6 + 5] = AVERAGE_ROTATION_VARIANCE; // variance of z rotation
-
-        // Set twist (=velocities)
-        twist.twist.linear.x = robot_frame_dir(0);
-        twist.twist.linear.y = robot_frame_dir(1);
-        twist.twist.linear.z = robot_frame_dir(2);
-
-        twist.covariance.fill(0.0);
-        twist.covariance[0 * 6 + 0] = C(curr_idx)(3,3); // variance of x linear velocity
-        twist.covariance[1 * 6 + 1] = C(curr_idx)(3,3); // variance of y linear velocity
-        twist.covariance[2 * 6 + 2] = INFINITE_VARIANCE; // variance of z linear velocity
-        twist.covariance[3 * 6 + 3] = C(curr_idx)(2,2);; // variance of x angular velocity
-        twist.covariance[4 * 6 + 4] = C(curr_idx)(2,2);; // variance of y angular velocity
-        twist.covariance[5 * 6 + 5] = INFINITE_VARIANCE; // variance of z angular velocity
-
-
-        // set pose and twist and add to tracked persons
-        trackedPerson.pose = pose;
-        trackedPerson.twist = twist;
-        trackedPersons.tracks.push_back(trackedPerson);
-        trackedPersons2d.boxes.push_back(trackedPerson2d);
-    }
-
-    if(pub_image.getNumSubscribers()) {
-        ROS_DEBUG("Publishing image");
-        Image res_img;
-        res_img.header = color->header;
-        res_img.height = cim._height;
-        res_img.step   = color->step;
-        res_img.width = cim._width;
         for (std::size_t i = 0; i != cim._height*cim._width; ++i) {
             res_img.data.push_back(cim.data()[i+0*cim._height*cim._width]);
             res_img.data.push_back(cim.data()[i+1*cim._height*cim._width]);
@@ -1214,7 +873,7 @@ int main(int argc, char **argv)
     //Registering callback
     ///////////////////////////////////////////////////////////////////////////////////
     // With groundHOG
-    sync_policies::ApproximateTime<Image, CameraInfo, GroundPlane,
+    /*sync_policies::ApproximateTime<Image, CameraInfo, GroundPlane,
             DetectedPersons, DetectedPersons, VisualOdometry> MySyncPolicyHOG(queue_size); //The real queue size for synchronisation is set here.
     MySyncPolicyHOG.setAgePenalty(1000); //set high age penalty to publish older data faster even if it might not be correctly synchronized.
 
@@ -1226,7 +885,7 @@ int main(int argc, char **argv)
             syncHOG(MyConstSyncPolicyHOG, subscriber_color, subscriber_camera_info, subscriber_gp,
                  subscriber_groundHOG, subscriber_upperbody, subscriber_vo);
     if(strcmp(topic_groundHOG.c_str(),"") != 0)
-        syncHOG.registerCallback(boost::bind(&callbackWithHOG, _1, _2, _3, _4, _5, _6));
+        syncHOG.registerCallback(boost::bind(&callbackWithHOG, _1, _2, _3, _4, _5, _6));*/
     ///////////////////////////////////////////////////////////////////////////////////
     // Without groundHOG
     sync_policies::ApproximateTime<Image, CameraInfo, GroundPlane,
@@ -1241,7 +900,7 @@ int main(int argc, char **argv)
             sync(MyConstSyncPolicy, subscriber_color, subscriber_camera_info, subscriber_gp,
                  subscriber_upperbody, subscriber_vo);
     if(strcmp(topic_groundHOG.c_str(),"") == 0)
-        sync.registerCallback(boost::bind(&callbackWithoutHOG, _1, _2, _3, _4, _5));
+        sync.registerCallback(boost::bind(&callback, _1, _2, _3, _4, _5));
     ///////////////////////////////////////////////////////////////////////////////////
 
     // Create a topic publisher

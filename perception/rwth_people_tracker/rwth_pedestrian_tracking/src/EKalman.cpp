@@ -231,7 +231,7 @@ bool EKalman::findObservation(Detections& det, int frame, int /*detPos*/, int /*
         /*std::cout << "pDiff.norm(): " << pDiff.norm() << std::endl;
         std::cout << "weight: " << weight << std::endl;
         std::cout << "colScore: " << colScore << std::endl;*/
-        if(weight > Globals::kalmanObsMotionModelthresh && colScore > Globals::kalmanObsColorModelthresh)
+        if(weight > Globals::kalmanObsMotionModelthresh /*&& colScore > Globals::kalmanObsColorModelthresh*/)
         {
             allInlierInOneFrame.pushBack(i);
             weightOfAllInliersInOneFrame.pushBack(weight*colScore);
