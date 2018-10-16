@@ -447,7 +447,7 @@ bool Detections::improvingBBoxAlignment_libelas(Vector<double>& vbbox, double va
 }
 
 #ifdef cim_v
-void Detections::addHOGdetOneFrame(const frame_msgs::DetectedPersons::ConstPtr & det, int frame, CImg<unsigned char>& imageLeft, Camera cam/*, Matrix<double>& depthMap*/)
+void Detections::addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & det, int frame, CImg<unsigned char>& imageLeft, Camera cam/*, Matrix<double>& depthMap*/)
 {
 
     // FIXME find a different approach for determing a 3D cov.
@@ -475,7 +475,7 @@ void Detections::addHOGdetOneFrame(const frame_msgs::DetectedPersons::ConstPtr &
             v_bbox(0) = (detContent(bbox));
             v_bbox(1) = (detContent(bbox+1));
             v_bbox(2) = (detContent(bbox+2));
-            v_bbox(3) = (detContent(bbox+3)/3); // Use only upper body for histogram calculation FIXME: better whole with luggage etc.?
+            v_bbox(3) = (detContent(bbox+3));
 
             computeColorHist(colhist, v_bbox, Globals::binSize, imageLeft);
 

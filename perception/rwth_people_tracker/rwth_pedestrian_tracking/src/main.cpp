@@ -40,9 +40,7 @@
 #include "AncillaryMethods.h"
 #include "Tracker.h"
 
-#include "rwth_perception_people_msgs/UpperBodyDetector.h"
 #include "rwth_perception_people_msgs/GroundPlane.h"
-#include "rwth_perception_people_msgs/GroundHOGDetections.h"
 #include "rwth_perception_people_msgs/VisualOdometry.h"
 #include "rwth_perception_people_msgs/PedestrianTracking.h"
 #include "rwth_perception_people_msgs/PedestrianTrackingArray.h"
@@ -685,9 +683,18 @@ void callback(const ImageConstPtr &color,
         trackedPerson2d.h = bbox_bottomrightCornerInImage(1) - bbox_topleftCornerInImage(1);
         trackedPerson2d.depth = posInCamera(2);
 
-        robot_frame_dir(0) = dir(0);//dir(2);
-        robot_frame_dir(1) = dir(1);//-dir(0);
-        robot_frame_dir(2) = dir(2);//-dir(1);
+        Vector<double>  vCurrVX;
+        Vector<double>  vCurrVY;
+        double currVX;
+        double currVY;
+        hyposMDL(i).getVX(vCurrVX);
+        hyposMDL(i).getVY(vCurrVY);
+        currVX = vCurrVX(vCurrVX.getSize()-1);
+        currVY = vCurrVY(vCurrVY.getSize()-1);
+
+        robot_frame_dir(0) = currVX; //dir(0);//dir(2);
+        robot_frame_dir(1) = currVY; //dir(1);//-dir(0);
+        robot_frame_dir(2) = 0.0; //dir(2);//-dir(1);
 
         // Some constants for determining the pose
         //const double AVERAGE_ROTATION_VARIANCE = pow(10.0 / 180 * M_PI, 2); // FIXME: determine from vx, vy?
@@ -699,7 +706,8 @@ void callback(const ImageConstPtr &color,
         pose.pose.position.z = trajPts(curr_idx)(2);//-trajPts(curr_idx)(1);
 
         // Set orientation
-        pose.pose.orientation = tf::createQuaternionMsgFromYaw(atan2(robot_frame_dir(1), robot_frame_dir(0))); // determine orientation from current velocity estimate
+        //pose.pose.orientation = tf::createQuaternionMsgFromYaw(atan2(robot_frame_dir(1), robot_frame_dir(0))); // determine orientation from current velocity estimate
+        pose.pose.orientation = tf::createQuaternionMsgFromYaw(atan2(currVY, currVX)); // determine orientation from current velocity estimate
         pose.covariance.fill(0.0);
         pose.covariance[0 * 6 + 0] = C(curr_idx)(0,0); // variance of x position
         pose.covariance[1 * 6 + 1] = C(curr_idx)(1,1); // variance of y position
@@ -717,8 +725,8 @@ void callback(const ImageConstPtr &color,
         twist.covariance[0 * 6 + 0] = C(curr_idx)(2,2); // variance of x linear velocity
         twist.covariance[1 * 6 + 1] = C(curr_idx)(3,3); // variance of y linear velocity
         twist.covariance[2 * 6 + 2] = INFINITE_VARIANCE; // variance of z linear velocity
-        twist.covariance[3 * 6 + 3] = C(curr_idx)(2,2); // variance of x angular velocity
-        twist.covariance[4 * 6 + 4] = C(curr_idx)(3,3); // variance of y angular velocity
+        twist.covariance[3 * 6 + 3] = INFINITE_VARIANCE; // variance of x angular velocity
+        twist.covariance[4 * 6 + 4] = INFINITE_VARIANCE; // variance of y angular velocity
         twist.covariance[5 * 6 + 5] = INFINITE_VARIANCE; // variance of z angular velocity
 
 
@@ -758,8 +766,7 @@ void callback(const ImageConstPtr &color,
 // Connection callback that unsubscribes from the tracker if no one is subscribed.
 void connectCallback(message_filters::Subscriber<CameraInfo> &sub_cam,
                      message_filters::Subscriber<GroundPlane> &sub_gp,
-                     message_filters::Subscriber<DetectedPersons> &sub_hog,
-                     message_filters::Subscriber<DetectedPersons> &sub_ubd,
+                     message_filters::Subscriber<DetectedPersons> &sub_det,
                      message_filters::Subscriber<VisualOdometry> &sub_vo,
                      image_transport::SubscriberFilter &sub_col,
                      image_transport::ImageTransport &it){
@@ -771,16 +778,14 @@ void connectCallback(message_filters::Subscriber<CameraInfo> &sub_cam,
         ROS_DEBUG("Tracker: No subscribers. Unsubscribing.");
         sub_cam.unsubscribe();
         sub_gp.unsubscribe();
-        sub_hog.unsubscribe();
-        sub_ubd.unsubscribe();
+        sub_det.unsubscribe();
         sub_vo.unsubscribe();
         sub_col.unsubscribe();
     } else {
         ROS_DEBUG("Tracker: New subscribers. Subscribing.");
         sub_cam.subscribe();
         sub_gp.subscribe();
-        sub_hog.subscribe();
-        sub_ubd.subscribe();
+        sub_det.subscribe();
         sub_vo.subscribe();
         sub_col.subscribe(it,sub_col.getTopic().c_str(),1);
     }
@@ -802,8 +807,7 @@ int main(int argc, char **argv)
     string config_file;
     string cam_ns;
     string topic_gp;
-    string topic_groundHOG;
-    string topic_upperbody;
+    string topic_detections;
     string topic_vo;
 
     string pub_topic;
@@ -820,8 +824,7 @@ int main(int argc, char **argv)
 
     private_node_handle_.param("camera_namespace", cam_ns, string("/head_xtion"));
     private_node_handle_.param("ground_plane", topic_gp, string("/ground_plane"));
-    private_node_handle_.param("ground_hog", topic_groundHOG, string("/detected_persons/groundHOG"));
-    private_node_handle_.param("upper_body_detections", topic_upperbody, string("/detected_persons/upperbody"));
+    private_node_handle_.param("detections", topic_detections, string("/detected_persons"));
     private_node_handle_.param("visual_odometry", topic_vo, string("/visual_odometry/motion_matrix"));
 
     string topic_color_image = cam_ns + "/hd/image_color_rect";
@@ -848,23 +851,20 @@ int main(int argc, char **argv)
     subscriber_color.subscribe(it, topic_color_image.c_str(), 1); subscriber_color.unsubscribe(); //This subscribe and unsubscribe is just to set the topic name.
     message_filters::Subscriber<CameraInfo> subscriber_camera_info(n, topic_camera_info.c_str(), 1); subscriber_camera_info.unsubscribe();
     message_filters::Subscriber<GroundPlane> subscriber_gp(n, topic_gp.c_str(), 1); subscriber_gp.unsubscribe();
-    message_filters::Subscriber<DetectedPersons> subscriber_groundHOG(n, topic_groundHOG.c_str(), 1); subscriber_groundHOG.unsubscribe();
-    message_filters::Subscriber<DetectedPersons> subscriber_upperbody(n, topic_upperbody.c_str(), 1); subscriber_upperbody.unsubscribe();
+    message_filters::Subscriber<DetectedPersons> subscriber_detections(n, topic_detections.c_str(), 1); subscriber_detections.unsubscribe();
     message_filters::Subscriber<VisualOdometry> subscriber_vo(n, topic_vo.c_str(), 1); subscriber_vo.unsubscribe();
 
     ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
                                                        boost::ref(subscriber_camera_info),
                                                        boost::ref(subscriber_gp),
-                                                       boost::ref(subscriber_groundHOG),
-                                                       boost::ref(subscriber_upperbody),
+                                                       boost::ref(subscriber_detections),
                                                        boost::ref(subscriber_vo),
                                                        boost::ref(subscriber_color),
                                                        boost::ref(it));
     image_transport::SubscriberStatusCallback image_cb = boost::bind(&connectCallback,
                                                                      boost::ref(subscriber_camera_info),
                                                                      boost::ref(subscriber_gp),
-                                                                     boost::ref(subscriber_groundHOG),
-                                                                     boost::ref(subscriber_upperbody),
+                                                                     boost::ref(subscriber_detections),
                                                                      boost::ref(subscriber_vo),
                                                                      boost::ref(subscriber_color),
                                                                      boost::ref(it));
@@ -872,22 +872,6 @@ int main(int argc, char **argv)
     ///////////////////////////////////////////////////////////////////////////////////
     //Registering callback
     ///////////////////////////////////////////////////////////////////////////////////
-    // With groundHOG
-    /*sync_policies::ApproximateTime<Image, CameraInfo, GroundPlane,
-            DetectedPersons, DetectedPersons, VisualOdometry> MySyncPolicyHOG(queue_size); //The real queue size for synchronisation is set here.
-    MySyncPolicyHOG.setAgePenalty(1000); //set high age penalty to publish older data faster even if it might not be correctly synchronized.
-
-    const sync_policies::ApproximateTime<Image, CameraInfo, GroundPlane,
-            DetectedPersons, DetectedPersons, VisualOdometry> MyConstSyncPolicyHOG = MySyncPolicyHOG;
-
-    Synchronizer< sync_policies::ApproximateTime<Image, CameraInfo, GroundPlane,
-            DetectedPersons, DetectedPersons, VisualOdometry> >
-            syncHOG(MyConstSyncPolicyHOG, subscriber_color, subscriber_camera_info, subscriber_gp,
-                 subscriber_groundHOG, subscriber_upperbody, subscriber_vo);
-    if(strcmp(topic_groundHOG.c_str(),"") != 0)
-        syncHOG.registerCallback(boost::bind(&callbackWithHOG, _1, _2, _3, _4, _5, _6));*/
-    ///////////////////////////////////////////////////////////////////////////////////
-    // Without groundHOG
     sync_policies::ApproximateTime<Image, CameraInfo, GroundPlane,
             DetectedPersons, VisualOdometry> MySyncPolicy(queue_size); //The real queue size for synchronisation is set here.
     MySyncPolicy.setAgePenalty(1000); //set high age penalty to publish older data faster even if it might not be correctly synchronized.
@@ -898,9 +882,8 @@ int main(int argc, char **argv)
     Synchronizer< sync_policies::ApproximateTime<Image, CameraInfo, GroundPlane,
             DetectedPersons, VisualOdometry> >
             sync(MyConstSyncPolicy, subscriber_color, subscriber_camera_info, subscriber_gp,
-                 subscriber_upperbody, subscriber_vo);
-    if(strcmp(topic_groundHOG.c_str(),"") == 0)
-        sync.registerCallback(boost::bind(&callback, _1, _2, _3, _4, _5));
+                 subscriber_detections, subscriber_vo);
+    sync.registerCallback(boost::bind(&callback, _1, _2, _3, _4, _5));
     ///////////////////////////////////////////////////////////////////////////////////
 
     // Create a topic publisher

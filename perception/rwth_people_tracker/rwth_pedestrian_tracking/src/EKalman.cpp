@@ -184,7 +184,7 @@ bool EKalman::findObservation(Detections& det, int frame, int /*detPos*/, int /*
         //covariance(0,0) = sqrt(devObs(0,0));
         //covariance(1,1) = sqrt(devObs(2,2));
         covariance(0,0) = devObs(0,0);
-        covariance(1,1) = devObs(2,2);
+        covariance(1,1) = devObs(1,1);
 
         double covariance_det = covariance(0,0)*covariance(1,1)-covariance(1,0)*covariance(0,1);
 
@@ -198,7 +198,7 @@ bool EKalman::findObservation(Detections& det, int frame, int /*detPos*/, int /*
         p1(1) = m_xprio(1);
 
         p2(0) = succPoint(0);
-        p2(1) = succPoint(2);
+        p2(1) = succPoint(1);
 
         Vector<double> pDiff(2,0.0);
         pDiff = p1;
@@ -234,7 +234,8 @@ bool EKalman::findObservation(Detections& det, int frame, int /*detPos*/, int /*
         if(weight > Globals::kalmanObsMotionModelthresh /*&& colScore > Globals::kalmanObsColorModelthresh*/)
         {
             allInlierInOneFrame.pushBack(i);
-            weightOfAllInliersInOneFrame.pushBack(weight*colScore);
+            //weightOfAllInliersInOneFrame.pushBack(weight*colScore);
+            weightOfAllInliersInOneFrame.pushBack(weight);
         }
     }
 
@@ -290,7 +291,7 @@ bool EKalman::findObservation(Detections& det, int frame, int /*detPos*/, int /*
         //m_R(0,0) = sqrt(covMatrix(0,0));
         //m_R(1,1) = sqrt(covMatrix(2,2));
         m_R(0,0) = covMatrix(0,0);
-        m_R(1,1) = covMatrix(2,2);
+        m_R(1,1) = covMatrix(1,1);
 
         //m_R(2,2) = 0.2*0.2;
         //m_R(3,3) = 0.2*0.2;
@@ -304,7 +305,9 @@ Vector<double> EKalman::makeMeasurement()
     Vector<double> measurement;
 
     double xo = m_yPos(0);
-    double yo = m_yPos(2);
+    double yo = m_yPos(1);
+    //std::cout << "m_yPos:" << std::endl;
+    //m_yPos.show();
     //double xp = m_xprio(0);
     //double yp = m_xprio(1);
 
@@ -345,7 +348,7 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
 
     m_R.fill(0.0);
     m_R(0,0) = covMatrix(0,0);
-    m_R(1,1) = covMatrix(2,2);
+    m_R(1,1) = covMatrix(1,1);
 
     //m_R(2,2) = 0.2*0.2;
     //m_R(3,3) = 0.2*0.2;

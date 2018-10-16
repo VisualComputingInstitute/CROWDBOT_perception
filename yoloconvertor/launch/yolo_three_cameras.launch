@@ -157,8 +157,7 @@
     <include file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking.launch">
         <arg name="camera_namespace" value="$(arg camera_namespace)" />
         <arg name="ground_plane" value="/ground_plane_right" />
-        <arg name="ground_hog" value="" />
-        <arg name="upper_body_detections" value="yolofusion/detected_persons" />
+        <arg name="detections" value="yolofusion/detected_persons" />
         <arg name="visual_odometry" value="$(arg motion_parameters)" />
         <arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
         <arg name="pedestrian_image" value="/rwth_tracker/image" />

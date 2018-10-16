@@ -24,6 +24,8 @@ void Kalman::predict()
     // m_Prior = F*m_Post*F' + W*mQ*W'
     //***************************************************
 
+    //std::cout << "---pred KF---" << std::endl;
+
     Matrix<double> mQ = makeQ(m_xpost, m_dt);
 
     Matrix<double> mF = makeF(m_xpost, m_dt);
@@ -37,6 +39,10 @@ void Kalman::predict()
 
     //m_Pprio += mW*mQ*Transpose(mW);
     m_Pprio += mQ;
+
+    //m_xprio.show();
+    //m_Pprio.Show();
+    //td::cout << "---" << std::endl;
 
 }
 
@@ -77,6 +83,8 @@ void Kalman::update()
     // P_new = P_pred - K*H*P_pred;
     //***************************************************
 
+    //std::cout << "---update KF---" << std::endl;
+
     if(m_measurement_found)
     {
         Matrix<double> mR = makeR();
@@ -99,18 +107,31 @@ void Kalman::update()
 
         m_Ppost = m_Pprio - (K*mS*Transpose(K));
 
+        //m_measurement.show();
+
     }
     else
     {
         m_xpost = m_xprio;
         m_Ppost = m_Pprio;
+
+        //std::cout << "no meas." << std::endl;
     }
+
+    //m_xpost.show();
+    //m_Ppost.Show();
+
+    //std::cout << "---" << std::endl;
 
 }
 
 void Kalman::init(Vector<double> xInit, Matrix<double> Pinit, double dt)
 {
+    //std::cout << "---init KF---" << std::endl;
     m_xpost = xInit;
     m_Ppost = Pinit;
     m_dt = dt;
+    //xInit.show();
+    //Pinit.Show();
+    //std::cout << "---" << std::endl;
 }

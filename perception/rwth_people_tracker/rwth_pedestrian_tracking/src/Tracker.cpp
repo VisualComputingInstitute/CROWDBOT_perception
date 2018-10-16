@@ -328,7 +328,7 @@ void Tracker::process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allD
 {
 
 //    Vector<double> camPos = cam.get_t();
-    allDet.addHOGdetOneFrame(foundDetInFrame, frame, im, cam/*, depthMap*/);
+    allDet.addDetsOneFrame(foundDetInFrame, frame, im, cam/*, depthMap*/);
 
     //*****************************************************************************************************
     HyposMDL.clearContent();
@@ -535,10 +535,6 @@ void Tracker::process_frame(Detections& det, Camera &cam, int t,  Vector< Hypo >
     Vector<int> extendUsedDet;
 
     extend_trajectories(HyposAll,  det, LTPmax, LTPmin, normfct, HypoExtended, extendUsedDet/*, cam*/);
-//    if(Globals::verbose){
-//        cout << "\33[36;40;1m" <<" Extended " << HypoExtended.getSize()
-//             << " trajectories" << "\33[0m" << endl;
-//    }
     ROS_DEBUG("\33[36;40;1m Extended %i trajectories\33[0m", HypoExtended.getSize());
 
     //        extendUsedDet.clearContent();
@@ -547,10 +543,6 @@ void Tracker::process_frame(Detections& det, Camera &cam, int t,  Vector< Hypo >
     //******************************************************************
 
     make_new_hypos(LTPmax, LTPmin, det, HypoNew, normfct, extendUsedDet);
-//    if(Globals::verbose){
-//        cout<< "\33[31;40;1m" << "     Created " << HypoNew.getSize()
-//            << " new Trajectories " << "\33[0m"  << endl;
-//    }
     ROS_DEBUG("\33[31;40;1m     Created %i new Trajectories \33[0m", HypoNew.getSize());
 
     HyposAll.clearContent();
@@ -597,17 +589,12 @@ void Tracker::process_frame(Detections& det, Camera &cam, int t,  Vector< Hypo >
     for(int i = 0; i < HyposMDL.getSize(); i++)
     {
         // skip terminated hypotheses
-
-
         if (HyposMDL(i).isTerminated()) continue;
         bTerminated = 0;
         // if the parent is known from trajectory extension
         if (HyposMDL(i).getParentID() > 0)
         {
             HyposMDL(i).setHypoID(HyposMDL(i).getParentID());
-//            if(Globals::verbose){
-//                printf("Continuing extended trajectory %d (%f - %f) \n", HyposMDL(i).getHypoID(), (1 - Globals::k2)*HyposMDL(i).getNW(), Globals::k2*HyposMDL(i).getScoreW());
-//            }
             ROS_DEBUG("Continuing extended trajectory %d (%f - %f) \n", HyposMDL(i).getHypoID(), (1 - Globals::k2)*HyposMDL(i).getNW(), Globals::k2*HyposMDL(i).getScoreW());
             for (int j = 0; j < hypoStack.getSize(); j++)
             {
@@ -664,9 +651,6 @@ void Tracker::process_frame(Detections& det, Camera &cam, int t,  Vector< Hypo >
                     vRemoveHypos.pushBack(i);
                 }
 
-//                if(Globals::verbose){
-//                    printf("Replacing trajectory %d with new hypos (%f - %f) \n", HyposMDL(i).getHypoID(), (1 - Globals::k2)*HyposMDL(i).getNW(), Globals::k2*HyposMDL(i).getScoreW());
-//                }
                 ROS_DEBUG("Replacing trajectory %d with new hypos (%f - %f) \n", HyposMDL(i).getHypoID(), (1 - Globals::k2)*HyposMDL(i).getNW(), Globals::k2*HyposMDL(i).getScoreW());
             }
             else
@@ -676,9 +660,6 @@ void Tracker::process_frame(Detections& det, Camera &cam, int t,  Vector< Hypo >
                 lastHypoID +=1;
                 HyposMDL(i).setHypoID(lastHypoID);
                 hypoStack.pushBack(HyposMDL(i));
-//                if(Globals::verbose){
-//                    cout << "Creating new Trajectory " << HyposMDL(i).getHypoID() << " (" << (1 - Globals::k2)*HyposMDL(i).getNW() << " - " << Globals::k2*HyposMDL(i).getScoreW() << ") "<<  endl;
-//                }
                 ROS_DEBUG("Creating new Trajectory %i (%f - %f) ", HyposMDL(i).getHypoID(), (1 - Globals::k2)*HyposMDL(i).getNW(), Globals::k2*HyposMDL(i).getScoreW());
             }
         }
@@ -696,16 +677,10 @@ void Tracker::process_frame(Detections& det, Camera &cam, int t,  Vector< Hypo >
     {
         if(HyposMDL(i).isMoving())
         {
-//            if(Globals::verbose){
-//                cout << "\33[1;32;40;1m" << "Score of Hypo "<<  HyposMDL(i).getHypoID() << " is = " << HyposMDL(i).getScoreMDL() << " (pedestrian, moving, speed = " << HyposMDL(i).getSpeed() << " )" << "\33[0m" << endl;
-//            }
             ROS_DEBUG("\33[1;32;40;1m Score of Hypo %i is = %f (pedestrian, moving, speed = %f )\33[0m", HyposMDL(i).getHypoID(), HyposMDL(i).getScoreMDL(), HyposMDL(i).getSpeed());
         }
         else
         {
-//            if(Globals::verbose){
-//                cout << "\33[1;32;40;1m" << "Score of Hypo "<<  HyposMDL(i).getHypoID() << " is = " << HyposMDL(i).getScoreMDL() << " (pedestrian, static) " << "\33[0m" << endl;
-//            }
             ROS_DEBUG("\33[1;32;40;1m Score of Hypo %i is = %f (pedestrian, static) \33[0m", HyposMDL(i).getHypoID(), HyposMDL(i).getScoreMDL());
         }
     }
@@ -796,10 +771,6 @@ void Tracker::prepare_hypos(Vector<Hypo>& vHypos)
         }
     }
 
-//    if(Globals::verbose){
-//        cout << "Filtering out low-scoring hypothesis..." << endl;
-//        cout << "  compacted hypothesis set from " << nrHyposOldOut << " to " << vHypos.getSize() << endl;
-//    }
     ROS_DEBUG("Filtering out low-scoring hypothesis...");
     ROS_DEBUG("  compacted hypothesis set from %i to %i", nrHyposOldOut, vHypos.getSize());
 
@@ -867,10 +838,6 @@ void Tracker::remove_duplicates(Vector<Hypo>& hypos)
     }
 
     hypos = copyH;
-//    if(Globals::verbose){
-//        cout << "Removing duplicate hypos..." << endl;
-//        cout << "  compacted hypothesis set from " << nrHyposOld << " to " << hypos.getSize() << endl;
-//    }
     ROS_DEBUG("Removing duplicate hypos...");
     ROS_DEBUG("  compacted hypothesis set from %i to %i", nrHyposOld, hypos.getSize());
 }
@@ -1011,9 +978,6 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
 
         if(t - auxHypo->getLastSelected() > timeHorizon)
         {
-//            if(Globals::verbose){
-//                cout << "  DEBUG: Hypothesis " << i << " too old ==> dropped." << endl;
-//            }
             ROS_DEBUG("  DEBUG: Hypothesis %i too old ==> dropped.", i);
             continue;
         }
@@ -1287,10 +1251,9 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
 
 //        det.getBBox(endFrame, j, bbox);
         det.getPos3D(endFrame, j, pos3d);
-
         xInit.setSize(4);
         xInit(0) = pos3d(0);
-        xInit(1) = pos3d(2);
+        xInit(1) = pos3d(1);
         xInit(2) = vx_init;
         xInit(3) = vy_init;
 
@@ -1393,7 +1356,6 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
     int nFrames = 10; // number of Frames for further extropolation of Traj.
 
     if (numberInlier > 0 && Idx.getSize() > 1)
-        //        if (true)
     {
 
         hypo.setVY(vY);
@@ -1480,17 +1442,14 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
         Vector<double>  point(3, 0.0);
         Vector<double>  point4D(4,0.0);
         Vector<double>  oldX;
+        Vector<double>  pos3DStl;
 
-
-        Vector <double> pos3DStl;
-
-        //        cout << maxHole << endl;
         if(maxHole < maxHoleLen)
-            //        if(true)
         {
             int nrFrWithInl = Idx.getSize();
-            inlier = Idx(0).getInlier();
 
+            // average position of all inlier detections at start
+            inlier = Idx(0).getInlier();
             for( int i = 0; i < inlier.getSize(); i++)
             {
                 det.getPos3D(Idx(0).getFrame(), inlier(i), pos3DStl);
@@ -1510,8 +1469,8 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
             hypo.setStart(point4D);
             point.fill(0.0);
 
+            // average position of all inlier detections at end
             inlier = Idx(nrFrWithInl-1).getInlier();
-
             for( int i = 0; i < inlier.getSize(); i++)
             {
                 det.getPos3D(Idx(nrFrWithInl-1).getFrame(), inlier(i), pos3DStl);
@@ -1627,7 +1586,7 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
 
                         ort4D = cross(main4D, up4D); // cross product
                         main3D(0) = main4D(0);
-                        main3D(2) = main4D(1);
+                        main3D(1) = main4D(1);
 
                         //printf("main3d (=hypoDir):\n");
                         //main3D.show();
@@ -1887,48 +1846,31 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
                     }
                     else
                     {
-                        printf("hypo has no main direction => reject!");
                         hypo.setCategory(-1);
-//                        if(Globals::verbose){
-//                            cerr << "hypo has no main direction => reject!" << endl;
-//                        }
                         ROS_DEBUG("hypo has no main direction => reject!");
                     }
                 }
                 else
                 {
-                    printf("Hypo %i is not moving => reject!\n", hypo.getHypoID());
                     hypo.setSpeed(0);
                     hypo.setCategory(-1);
-//                    if(Globals::verbose){
-//                        cerr << "Hypo " << hypo.getHypoID()  << " is not moving => reject!" << endl;
-//                    }
                     ROS_DEBUG("Hypo %i is not moving => reject!", hypo.getHypoID());
                 }
             }
             else
             {
                 hypo.setCategory(-1);
-//                if(Globals::verbose){
-//                    cerr << " Hypo contains only single frame => reject! " << endl;
-//                }
                 ROS_DEBUG(" Hypo contains only single frame => reject! ");
             }
         }
         else
         {
             hypo.setCategory(-1);
-//            if(Globals::verbose){
-//                cerr << "Hypo " << hypo.getHypoID() << " had large holes : MaxHoleLength - " << maxHole << " => reject" << endl;
-//            }
             ROS_DEBUG("Hypo %i had large holes : MaxHoleLength - %i => reject", hypo.getHypoID(), maxHole);
         }
     }else
     {
         hypo.setCategory(-1);
-//        if(Globals::verbose){
-//            cout << "Size of Idx is 1, so no hypo can be computed" << endl;
-//        }
         ROS_DEBUG("Size of Idx is 1, so no hypo can be computed");
     }
 }
