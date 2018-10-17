@@ -72,6 +72,7 @@ Tracker tracker;
 tf::TransformListener* listener;
 int cnt = 0;
 unsigned long track_seq = 0;
+int numAllDets = 0;
 
 //CImgDisplay* main_disp;
 CImg<unsigned char> cim(1920,1080,1,3); //TODO: no hardcoded image dimensions
@@ -477,36 +478,47 @@ void callback(const ImageConstPtr &color,
               const DetectedPersons::ConstPtr &detections,
               const VisualOdometry::ConstPtr &vo)
 {
+    //std::cout << "==============>cnt: " << cnt << std::endl;
 
-    // ---update framerate + framerateVector---
+    // ---update framerate + framerateVector OR dt + dtVector---
     //printf("set new framerate to: %d / (%f-%f) \n", 1,color->header.stamp.toSec(),Globals::oldTimeForFPSUpdate);
     //printf("result: %d\n", (int) (1 / (color->header.stamp.toSec()-Globals::oldTimeForFPSUpdate)));
     // update framerate first after some tracking cycles, before use framerate from config file
     if (cnt>0) {
         double dt = color->header.stamp.toSec() - Globals::oldTimeForFPSUpdate;
-        double fps = 1.0 / dt;
+        double fps = 1.0 / dt; //replaced with direct dt as discretization of dt for lower framerates is too coarse
 
-        if(!std::isfinite(fps) || fps < 1) {
+        //framerate-based
+        /*if(!std::isfinite(fps) || fps < 1) {
             ROS_WARN("Abnormal frame rate detected: %f, dt: %f. Set to 1", fps, dt);
             Globals::frameRate = 1;
         }
         else {
             Globals::frameRate = (int) fps;
+        }*/
+
+        //dt-based
+        if(!std::isfinite(dt) || dt <= 0) {
+            ROS_WARN("Abnormal dt detected: %f. Set to 1.0", dt);
+            Globals::dt = 1.0;
         }
-        Globals::frameRateVector.swap();
-        Globals::frameRateVector.pushBack(Globals::frameRate);
-        Globals::frameRateVector.swap();
-        Globals::frameRateVector.resize(min(cnt+1,100));
+        else {
+            Globals::dt = dt;
+        }
+        Globals::dtVector.swap();
+        Globals::dtVector.pushBack(Globals::dt);
+        Globals::dtVector.swap();
+        Globals::dtVector.resize(min(cnt+1,1000));
     }
     else{
         //first cycle, setup frameRateVector
-        Globals::frameRateVector.setSize(1,0.0);
-        Globals::frameRateVector(0) = Globals::frameRate;
+        Globals::dtVector.setSize(1,0.0);
+        Globals::dtVector(0) = 1;//Globals::dt; //set to something, should be never used (there is no dt for the very first frame); convention: set Globals::nOffset to 1!
     }
     //printf("---\n");
     //Globals::frameRateVector.show();
     //printf("---\n");
-    // ---end update framerate+frameRatevector---
+    // ---end update framerate+frameRatevector OR dt + dtVector---
 
     ROS_DEBUG("Entered tracking callback");
     Globals::render_bbox3D = (pub_image.getNumSubscribers() > 0) || (Globals::save_for_eval);
@@ -625,8 +637,10 @@ void callback(const ImageConstPtr &color,
         int curr_idx = trajPts.getSize()-1;
         Vector<Matrix<double> > C;
         hyposMDL(i).getStateCovMats(C);
-        //printf("C:\n");
+        //printf("C(curr_idx):\n");
         //C(curr_idx).Show();
+        //std::cout << "hypo " << hyposMDL(i).getHypoID() << " C size: " << C.getSize() << std::endl;
+
 
         // init one tracked person
         frame_msgs::TrackedPerson trackedPerson;
@@ -644,16 +658,14 @@ void callback(const ImageConstPtr &color,
         //printf("last:\n");
         //frameInlier(frameInlier.getSize()-1).showFrameInlier();
         Vector<int> currentInlier = frameInlier(frameInlier.getSize()-1).getInlier();
-        if (currentInlier(0) > 0){
+        if (frameInlier(frameInlier.getSize()-1).getFrame() == cnt){
             trackedPerson.is_matched = true;
+            trackedPerson.detection_id = currentInlier(0) + numAllDets; //current position in detVector + num of all (previous) dets = current DetID
         }
         else{
             trackedPerson.is_matched = false;
+            trackedPerson.detection_id = 0; //actually 0 is wrong, as detection 0 exist, better use -1, but detection_id is unsigned
         }
-        trackedPerson.is_matched = true; // FIXME: available for mht tracker, yet? probably with getIdx() = Inlier detections
-        // from kalman: !!det!!.getColorHist(frame, inl(0), newColHist); same with ID instead of colorhist? Look later...
-        trackedPerson.detection_id = 0; // FIXME: available for mht tracker, yet? can we get it from Idx??
-
         trackedPerson2d.track_id = hyposMDL(i).getHypoID();
         trackedPerson2d.person_height = hyposMDL(i).getHeight();
 
@@ -760,6 +772,8 @@ void callback(const ImageConstPtr &color,
     pub_tracked_persons.publish(trackedPersons);
     pub_tracked_persons_2d.publish(trackedPersons2d);
     Globals::oldTimeForFPSUpdate = color->header.stamp.toSec(); //ros::Time::now().toSec();
+    // number of detections over all Frames (for detID)
+    numAllDets += detections->detections.size();
     cnt++;
 }
 

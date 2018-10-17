@@ -23,7 +23,8 @@ double randdouble()
 EKalman::EKalman()
 {
     m_R.set_size(2, 2, 0.0);
-    m_dt = 1.0 / Globals::frameRate;
+    //m_dt = 1.0 / Globals::frameRate;
+    m_dt = Globals::dt;
     m_height = 1.7;
 }
 
@@ -331,6 +332,7 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
                             Vector<double>& vX, Vector<double>& vY, Volume<double>& hMean, Vector<Matrix<double> >& stateCovMats,
                             Vector<Volume<double> >& colHists)
 {
+    //ROS_INFO("Kalman down...\n");
     m_Up = false;
 
     det.getColorHist(frame, pointPos, m_colHist);
@@ -349,6 +351,7 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
     m_R.fill(0.0);
     m_R(0,0) = covMatrix(0,0);
     m_R(1,1) = covMatrix(1,1);
+    //m_R.Show();
 
     //m_R(2,2) = 0.2*0.2;
     //m_R(3,3) = 0.2*0.2;
@@ -361,15 +364,14 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
 
     for(int i = frame+1; i > t; i--)
     {
-        if(tLastSupport > Globals::accepted_frames_without_det)
-            break;
 
         //take framerate from past
         //printf("i: %d, frame: %d, t: %d\n", i,frame,t);
         //printf("1: take element frame+1-i (%d)\n", frame+1-i);
         //printf("currentFrameRateVector:\n");
         //Globals::frameRateVector.show();
-        m_dt = 1.0 / Globals::frameRateVector(frame+1-i);
+        //m_dt = 1.0 / Globals::frameRateVector(frame+1-i);
+        m_dt = Globals::dtVector(frame+1-i);
 
         predict();
         m_measurement_found = findObservation(det, i, pointPos, frame);
@@ -392,12 +394,13 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
         }
         else
         {
-            update();
-            //m_xpost(3) *= 0.8;
-            saveData(i-1);
             tLastSupport += 1;
+            // should check for last support here to allow for "hole-less" backwards search (accepted_frames_without_det=0)
+            if(tLastSupport > Globals::accepted_frames_without_det)
+                break;
+            update();
+            saveData(i-1);
         }
-
     }
 
     if(m_vX.getSize() > 1) {
@@ -449,6 +452,7 @@ void EKalman::runKalmanUp(Detections& det, int frame, int t, Matrix<double>& all
                           Vector<double>& vX, Vector<double>& vY, Volume<double>& hMean,  Vector<Matrix<double> >& stateCovMats, Volume<double>& colHistInit,
                           Vector<Volume<double> >& colHists, double yPosOfStartingPoint, Vector<double>& bbox)
 {
+    //ROS_INFO("Kalman up...\n");
     m_bbox = bbox;
     m_Up = true;
     int tLastSupport = 0;
@@ -462,7 +466,8 @@ void EKalman::runKalmanUp(Detections& det, int frame, int t, Matrix<double>& all
     {
         if(tLastSupport > Globals::maxHoleLen) break;
 
-        m_dt = 1.0 / Globals::frameRateVector(t-1-i);
+        // m_dt = 1.0 / Globals::frameRateVector(t-1-i);
+        m_dt = Globals::dtVector(t-1-i);
 
         predict();
 

@@ -110,8 +110,9 @@ public:
 
     // Detections
     static int frameRate;
+    static double dt;
     static double oldTimeForFPSUpdate;
-    static Vector< int > frameRateVector;
+    static Vector< double > dtVector;
 
     static bool cutDetectionsUsingDepth;
 

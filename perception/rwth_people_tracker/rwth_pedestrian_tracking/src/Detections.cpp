@@ -491,16 +491,16 @@ void Detections::addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & d
             //ROS_INFO("Covariance: ");
             //covariance.Show();
 
-            // DEBUG COVARIANCE:
-            covariance(0,0) = 0.1;
-            covariance(1,1) = 0.1;
-            covariance(2,2) = 0.1;
-            covariance(0,1) = 0;
-            covariance(0,2) = 0;
-            covariance(1,0) = 0;
-            covariance(1,2) = 0;
-            covariance(2,0) = 0;
-            covariance(2,1) = 0;
+            // covariance from detection message
+            covariance(0,0) = det->detections[i].pose.covariance[0]; //0.05;
+            covariance(1,1) = det->detections[i].pose.covariance[7];//0.05;
+            covariance(2,2) = det->detections[i].pose.covariance[14];//0.05;
+            covariance(0,1) = det->detections[i].pose.covariance[6];//0;
+            covariance(0,2) = det->detections[i].pose.covariance[12];//0;
+            covariance(1,0) = det->detections[i].pose.covariance[1];//0;
+            covariance(1,2) = det->detections[i].pose.covariance[13];//0;
+            covariance(2,0) = det->detections[i].pose.covariance[2];//0;
+            covariance(2,1) = det->detections[i].pose.covariance[8];//0;
             //covariance.Show();
 
             // DEBUG END

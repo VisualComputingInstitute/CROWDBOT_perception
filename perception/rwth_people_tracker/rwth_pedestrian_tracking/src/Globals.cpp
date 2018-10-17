@@ -101,8 +101,9 @@ bool Globals::cutDetectionsUsingDepth;
 
 // Kalman
 int Globals::frameRate;
+double Globals::dt;
 double Globals::oldTimeForFPSUpdate;
-Vector< int > Globals::frameRateVector;
+Vector< double > Globals::dtVector;
 
 // Camera
 double Globals::farPlane;

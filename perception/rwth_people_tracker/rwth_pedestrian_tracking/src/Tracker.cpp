@@ -1064,7 +1064,7 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
         auxHypo->getStateCovMats(stateCovMatsOld);
 
         EKalman kalman;
-        kalman.init(xInit, stateCovMatsOld(stateCovMatsOld.getSize()-1), 1.0/Globals::frameRate);
+        kalman.init(xInit, stateCovMatsOld(stateCovMatsOld.getSize()-1), Globals::dt);
         kalman.runKalmanUp(det, t-1, t, mAllXnewUp, vvIdxUp, vVXUp, vVYUp, volHMean,
                            stateCovMatsNew, colHistsOld(colHistsOld.getSize()-1), colHistsNew,
                            mXProj(3, mXProj.y_size()-1), bbox);
@@ -1258,7 +1258,7 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
         xInit(3) = vy_init;
 
         EKalman kalman;
-        kalman.init(xInit, PInit, 1.0/Globals::frameRate);
+        kalman.init(xInit, PInit, Globals::dt);
         kalman.runKalmanDown(det, endFrame, j, tmin, mAllXnewDown, vvIdxDown, vvXDown, vvYDown, volHMean, stateCovMats, colHists);
         //*********************************
         // swap data to make it consistent
@@ -1287,11 +1287,10 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
         Vector<double> bboxInit(4,0.0);
 
         EKalman kalmanBi;
-        kalmanBi.init(xInit, stateCovMats(0), 1.0/Globals::frameRate);
-        //kalmanBi.runKalmanUp(det, endFrame, j, tmin, mAllXnewDown, vvIdxDown, vRDown, vVDown, volHMean, stateCovMats, colHists);
-        kalmanBi.runKalmanUp(det, tmin-1, endFrame, mAllXnewDown, vvIdxDown, vvXDown, vvYDown, volHMean,
-                              stateCovMats, colHistsInit, colHists,
-                              xInit(1), bboxInit);
+        kalmanBi.init(xInit, stateCovMats(0), Globals::dt);
+        //start where above KalmanDown has stopped (at mAllXnewDown(2,0)-1)
+        kalmanBi.runKalmanUp(det, /*tmin-1*/mAllXnewDown(2,0)-1, endFrame, mAllXnewDown, vvIdxDown, vvXDown, vvYDown, volHMean,
+                              stateCovMats, colHistsInit, colHists, xInit(1), bboxInit);
         //*********************************
         // swap data to make it consistent
         //*********************************
@@ -1539,8 +1538,8 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
                     //assistant *= Globals::frameRateVector(j-1);
                     //printf("assistant*=frameRateVector(.):\n");
                     //assistant.show();
-                    avgSpeed(0) = assistant(0)*Globals::frameRateVector(j-1);
-                    avgSpeed(1) = assistant(1)*Globals::frameRateVector(j-1);
+                    avgSpeed(0) = assistant(0)*1.0/Globals::dtVector(j-1);
+                    avgSpeed(1) = assistant(1)*1.0/Globals::dtVector(j-1);
                     c++;
                 }
 

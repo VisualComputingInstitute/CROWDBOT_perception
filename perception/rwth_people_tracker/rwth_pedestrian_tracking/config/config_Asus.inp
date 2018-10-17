@@ -63,8 +63,8 @@ baseline = 120.168000
 #====================================
 # Number of Frames / offset
 #====================================
-numberFrames = 1000000
-nOffset = 0
+numberFrames = 100000
+nOffset = 1
 
 #====================================
 # Console output
@@ -117,7 +117,7 @@ pedSizeHCom = 1.7
 #====================================
 # History
 #====================================
-history = 5
+history = 10 # when looking backwards for new hypos (KF runs this far into past and back, as long as accepted_frames_without_det holds (see below)
 
 #========================
 # Pedestrians parameter
@@ -167,7 +167,7 @@ dSameIdThresh = 0.49
 #=========================
 # Thresholds for accepted and displayed hypotheses
 #=========================
-dTheta2 = 0.1
+dTheta2 = 0.5 # hard constraint: hypos with lower MDL_score are not included in MDL matrix!
 
 #=========================
 # Time ant for temporal decay
@@ -197,10 +197,10 @@ initPY = 0.5
 initPVX = 0.7
 initPVY = 0.7
 
-kalmanObsMotionModelthresh = 0.5
+kalmanObsMotionModelthresh = 0.1
 kalmanObsColorModelthresh = 0.5
 
-accepted_frames_without_det = 60
+accepted_frames_without_det = 0 # consecutive (!) frames without det, when looking backwards for new hypos!
 
 
 #=======GP-Estimation========================================================================================================================

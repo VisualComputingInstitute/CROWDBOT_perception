@@ -24,7 +24,7 @@ void Kalman::predict()
     // m_Prior = F*m_Post*F' + W*mQ*W'
     //***************************************************
 
-    //std::cout << "---pred KF---" << std::endl;
+    //std::cout << "---pred KF with dt: "<< m_dt << "---" << std::endl;
 
     Matrix<double> mQ = makeQ(m_xpost, m_dt);
 
@@ -83,10 +83,9 @@ void Kalman::update()
     // P_new = P_pred - K*H*P_pred;
     //***************************************************
 
-    //std::cout << "---update KF---" << std::endl;
-
     if(m_measurement_found)
     {
+        //std::cout << "---update KF with dt: " << m_dt << "---" << std::endl;
         Matrix<double> mR = makeR();
 
         Matrix<double> mH = makeH();
@@ -112,6 +111,7 @@ void Kalman::update()
     }
     else
     {
+        //std::cout << "---update KF with dt: " << m_dt << "--- (no meas)" << std::endl;
         m_xpost = m_xprio;
         m_Ppost = m_Pprio;
 
@@ -127,7 +127,7 @@ void Kalman::update()
 
 void Kalman::init(Vector<double> xInit, Matrix<double> Pinit, double dt)
 {
-    //std::cout << "---init KF---" << std::endl;
+    //std::cout << "---init KF with dt: " << m_dt << "---" << std::endl;
     m_xpost = xInit;
     m_Ppost = Pinit;
     m_dt = dt;
