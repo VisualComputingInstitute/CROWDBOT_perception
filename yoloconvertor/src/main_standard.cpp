@@ -16,7 +16,6 @@
 
 #include <cv_bridge/cv_bridge.h>
 
-#include <rwth_perception_people_msgs/GroundHOGDetections.h>
 #include <rwth_perception_people_msgs/GroundPlane.h>
 #include <darknet_ros_msgs/BoundingBox.h>
 #include <darknet_ros_msgs/BoundingBoxes.h>
@@ -45,6 +44,8 @@ double worldScale; // for computing 3D positions from BBoxes
 int detection_id_increment, detection_id_offset, current_detection_id; // added for multi-sensor use in SPENCER
 double pose_variance; // used in output frame_msgs::DetectedPerson.pose.covariance
 
+const double eps(1e-5);
+
 
 void getRay(const Matrix<double>& K, const Vector<double>& x, Vector<double>& ray1, Vector<double>& ray2)
 {
@@ -56,7 +57,7 @@ void getRay(const Matrix<double>& K, const Vector<double>& x, Vector<double>& ra
     Matrix<double> rot = Eye<double>(3);
     rot *= Kinv;
     ray2 = rot * x;
-    //ray2 += ray1;
+    ray2 += ray1;
 }
 
 void intersectPlane(const Vector<double>& gp, double gpd, const Vector<double>& ray1, const Vector<double>& ray2, Vector<double>& point)
@@ -106,35 +107,11 @@ void calc3DPosFromBBox(const Matrix<double>& K, const Vector<double>& GPN_, doub
 void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoConstPtr &camera_info,
                               const GroundPlaneConstPtr &gp, const ImageConstPtr &depth, const CameraInfoConstPtr &dep_info)
 {
-    //    ROS_INFO("Entered yolo-convert callback");
-
-
-    // Generate base camera
-    //Matrix<float> R = Eye<float>(3);
-    //Vector<float> t(3, 0.0);
-
     // Get GP
     Vector<double> GPN(3, (double*) &gp->n[0]);
-    double GPd = ((double) gp->d)*(-1000.0); // GPd = -958.475;
+    double GPd = ((double) gp->d); // GPd = -958.475;
     Matrix<double> K(3,3, (double*)&camera_info->K[0]);
     Matrix<double> K_d(3,3, (double*)&dep_info->K[0]);
-
-    // NOTE: Using 0 1 0 does not work, apparently due to numerical problems in libCudaHOG (E(1,1) gets zero when solving quadratic form)
-    //Vector<float> float_GPN(3);
-    //float_GPN(0) = -0.0123896; //-float(GPN(0));
-    //float_GPN(1) = 0.999417; //-float(GPN(1)); // swapped with z by Timm
-    //float_GPN(2) = 0.0317988; //-float(GPN(2));
-
-    //float float_GPd = (float) GPd;
-    //Matrix<float> float_K(3,3);
-    //float_K(0,0) = K(0,0); float_K(1,0) = K(1,0); float_K(2,0) = K(2,0);
-    //float_K(1,1) = K(1,1); float_K(0,1) = K(0,1); float_K(2,1) = K(2,1);
-    //float_K(2,2) = K(2,2); float_K(0,2) = K(0,2); float_K(1,2) = K(1,2);
-
-    //ROS_WARN("Ground plane: %.2f %.2f %.2f d=%.3f", float_GPN(0), float_GPN(1), float_GPN(2), float_GPd);
-
-
-
 
     //
     // Now create 3D coordinates for SPENCER DetectedPersons msg
@@ -144,14 +121,15 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
         detected_persons.header = boxes->image_header;
 
         //debug image
-        /*QImage image_rgb = QImage(&depth->data[0], depth->width, depth->height, depth->step, QImage::Format_RGB888).copy();
-        QPainter painter(&image_rgb);
-        QColor qColor;
-        qColor.setRgb(255, 255, 255);
-        QPen pen;
-        pen.setColor(qColor);
-        pen.setWidth(120.0);*/
-        //debugend
+        //convert depth to rgb image for display
+        cv_bridge::CvImagePtr cv_depth_ptr(cv_bridge::toCvCopy(depth,"32FC1"));
+        img_depth_ = cv_depth_ptr->image;
+        cv::Mat tmp_depth_mat;
+        img_depth_.cv::Mat::convertTo(tmp_depth_mat,CV_8U);
+        //cv::Mat depth_mat_rgb;
+        //cv::cvtColor(tmp_depth_mat,depth_mat_rgb,CV_GRAY2RGB);
+        //cout<< "depth now image coding "<< depth_mat_rgb.type()<<endl;  //cv8uc3
+
 
         for(unsigned int i=0;i<(boxes->bounding_boxes.size());i++)
         {
@@ -160,48 +138,57 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
             float y = curBox.ymin;
             float width = curBox.xmax - x;
             float height = curBox.ymax - y;
-           
-            //Vector<double> normal(3, 0.0);
-            //normal(0) = GPN(0);
-            //normal(1) = GPN(1);
-            //normal(2) = GPN(2);
 
             Vector<double> pos3D;
             calc3DPosFromBBox(K, GPN, GPd, x, y, width, height, worldScale, pos3D);
 
             // get readings in rectanular region from (registered!) depth image
 
-            // Get depth image as matrix
-            cv_depth_ptr = cv_bridge::toCvCopy(depth, "32FC1");
-            //if (depth->encoding == "16UC1" || depth->encoding == "32FC1") {
-                //cv_depth_ptr->image *= 0.001;
-            //}
-            img_depth_ = cv_depth_ptr->image;
-
-            const int len = (int)width*(int)height;
-            vector<double> vector_depth(len);
-            for (int r = y ; r < y+(int)height ; r++){
-                for (int c = x ; c < x+(int)width ; c++) {
-                    //std::cout << " " << (c-x)*(int)width+(r-y) << " " << std::endl;
-                    //std::cout << " " << img_depth_.at<float>(r,c) << std::endl;
-                    vector_depth[(c-x)*(int)height+(r-y)] = img_depth_.at<float>(r,c);
-                }
+            // only take 50% box.
+            vector<double> vector_depth;
+            vector_depth.clear();
+            vector_depth.reserve(width*height/2);
+            int x_50 = (int)(x+0.25*width);
+            int y_50 = (int)(y+0.25*height);
+            int height_50 = (int)(0.50*height);
+            int width_50 = (int)(0.50*width);
+            for (int r = y_50 ; r < y_50 + height_50 ; r++){
+                for (int c = x_50 ; c < x_50 + width_50 ; c++) {
+                    double depth_value = img_depth_.at<float>(r,c);
+                    if((!isfinite(depth_value))||(abs(depth_value)<=eps*abs(depth_value) )) // check if 0 or inf
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        vector_depth.push_back(depth_value);
+                    }
+               }
+            }
+            int len = vector_depth.size();
+            float good_pixel_ratio = (float)len / (height_50*width_50);
+            bool use_depth_image = true;
+            if(good_pixel_ratio <= 0.25 )  // if only less than 25% pixel is good( not 0 or NaN), use ray casting
+            {
+                use_depth_image = false;
+            }
+            else{
+                use_depth_image = true;
             }
             nth_element( vector_depth.begin(), vector_depth.begin()+len/2,vector_depth.end() );
-            double med_depth = vector_depth[len/2];
-            //std::cout << "Median: " << med_depth << std::endl;
+            double med_depth_50 = vector_depth[len/2];
 
             // DetectedPerson for SPENCER
             frame_msgs::DetectedPerson detected_person;
             detected_person.modality = frame_msgs::DetectedPerson::MODALITY_GENERIC_MONOCULAR_VISION;
             // use the probability from yolo detector
             detected_person.confidence = curBox.probability;
-            detected_person.pose.pose.position.x = -pos3D(0);
-            detected_person.pose.pose.position.y = -pos3D(1);
-            if(med_depth<99999 && med_depth > 0){
-                detected_person.pose.pose.position.z = min(med_depth,-pos3D(2));
+            detected_person.pose.pose.position.x = pos3D(0);
+            detected_person.pose.pose.position.y = pos3D(1);
+            if(med_depth_50 < 9999 && med_depth_50 > eps && use_depth_image){
+                detected_person.pose.pose.position.z = med_depth_50;//min(med_depth_50, pos3D(2));
             }else{
-                detected_person.pose.pose.position.z = -pos3D(2);
+                detected_person.pose.pose.position.z = pos3D(2);
             }
             detected_person.pose.pose.orientation.w = 1.0;
 
@@ -222,53 +209,10 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
             detected_person.bbox_h = height;
 
             detected_persons.detections.push_back(detected_person);
-
-            //debug
-            // Calculate centres and corner points of bounding boxes in IR, world and RGB
-            /*double depth_value = detected_person.pose.pose.position.z;
-            double w_rgb = width;
-            double h_rgb = height;
-            double x_left_rgb = x;
-            double y_top_rgb = y;
-            double x_right_rgb = x_left_rgb + w_rgb;
-            double y_down_rgb = y_top_rgb + h_rgb;
-
-            double x_left_world = depth_value*((x_left_rgb-K(2,0))/K(0,0));
-            double y_top_world = depth_value*((y_top_rgb-K(2,1))/K(1,1));
-            double x_right_world = depth_value*((x_right_rgb-K(2,0))/K(0,0));
-            double y_down_world = depth_value*((y_down_rgb-K(2,1))/K(1,1));
-
-            //TODO: R/t?
-            double x_left_d = (x_left_world * K_d(0,0) / depth_value) + K_d(2,0);
-            double y_top_d = (y_top_world * K_d(1,1) / depth_value) + K_d(2,1);
-            double x_right_d = (x_right_world * K_d(0,0) / depth_value) + K_d(2,0);
-            double y_down_d = (y_down_world * K_d(1,1) / depth_value) + K_d(2,1);
-            double w_d = x_right_d - x_left_d;
-            double h_d = y_down_d - y_top_d;
-
-            float x_d = x_left_d;
-            float y_d = y_top_d;
-            painter.drawLine(x_d,y_d, x_d+w_d,y_d);
-            painter.drawLine(x_d,y_d, x_d,y_d+h_d);
-            painter.drawLine(x_d+w_d,y_d, x_d+w_d,y_d+h_d);
-            painter.drawLine(x_d,y_d+h_d, x_d+w_d,y_d+h_d);*/
-            //debugend
         }
 
         // Publish
         pub_detected_persons.publish(detected_persons);
-
-        //debug
-        /*const uchar *bits = image_rgb.constBits();
-        sensor_msgs::Image sensor_image;
-        sensor_image.header = depth->header;
-        sensor_image.height = image_rgb.height();
-        sensor_image.width  = image_rgb.width();
-        sensor_image.step   = image_rgb.bytesPerLine();
-        sensor_image.data   = vector<uchar>(bits, bits + image_rgb.byteCount());
-        sensor_image.encoding = "rgb8";//depth->encoding;
-        pub_result_image.publish(sensor_image);*/
-        //debugend
     }
 }
 
@@ -351,17 +295,16 @@ int main(int argc, char **argv)
     // Name the topic, message queue, callback function with class name, and object containing callback function.
     // Set queue size to 1 because generating a queue here will only pile up images and delay the output by the amount of queued images
     ros::Subscriber sub_message; //Subscribers have to be defined out of the if scope to have affect.
-    Subscriber<GroundPlane> subscriber_ground_plane(n, ground_plane.c_str(), 1); subscriber_ground_plane.unsubscribe();
+    Subscriber<GroundPlane> subscriber_ground_plane(n, ground_plane.c_str(), 10); subscriber_ground_plane.unsubscribe();
     
 //    image_transport::SubscriberFilter subscriber_color;
 //    subscriber_color.subscribe(it, image_color.c_str(), 1); subscriber_color.unsubscribe();
-    Subscriber<CameraInfo> subscriber_camera_info(n, camera_info.c_str(), 1); subscriber_camera_info.unsubscribe();
-    Subscriber<BoundingBoxes> subscriber_bounding_boxes(n,boundingboxes.c_str(),1); subscriber_bounding_boxes.unsubscribe();
+    Subscriber<CameraInfo> subscriber_camera_info(n, camera_info.c_str(), 10); subscriber_camera_info.unsubscribe();
+    Subscriber<BoundingBoxes> subscriber_bounding_boxes(n,boundingboxes.c_str(),10); subscriber_bounding_boxes.unsubscribe();
     image_transport::SubscriberFilter subscriber_depth;
     subscriber_depth.subscribe(it, topic_depth_image.c_str(),1); subscriber_depth.unsubscribe();
-    message_filters::Subscriber<CameraInfo> subscriber_depth_info(n, topic_depth_info.c_str(), 1); subscriber_depth_info.unsubscribe();
+    message_filters::Subscriber<CameraInfo> subscriber_depth_info(n, topic_depth_info.c_str(), 10); subscriber_depth_info.unsubscribe();
 
-    // Neng, why we need this line? what is this for? also connectCallback
     ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
                                                        boost::ref(sub_message),
                                                        boost::ref(n),
@@ -373,22 +316,10 @@ int main(int argc, char **argv)
                                                        boost::ref(subscriber_depth_info),
                                                        boost::ref(it));
 
-    /*image_transport::SubscriberStatusCallback image_cb = boost::bind(&connectCallback,
-                                                                     boost::ref(sub_message),
-                                                                     boost::ref(n),
-                                                                     ground_plane,
-                                                                     boost::ref(subscriber_ground_plane),
-                                                                     boost::ref(subscriber_camera_info),
-                                                                     boost::ref(subscriber_bounding_boxes),
-                                                                     boost::ref(subscriber_depth),
-                                                                     boost::ref(subscriber_depth_info),
-                                                                     boost::ref(it));*/
-
 
 
     //The real queue size for synchronisation is set here.
     sync_policies::ApproximateTime<BoundingBoxes, CameraInfo, GroundPlane, Image, CameraInfo> MySyncPolicy(queue_size);
-    MySyncPolicy.setAgePenalty(1000); //set high age penalty to publish older data faster even if it might not be correctly synchronized.
 
     const sync_policies::ApproximateTime<BoundingBoxes, CameraInfo, GroundPlane, Image, CameraInfo> MyConstSyncPolicy = MySyncPolicy;
     Synchronizer< sync_policies::ApproximateTime<BoundingBoxes, CameraInfo, GroundPlane, Image, CameraInfo> > sync(MyConstSyncPolicy,
@@ -409,17 +340,7 @@ int main(int argc, char **argv)
     private_node_handle_.param("detected_persons", pub_topic_detected_persons, string("/detected_persons"));
     pub_detected_persons = n.advertise<frame_msgs::DetectedPersons>(pub_topic_detected_persons, 10, con_cb, con_cb);
 
-    //debug image publisher
-    //private_node_handle_.param("yolo_depth_image", pub_topic_result_image, string("/yolo_depth_image"));
-    //pub_result_image = it.advertise(pub_topic_result_image.c_str(), 1, image_cb, image_cb);
 
-    //double min_expected_frequency, max_expected_frequency;
-    //private_node_handle_.param("min_expected_frequency", min_expected_frequency, 8.0);
-    //private_node_handle_.param("max_expected_frequency", max_expected_frequency, 100.0);
-    
-    /*pub_detected_persons.setExpectedFrequency(min_expected_frequency, max_expected_frequency);
-    pub_detected_persons.setMaximumTimestampOffset(0.3, 0.1);
-    pub_detected_persons.finalizeSetup();*/
 
     ros::spin();
 
