@@ -49,9 +49,9 @@ render_tracking_numbers = true  #! renders track IDs on output image
 # MDL parameters for trajectories
 #========================
 k1 = 0.1  #! "counterweight": min. support for a hypothesis
-k2 = 0.7  #! balance factor between only counting on "detection support + hole penalty" (k=0) vs. "detection scores" (k=1)
-k3 = 1.0  #! overlap penalty (simple factor for overlap3D)
-k4 = 0.0  #! temporal decay for recently unsupported tracks (if >0: this value gets added as exp(-(frame_diff/k4)) on k1, i.e., tracks with older detection support, need more support); if set to 0 all hypothesis need the same min. support k1
+k2 = 0.5  #! balance factor between only counting on "detection support + hole penalty" (k=0) vs. "detection scores" (k=1)
+k3 = 20.0  #! overlap penalty (simple factor for overlap3D)
+k4 = 2.0  #! temporal decay for recently unsupported tracks (if >0: this value gets added as exp(-(frame_diff/k4)) on k1, i.e., tracks with older detection support, need less support); if set to 0 all hypothesis need the same min. support k1
 
 #=======================
 # Threshold for distinction between static/moving object
@@ -78,9 +78,9 @@ dTau = 2 #! regulates the impact-factor for detections of the past to the weight
 #==========================
 # Time horizon for event cone search
 #==========================
-coneTimeHorizon = 200 #! number of frames a hypothesis needs to be useless (not selected) before getting dropped
+coneTimeHorizon = 210 #! number of frames a hypothesis needs to be useless (not selected) before getting dropped
 maxHoleLen = 60 #! allowed number of (consecutive) frames without detection support, when running Kalman up (+extending tracks)
-dHolePenalty = 0.3
+dHolePenalty = 0.5 #! simple factor to penalize holes (frames without detection support)
 
 #==============================
 # Kalman Filter
@@ -98,7 +98,7 @@ initPY = 0.5 #!
 initPVX = 0.7 #!
 initPVY = 0.7 #!
 
-kalmanObsMotionModelthresh = 0.01 #! threshold deciding if a detection is counted as inlier based on motion model (covariance of Kalman Filter)
+kalmanObsMotionModelthresh = 0.1 #! threshold deciding if a detection is counted as inlier based on motion model (covariance of Kalman Filter)
 kalmanObsColorModelthresh = 0.5 #! threshold deciding if a detection is counted as inlier based on appearance model (color histogram distance)
 
 accepted_frames_without_det = 0 #! consecutive (!) frames without detections, when looking backwards for new hypos (running Kalman down)

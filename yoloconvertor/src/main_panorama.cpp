@@ -169,7 +169,7 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
 
     // Get GP
     Vector<double> GPN(3, (double*) &gp->n[0]);
-    double GPd = ((double) gp->d)*(-1000.0); // GPd = -958.475;
+    double GPd = ((double) gp->d);
 
     //
     // Now create 3D coordinates for SPENCER DetectedPersons msg
@@ -204,10 +204,10 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
             detected_person.modality = frame_msgs::DetectedPerson::MODALITY_GENERIC_MONOCULAR_VISION;
             // use the probability from yolo detector
             detected_person.confidence = curBox.probability;
-            detected_person.pose.pose.position.x = -pos3D(0);
-            detected_person.pose.pose.position.y = -pos3D(1);
+            detected_person.pose.pose.position.x = pos3D(0);
+            detected_person.pose.pose.position.y = pos3D(1);
 
-            detected_person.pose.pose.position.z = -pos3D(2);
+            detected_person.pose.pose.position.z = pos3D(2);
             detected_person.pose.pose.orientation.w = 1.0;
 
 

@@ -17,7 +17,7 @@
     <!-- general yoloconvertor_panorama arg-->
     <arg name="detection_id_offset" default="0"/>
     <arg name="detection_id_increment" default="1"/>
-    <arg name="world_scale" default="0.001"/>
+    <arg name="world_scale" default="1.0"/>
     <arg name="queue_size" default="10" />
 
     <!-- yolofusion -->

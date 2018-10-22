@@ -302,9 +302,6 @@ void MDL::build_mdl_matrix(Matrix<double>& Q, Vector<Hypo>& hypos, int t, double
 
             Q(i, j) = - Sinter / 2.0;
             Q(j, i) = Q(i, j);
-
-            std::cout << "Q(" << i << "," << j << "): " << Q(i,j) << std::endl;
-            std::cout << "overlap3D: " << overlap3D << std::endl;
         }
     }
 }
