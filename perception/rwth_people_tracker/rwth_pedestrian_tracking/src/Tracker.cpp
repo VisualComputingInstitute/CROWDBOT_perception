@@ -921,8 +921,9 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
     extendUsedDet.clearContent();
     Vector<int> extendedUseTemp;
 
-    Vector<double> Lmax(3, Globals::pedSizeWCom);
-    Lmax(2) = Globals::pedSizeHCom;
+    // not used here, yet
+    //Vector<double> Lmax(3, Globals::pedSizeWCom);
+    //Lmax(2) = Globals::pedSizeHCom;
 
     double dLastT;
     int nrFramesWithInlier;

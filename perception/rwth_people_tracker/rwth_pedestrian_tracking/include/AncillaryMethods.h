@@ -46,7 +46,6 @@ public:
     static Vector<double> PlaneToWorld(const Camera &camera, const Vector<double> &plane_in_camera);
     static Vector<double> PlaneToCam(const Camera &camera);
 
-    static Matrix<double> GetDepthLibelas(int frame_nr, const Camera &camera, double baseline);
     static Camera GetCameraOrigin(const Camera &camWorld);
 
     static double  MedianOfMatrixRejectZero(const Matrix<double> &mat, int start_row, int end_row, int start_col, int end_col);

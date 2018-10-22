@@ -327,125 +327,6 @@ double Detections::get_mediandepth_inradius(Vector<double>& bbox, int radius, Ma
     }
 }
 
-bool Detections::improvingBBoxAlignment_libelas(Vector<double>& vbbox, double var, Camera camera, Matrix<double>& depthMap)
-{
-    //======================================
-    // Increase width and height of the bbox
-    //======================================
-    double incHeight = 0.2;
-
-    vbbox(1) -= floor((double)(incHeight*vbbox(3))/2.0);
-    vbbox(3) += floor(incHeight*vbbox(3));
-
-    //================================================
-    // Get Camera Parameters
-    //================================================
-
-    Matrix<double> intrinsic = camera.get_K();
-
-    //================================================
-    // Find the middle of the bbox and find a median
-    // in radius of the middle.
-    //================================================
-    int k = 0;
-
-    vbbox(1) = vbbox(1) < 0 ? 0 : vbbox(1);
-    vbbox(0) = vbbox(0) < 0 ? 0 : vbbox(0);
-    vbbox(3) = vbbox(1)+vbbox(3) >= Globals::dImHeight - 1 ? vbbox(3) - (vbbox(1)+vbbox(3) - Globals::dImHeight) - 1 : vbbox(3);
-    vbbox(2) = vbbox(0)+vbbox(2) >= Globals::dImWidth - 1 ? vbbox(2) - (vbbox(0)+vbbox(2) - Globals::dImWidth) - 1 : vbbox(2);
-
-    std::vector< double > medv(((vbbox(2)+1)/2) * ((vbbox(3)+1)/2));
-    for (int y = vbbox(1); y < vbbox(1) + vbbox(3); y += 2) {
-        for (int x = vbbox(0); x < vbbox(0) + vbbox(2); x += 2) {
-            if (depthMap(x, y) == 0 && depthMap(x, y) == Globals::farPlane) {
-                continue;
-            }
-            medv[k++] = depthMap(x, y);
-        }
-    }
-
-    if(k < 10)
-    {
-        return false;
-    }
-
-    sort(medv.begin(), medv.begin() + k);
-    double medianDepth = medv[k / 2];
-
-    //================================================
-    // Get pos in 3D in Camera coordinate
-    //================================================
-
-    Vector<double> pos2D;
-    pos2D.pushBack(vbbox(0)+vbbox(2)/2.0);
-    pos2D.pushBack(vbbox(1)+vbbox(3)/2.0);
-    pos2D.pushBack(1);
-
-    Vector<double> pos3D(3);
-    pos3D(0) = medianDepth*((pos2D(0)-intrinsic(2,0))/intrinsic(0,0));
-    pos3D(1) = medianDepth*((pos2D(1)-intrinsic(2,1))/intrinsic(1,1));
-    pos3D(2) = medianDepth;
-
-    //====================================================
-    // Project the 3D Point on the ground plane
-    //====================================================
-
-    camera.ProjectToGP(pos3D, Globals::WORLD_SCALE, pos3D);
-
-    //====================================================
-    // Using the media depth find the head of the person
-    // more exactly find the new Y position of the bbox
-    //====================================================
-
-    vbbox(1) = vbbox(1) < 2 ? 2 : vbbox(1);
-    vbbox(0) = vbbox(0) < 2 ? 2 : vbbox(0);
-    vbbox(3) = vbbox(1)+vbbox(3) >= Globals::dImHeight - 3 ? vbbox(3) - (vbbox(1)+vbbox(3) - Globals::dImHeight) - 3 : vbbox(3);
-    vbbox(2) = vbbox(0)+vbbox(2) >= Globals::dImWidth - 3 ? vbbox(2) - (vbbox(0)+vbbox(2) - Globals::dImWidth) - 3 : vbbox(2);
-
-    if(vbbox(1)+vbbox(3) < 0)
-        return  false;
-
-    if(vbbox(0)+vbbox(2) < 0)
-        return false;
-
-    int newYAbove = -1;
-    int c = 5;
-
-    int j = vbbox(0) + vbbox(2)/2.0;
-    int i = vbbox(1);
-
-    for(; i  < vbbox(1)+vbbox(3)/2.0; i++)
-    {
-        if (c == 0){break;}
-        // Check also the neighboors
-        if(depthMap(j,i) < medianDepth + var || depthMap(j-2,i) < medianDepth + var ||  depthMap(j+2,i) < medianDepth + var)
-        {
-            c -= 1;
-            newYAbove = i;
-        }
-    }
-
-    if(newYAbove < 0)
-    {
-        return false;
-    }
-    //=====================================================
-    // As next step we will have to find the bottom pos in
-    // 2D using the backprojection form 3D
-    //=====================================================
-
-    Vector<double> p1;
-    camera.WorldToImage(pos3D, Globals::WORLD_SCALE, p1);
-
-    int newYBottom = floor(p1(1));
-
-    vbbox(1) = newYAbove-5;
-    vbbox(3) = newYBottom - vbbox(1);
-
-    return true;
-
-}
-
 #ifdef cim_v
 void Detections::addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & det, int frame, CImg<unsigned char>& imageLeft, Camera cam/*, Matrix<double>& depthMap*/)
 {
@@ -617,10 +498,6 @@ void Detections::compute3DPosition(Vector<double>& detection, Camera cam)
     if(exp(-((Globals::dObjHeight - f_height)*(Globals::dObjHeight - f_height)) /
            (2 * Globals::dObjHVar * Globals::dObjHVar))  < Globals::probHeight || distance < 0)
     {
-//        if(Globals::verbose)
-//        {
-//            cout << "Height Test Failed! " << f_height << endl;
-//        }
         ROS_DEBUG("Height Test Failed! %f", f_height);
         detection(0) *= -1;
     }

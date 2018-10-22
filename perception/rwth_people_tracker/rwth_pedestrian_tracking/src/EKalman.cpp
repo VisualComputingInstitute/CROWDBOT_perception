@@ -240,7 +240,7 @@ bool EKalman::findObservation(Detections& det, int frame, int /*detPos*/, int /*
         }
     }
 
-
+    // find the inlier with the maximum weight
     if(allInlierInOneFrame.getSize()>0)
     {
         pair<double, int> maxPosValue = weightOfAllInliersInOneFrame.maxim();
@@ -288,14 +288,8 @@ bool EKalman::findObservation(Detections& det, int frame, int /*detPos*/, int /*
         m_Idx.pushBack(newInlier);
 
         m_R.set_size(2,2, 0.0);
-        //FIXED: not take sqrt again
-        //m_R(0,0) = sqrt(covMatrix(0,0));
-        //m_R(1,1) = sqrt(covMatrix(2,2));
         m_R(0,0) = covMatrix(0,0);
         m_R(1,1) = covMatrix(1,1);
-
-        //m_R(2,2) = 0.2*0.2;
-        //m_R(3,3) = 0.2*0.2;
     }
 
     return m_measurement_found;

@@ -101,7 +101,6 @@ public:
     void get3Dcovmatrix(int frame, int pos, Matrix<double>& covariance);
 
     Vector<double> fromCamera2World(Vector<double> posInCamera, Camera cam);
-    bool improvingBBoxAlignment_libelas(Vector<double>& vbbox, double var, Camera camera, Matrix<double>& depthMap);
     Vector<double> projectPlaneToCam(Vector<double> p, Camera cam);
 
     double get_mediandepth_inradius(Vector<double>& bbox, int radius, Matrix<double>& depthMap, double var, double pOnGp);

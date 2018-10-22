@@ -87,10 +87,6 @@ void MDL::build_mdl_matrix(Matrix<double>& Q, Vector<Hypo>& hypos, int t, double
     //*******************************************************************
 
     Q.set_size(nrHypos, nrHypos, 0.0);
-//    if(Globals::verbose){
-//        cout << "MDL hypothesis selection" << endl;
-//        cout << "   Building up interaction matrix..." << endl;
-//    }
     ROS_DEBUG("MDL hypothesis selection");
     ROS_DEBUG("   Building up interaction matrix...");
 
@@ -103,7 +99,7 @@ void MDL::build_mdl_matrix(Matrix<double>& Q, Vector<Hypo>& hypos, int t, double
     double k_dur;
     Vector<double> vEnd;
 
-    if (k4 < 0) {
+    if (k4 <= 0) {
         for (int i = 0; i < nrHypos; i++) {
             nw = hypos(i).getNW();
             scoreW = hypos(i).getScoreW();
@@ -306,6 +302,9 @@ void MDL::build_mdl_matrix(Matrix<double>& Q, Vector<Hypo>& hypos, int t, double
 
             Q(i, j) = - Sinter / 2.0;
             Q(j, i) = Q(i, j);
+
+            std::cout << "Q(" << i << "," << j << "): " << Q(i,j) << std::endl;
+            std::cout << "overlap3D: " << overlap3D << std::endl;
         }
     }
 }
