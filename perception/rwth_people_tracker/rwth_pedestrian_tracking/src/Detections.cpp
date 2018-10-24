@@ -46,57 +46,6 @@ Detections::Detections(int x, const int flag)
 //    points3D_.setSize(Globals::numberFrames + Globals::nOffset);
 //    occBins_.setSize(Globals::numberFrames + Globals::nOffset);
 
-    //    if(Globals::WORLD_SCALE != 0.001)
-    //    {
-    //        camLCov = Camera("cameraL", 1.0, 1.0);
-    //        camRCov = Camera("cameraR", 1.0, 1.0);
-    //        Matrix<double> K = camRCov.getCameraInt();
-    //        Matrix<double> R = camRCov.getCameraRot();
-    //        Vector<double> p = camRCov.getCameraPos();
-    //        Vector<double> gp = camRCov.getGP();
-
-    //        p *= (0.001)*Globals::WORLD_SCALE;
-    //        camRCov = Camera(K, R, p, gp);
-    //    }
-    //    else
-    //    {
-    //double lK_array[] = {500.683300000, 0.000000000, 318.572500000,
-    //                     0.000000000, 500.252570000, 247.114520000,
-    //                     0.000000000, 0.000000000, 1.000000000};
-
-    double lK_array[] = {570.3422241210938, 0.0, 319.5,
-                         0.0, 570.3422241210938, 239.5,
-                         0.000000000, 0.000000000, 1.000000000};
-
-    Matrix<double> lK(3,3, lK_array);
-
-    Matrix<double> lR; lR = Eye<double>(3);
-    Vector<double> lp(3,0.0);
-    // Vector<double> lgp(0.00897055, -0.999531, -0.0292899, -964.274);
-    Vector<double> lgp(0.00897055, -0.999531, -0.0292899, -964.274);
-    camLCov = Camera(lK, lR, lp, lgp);
-
-    //double rK_array[] = {500.806960000, 0.000000000, 307.205730000,
-    //                     0.000000000, 500.394060000, 233.520640000,
-    //                     0.000000000, 0.000000000, 1.000000000};
-    double rK_array[] = {570.3422241210938, 0.0, 319.5,
-                         0.0, 570.3422241210938, 239.5,
-                         0.000000000, 0.000000000, 1.000000000};
-
-    Matrix<double> rK(3,3, rK_array);
-
-    //double rR_array[] = {0.994584465, -0.008733820, -0.103563804,
-    //                     0.008137584, 0.999947803, -0.006178313,
-    //                     0.103612359, 0.005302095, 0.994603623};
-    //Matrix<double> rR(3,3, rR_array);
-     
-    Matrix<double> rR; rR = Eye<double>(3);
-    Vector<double> rp(400.127285298, 2.724361699, 19.103868250);
-    Vector<double> rgp(0.00897055, -0.999531, -0.0292899, -964.274);
-    camRCov = Camera(rK, rR, rp, rgp);
-
-
-    //    }
 }
 
 

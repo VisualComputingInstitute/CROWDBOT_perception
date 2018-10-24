@@ -114,9 +114,6 @@ protected:
 //    Vector<Vector<Vector<Vector<double> > > > points3D_;
 //    Vector<Vector<Vector<Vector<int> > > > occBins_;
 
-    Camera camLCov;
-    Camera camRCov;
-
 //    int sizeOfDetVec;
     int offSet;
     int img_num, hypo_num, center_x, center_y, scale, categ, bbox, initscore,

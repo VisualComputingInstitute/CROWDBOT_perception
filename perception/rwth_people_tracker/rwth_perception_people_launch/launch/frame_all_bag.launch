@@ -12,6 +12,7 @@
     <arg name="rate" default="10.0"/>
     <arg name="base_footprint" default="/robot/BaseFrame" />
     <arg name="camera_frame" default="/hardware/depth/kinect2/ColorImageFrame" />
+    <arg name="world_frame" default="/robot/OdometryFrame" />
     <!-- detectors -->
     <arg name="upper_body" default="false"/>
     <arg name="hog" default="false"/>
@@ -51,7 +52,7 @@
     <!-- Ground Plane -->
     <include file="$(find rwth_ground_plane)/launch/ground_plane_tf_based_fixed.launch">
         <arg name="base_footprint" value="$(arg base_footprint)" />
-        <arg name="camera_frame" value="$(arg camera_frame)" />
+        <arg name="camera_frame" value="$(arg world_frame)" />
         <arg name="ground_plane" value="$(arg ground_plane)" />
         <arg name="rate" value="$(arg rate)"/>
     </include>

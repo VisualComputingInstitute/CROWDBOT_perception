@@ -596,7 +596,7 @@ void callback(const ImageConstPtr &color,
         robot_frame_dir(2) = 0.0; //dir(2);//-dir(1);
 
         // Some constants for determining the pose
-        //const double AVERAGE_ROTATION_VARIANCE = pow(10.0 / 180 * M_PI, 2); // FIXME: determine from vx, vy?
+        const double AVERAGE_ROTATION_VARIANCE = pow(10.0 / 180 * M_PI, 2); // FIXME: determine from vx, vy?
         const double INFINITE_VARIANCE = 9999999; // should not really use infinity here because then the covariance matrix cannot be rotated (singularities!)
 
         // Set pose (=position + orientation)
@@ -613,7 +613,7 @@ void callback(const ImageConstPtr &color,
         pose.covariance[2 * 6 + 2] = INFINITE_VARIANCE; // variance of z position
         pose.covariance[3 * 6 + 3] = INFINITE_VARIANCE; // variance of x rotation
         pose.covariance[4 * 6 + 4] = INFINITE_VARIANCE; // variance of y rotation
-        pose.covariance[5 * 6 + 5] = INFINITE_VARIANCE; // variance of z rotation
+        pose.covariance[5 * 6 + 5] = AVERAGE_ROTATION_VARIANCE; // variance of z rotation
 
         // Set twist (=velocities)
         twist.twist.linear.x = robot_frame_dir(0);

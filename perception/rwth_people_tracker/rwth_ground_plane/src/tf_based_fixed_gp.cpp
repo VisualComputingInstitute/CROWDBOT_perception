@@ -79,7 +79,7 @@ int main(int argc, char **argv)
             gp.n.push_back(_normal.getX());
             gp.n.push_back(_normal.getY());
             gp.n.push_back(_normal.getZ());
-            gp.d = distancePointStampedCamera.point.z;//1.67;
+            gp.d = distancePointStampedCamera.point.z;
 
             gp.header.frame_id = camera_frame;
             gp.header.stamp = ros::Time::now();

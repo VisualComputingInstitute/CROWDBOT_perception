@@ -14,6 +14,8 @@
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/approximate_time.h>
 
+#include <tf/tf.h>
+#include <tf/transform_listener.h>
 
 #include <string.h>
 
@@ -37,6 +39,7 @@ using namespace rwth_perception_people_msgs;
 using namespace darknet_ros_msgs;
 using namespace cv_bridge;
 
+tf::TransformListener* listener;
 
 //for debug image
 image_transport::Publisher pub_result_image;
@@ -170,6 +173,44 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
     // Get GP
     Vector<double> GPN(3, (double*) &gp->n[0]);
     double GPd = ((double) gp->d);
+    std::string camera_frame_id = color->header.frame_id;
+    std::string gp_frame_id = gp->header.frame_id;
+    if(camera_frame_id != gp_frame_id){
+
+        geometry_msgs::Vector3Stamped normalVectorStamped;
+        geometry_msgs::Vector3Stamped normalVectorStampedCamera;
+
+        geometry_msgs::PointStamped distancePointStamped;
+        geometry_msgs::PointStamped distancePointStampedCamera;
+
+        normalVectorStamped.header.frame_id = gp_frame_id;
+        normalVectorStamped.header.stamp = ros::Time();
+        normalVectorStamped.vector.x = GPN[0];
+        normalVectorStamped.vector.y = GPN[1];
+        normalVectorStamped.vector.z = GPN[2];
+
+        distancePointStamped.header.frame_id = camera_frame_id;
+        distancePointStamped.header.stamp = ros::Time();
+        distancePointStamped.point.x = 0.0;
+        distancePointStamped.point.y = 0.0;
+        distancePointStamped.point.z = 0.0;
+
+        try {
+            listener->waitForTransform(camera_frame_id, gp_frame_id, ros::Time(), ros::Duration(1.0));
+            listener->transformVector(camera_frame_id, normalVectorStamped, normalVectorStampedCamera);
+            listener->waitForTransform(gp_frame_id, camera_frame_id, ros::Time(), ros::Duration(1.0));
+            listener->transformPoint(gp_frame_id, distancePointStamped, distancePointStampedCamera);
+
+            GPN[0] = normalVectorStampedCamera.vector.x;
+            GPN[1] = normalVectorStampedCamera.vector.y;
+            GPN[2] = normalVectorStampedCamera.vector.z;
+            GPd = distancePointStampedCamera.point.z;
+        }
+        catch(tf::TransformException ex) {
+            ROS_WARN_THROTTLE(20.0, "Failed transform lookup in yoloconvertor_pinhole -- maybe the RGB-D drivers are not yet running!? Reason: %s. Message will re-appear within 20 seconds.", ex.what());
+            return;
+        }
+    }
 
     //
     // Now create 3D coordinates for SPENCER DetectedPersons msg
@@ -307,6 +348,8 @@ int main(int argc, char **argv)
 
     //debug
     string pub_topic_result_image;
+
+    listener = new tf::TransformListener();
 
     // Initialize node parameters from launch file or command line.
     // Use a private node handle so that multiple instances of the node can be run simultaneously

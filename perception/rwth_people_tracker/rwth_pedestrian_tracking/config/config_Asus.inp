@@ -15,13 +15,13 @@ nOffset = 1 #! should be set to 1 for ROS
 # Pedestrians width and height
 #====================================
 pedSizeWVis = 0.6 #! hardcoded width of a person for visualization and cropping purposes (in m, so 0.6 is 60cm, diameter!)
-pedSizeWCom = 0.2 #! hardcoded width of a person for overlap calculation (width of occupancy area on ground)
+pedSizeWCom = 0.3 #! hardcoded width of a person for overlap calculation (width of occupancy area on ground)
 pedSizeHCom = 1.7 #! (CURRENTLY UNUSED) hardcoded width of a person for overlap calculation (height of a occupance volume); currently not used (overlap uses only 2d square on ground with pedSizeWCom)
 
 #====================================
 # History
 #====================================
-history = 10 #! when looking backwards for new hypos (KF runs this far into past and back, as long as accepted_frames_without_det holds (see below)
+history = 10 #! when looking backwards for new hypos, KF runs this far into past and back, as long as accepted_frames_without_det holds (see below)
 
 #========================
 # Pedestrians parameter
@@ -86,11 +86,11 @@ dHolePenalty = 0.5 #! simple factor to penalize holes (frames without detection 
 # Kalman Filter
 #==============================
 # Q - the system covariance (not used anymore)
-sysUncX = 0.5 #!
-sysUncY = 0.5 #!
-sysUncRot = 1.0 #!
-sysUncVel = 1.0 #!
-sysUncAcc = 1 #!
+sysUncX = 0.5 #! (CURRENTLY UNUSED)
+sysUncY = 0.5 #! (CURRENTLY UNUSED)
+sysUncRot = 1.0 #! (CURRENTLY UNUSED)
+sysUncVel = 1.0 #! (CURRENTLY UNUSED)
+sysUncAcc = 1 #! (CURRENTLY UNUSED)
 
 # P-init - the initial state covariance
 initPX = 0.5 #!

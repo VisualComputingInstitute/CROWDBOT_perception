@@ -1,10 +1,14 @@
 <launch>
 
     <!-- this launch file should like, run 3 yolov3, run 3 yolo convertor, and run 3 ground plane... -->
+
+    <!-- general parameters -->
+    <arg name="camera_frame" default="/hardware/video/valeo/ValeoLeftImageFrame" />
+    <arg name="world_frame" default="/robot/OdometryFrame" />
+
     <!-- GP -->
     <arg name="rate" default="30.0"/>
     <arg name="base_footprint" default="/robot/BaseFrame" />
-    <arg name="camera_frame" default="/hardware/video/valeo/ValeoLeftImageFrame" />
     <arg name="ground_plane" default="/ground_plane" />
 
     <!-- general yolo-v3 arg -->
@@ -22,7 +26,6 @@
 
     <!-- yolofusion -->
     <arg name="overlap_thresh" default="0.05"/>
-
 
     <!-- VO -->
     <arg name="motion_parameters" default="/motion_matrix" />
@@ -46,8 +49,15 @@
     <arg name="detected_persons_rear" default="/yoloconvertor_pano/detected_persons_rear"/>
     <arg name="bounding_boxes_rear" default="darknet_ros/bounding_boxes_rear"/>
 
-    <!-- left yoloconvertor and yolo-->
-    <!-- Start darknet and ros wrapper -->
+    <!-- Ground Plane (world) -->
+    <node pkg="rwth_ground_plane" type="ground_plane_tf_based_fixed" name="ground_plane" output="screen">
+        <param name="base_footprint" value="$(arg base_footprint)" />
+        <param name="camera_frame" value="$(arg world_frame)" />
+        <param name="ground_plane" value="$(arg ground_plane)" />
+        <param name="rate" value="$(arg rate)"/>
+    </node>
+
+    <!-- YOLO detector-->
     <!-- Load parameters for left -->
     <rosparam command="load" ns="darknet_ros_left" file="$(find darknet_ros)/config/ros_pano_left.yaml"/>
     <rosparam command="load" ns="darknet_ros_left" file="$(find darknet_ros)/config/yolov3.yaml"/>
@@ -70,34 +80,11 @@
       <param name="config_path"           value="$(arg yolo_config_path)" />
     </node>
 
-    <!-- Ground Plane left -->
-    <node pkg="rwth_ground_plane" type="ground_plane_tf_based_fixed" name="ground_plane_left" output="screen">
-        <param name="base_footprint" value="$(arg base_footprint)" />
-        <param name="camera_frame" value="/hardware/video/valeo/ValeoLeftImageFrame" />
-        <param name="ground_plane" value="/ground_plane_left" />
-        <param name="rate" value="$(arg rate)"/>
-    </node>
-
-    <!-- Ground Plane right -->
-    <node pkg="rwth_ground_plane" type="ground_plane_tf_based_fixed" name="ground_plane_right" output="screen">
-        <param name="base_footprint" value="$(arg base_footprint)" />
-        <param name="camera_frame" value="/hardware/video/valeo/ValeoRightImageFrame" />
-        <param name="ground_plane" value="/ground_plane_right" />
-        <param name="rate" value="$(arg rate)"/>
-    </node>
-
-    <!-- Ground Plane rear -->
-    <node pkg="rwth_ground_plane" type="ground_plane_tf_based_fixed" name="ground_plane_rear" output="screen">
-        <param name="base_footprint" value="$(arg base_footprint)" />
-        <param name="camera_frame" value="/hardware/video/valeo/ValeoRearImageFrame" />
-        <param name="ground_plane" value="/ground_plane_rear" />
-        <param name="rate" value="$(arg rate)"/>
-    </node>
-
-
+    <!-- YOLO convertor -->
+    <!-- left -->
     <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_panorama_left" output="screen">
         <param name="world_scale" value="$(arg world_scale)"/>
-        <param name="ground_plane" value="/ground_plane_left" type="string"/>
+        <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
         <param name="queue_size" value="$(arg queue_size)" type="int"/>
         <param name="pano_image" value="$(arg pano_image_left)" type="string"/>
         <param name="detected_persons" value="$(arg detected_persons_left)" type="string"/>
@@ -105,10 +92,10 @@
         <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
         <param name="bounding_boxes" value="$(arg bounding_boxes_left)"/>
     </node>
-
+    <!-- right -->
     <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_panorama_right" output="screen">
         <param name="world_scale" value="$(arg world_scale)"/>
-        <param name="ground_plane" value="/ground_plane_right" type="string"/>
+        <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
         <param name="queue_size" value="$(arg queue_size)" type="int"/>
         <param name="pano_image" value="$(arg pano_image_right)" type="string"/>
         <param name="detected_persons" value="$(arg detected_persons_right)" type="string"/>
@@ -116,10 +103,10 @@
         <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
         <param name="bounding_boxes" value="$(arg bounding_boxes_right)"/>
     </node>
-
+    <!-- rear -->
     <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_panorama_rear" output="screen">
         <param name="world_scale" value="$(arg world_scale)"/>
-        <param name="ground_plane" value="/ground_plane_rear" type="string"/>
+        <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
         <param name="queue_size" value="$(arg queue_size)" type="int"/>
         <param name="pano_image" value="$(arg pano_image_rear)" type="string"/>
         <param name="detected_persons" value="$(arg detected_persons_rear)" type="string"/>
@@ -143,7 +130,7 @@
        <param name="left_camera_frame" value="/hardware/video/valeo/ValeoLeftImageFrame" type="string"/>
        <param name="right_camera_frame" value="/hardware/video/valeo/ValeoRightImageFrame" type="string"/>
        <param name="rear_camera_frame" value="/hardware/video/valeo/ValeoRearImageFrame" type="string"/>
-       <param name="world_frame" value="/robot/OdometryFrame" type="string"/>
+       <param name="world_frame" value="$(arg world_frame)" type="string"/>
    </node>
 
     <!-- Visual Odometry -->
@@ -156,7 +143,7 @@
     <!-- Pedestrian Tracking -->
     <include file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking.launch">
         <arg name="camera_namespace" value="$(arg camera_namespace)" />
-        <arg name="ground_plane" value="/ground_plane_right" />
+        <arg name="ground_plane" value="$(arg ground_plane)" />
         <arg name="detections" value="yolofusion/detected_persons" />
         <arg name="visual_odometry" value="$(arg motion_parameters)" />
         <arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
