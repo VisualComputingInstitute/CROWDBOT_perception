@@ -25,24 +25,10 @@ using namespace frame_msgs;
 
 tf::TransformListener* listener;
 ros::Publisher pub_detected_persons;
-double worldScale; // for computing 3D positions from BBoxes
 
 int detection_id_increment, detection_id_offset, current_detection_id; // added for multi-sensor use in SPENCER
-double pose_variance; // used in output frame_msgs::DetectedPerson.pose.covariance
 double overlap_thresh;
-string left_camera_frame;
-string right_camera_frame;
-string rear_camera_frame;
 string world_frame;
-
-/*
-subscrible:
-    tf:
-    3 detected person:
-publish:
-    1 detection person
-  */
-
 
 void transfer_detected_persons_to_world_cord(const DetectedPersonsConstPtr &sub_dp, DetectedPersons &pub_dp, string camera_frame)
 {
@@ -97,17 +83,14 @@ bool is_overlapping(const DetectedPerson& dp1,const DetectedPerson& dp2, double 
     pos2[2] = dp2.pose.pose.position.z;
 
     double dist = (pos1 - pos2).norm();
-    //std::cout << "dets: " << dp1.detection_id << ", " << dp2.detection_id <<" dist: " << dist << std::endl;
 
     bool flag = false;
-    if(dist < thresh ){   // set 0.05, if two people is closer than 5 cm, we say they should be exactly the same person
+    if(dist < thresh ){
         flag = true;
-        //std::cout << "overlapping!" << std::endl;
     }
     else{
         flag = false;
     }
-
     return flag;
 }
 
@@ -116,17 +99,16 @@ void yolofusioncallback(const DetectedPersonsConstPtr &dp_left, const DetectedPe
 {
 
     // debug output, to show latency from yolo_v3
-    ROS_DEBUG_STREAM("current time:" << ros::Time::now());
+    //ROS_DEBUG_STREAM("current time:" << ros::Time::now());
 
     if(pub_detected_persons.getNumSubscribers()) {
         frame_msgs::DetectedPersons total_detected_persons;
-        //total_detected_persons.header = dp_left->header; // which actually header should we get? We may do a comparsion, to get the latest time stamp, and take its header.
         total_detected_persons.header.stamp = ros::Time::now();
         total_detected_persons.header.frame_id = world_frame;
 
-        transfer_detected_persons_to_world_cord(dp_left,total_detected_persons,left_camera_frame);  // this function will write the detected_persons into total_detected_persons
-        transfer_detected_persons_to_world_cord(dp_right,total_detected_persons, right_camera_frame);
-        transfer_detected_persons_to_world_cord(dp_rear,total_detected_persons, rear_camera_frame);
+        transfer_detected_persons_to_world_cord(dp_left,total_detected_persons, dp_left->header.frame_id);  // this function will write the detected_persons into total_detected_persons
+        transfer_detected_persons_to_world_cord(dp_right,total_detected_persons, dp_right->header.frame_id);
+        transfer_detected_persons_to_world_cord(dp_rear,total_detected_persons, dp_rear->header.frame_id);
 
         // remove the overlapping detection
         frame_msgs::DetectedPersons fused_detected_persons;
@@ -216,22 +198,15 @@ int main(int argc, char **argv)
     // while using different parameters.
     ros::NodeHandle private_node_handle_("~");
     private_node_handle_.param("queue_size", queue_size, int(10));
-    private_node_handle_.param("detected_persons_left", detected_persons_left, string("oops!need param for left"));
-    private_node_handle_.param("detected_persons_right", detected_persons_right, string("oops!need param for right"));
-    private_node_handle_.param("detected_persons_rear", detected_persons_rear, string("oops!need param for rear"));
+    private_node_handle_.param("detected_persons_left", detected_persons_left, string("/yoloconvertor_pano/detected_persons_left"));
+    private_node_handle_.param("detected_persons_right", detected_persons_right, string("/yoloconvertor_pano/detected_persons_right"));
+    private_node_handle_.param("detected_persons_rear", detected_persons_rear, string("/yoloconvertor_pano/detected_persons_rear"));
 
     // For SPENCER DetectedPersons message
-    private_node_handle_.param("world_scale", worldScale, 1.0); // default for ASUS sensors
     private_node_handle_.param("detection_id_increment", detection_id_increment, 1);
     private_node_handle_.param("detection_id_offset",    detection_id_offset, 0);
-    private_node_handle_.param("pose_variance", pose_variance, 0.05);
-
     private_node_handle_.param("overlap_thresh", overlap_thresh, 0.05);
-
-    private_node_handle_.param("left_camera_frame", left_camera_frame, string("oops!need param for left camera frame"));
-    private_node_handle_.param("right_camera_frame", right_camera_frame, string("oops!need param for right camera frame"));
-    private_node_handle_.param("rear_camera_frame", rear_camera_frame, string("oops!need param for rear camera frame"));
-    private_node_handle_.param("world_frame", world_frame, string("oops!need param for world frame"));
+    private_node_handle_.param("world_frame", world_frame, string("/robot/OdometryFrame"));
 
     current_detection_id = detection_id_offset;
 
@@ -250,11 +225,8 @@ int main(int argc, char **argv)
                                                        boost::ref(subscriber_detected_persons_right),
                                                        boost::ref(subscriber_detected_persons_rear));
 
-
     //The real queue size for synchronisation is set here.
     sync_policies::ApproximateTime<DetectedPersons,DetectedPersons, DetectedPersons> MySyncPolicy(queue_size);
-    MySyncPolicy.setAgePenalty(1000); //set high age penalty to publish older data faster even if it might not be correctly synchronized.
-
 
     const sync_policies::ApproximateTime<DetectedPersons, DetectedPersons, DetectedPersons> MyConstSyncPolicy = MySyncPolicy;
     Synchronizer< sync_policies::ApproximateTime<DetectedPersons, DetectedPersons, DetectedPersons> > sync(MyConstSyncPolicy,

@@ -14,16 +14,14 @@
     <arg name="camera_frame" default="/hardware/depth/kinect2/ColorImageFrame" />
     <arg name="world_frame" default="/robot/OdometryFrame" />
     <!-- detectors -->
-    <arg name="upper_body" default="false"/>
-    <arg name="hog" default="false"/>
     <arg name="yolo" default="true"/>
     <arg name="camera_namespace" default="/hardware/depth/kinect2"/>
-    <arg name="upperbody_detections" default="/upper_body_detector/detections" />
-    <arg name="groundHOG_detections" default="/groundHOG/detections" />
-    <arg name="detected_persons_upperbody" default="/detected_persons/upper_body" />
-    <arg name="detected_persons_groundHOG" default="/detected_persons/groundHOG" />
     <arg name="detected_persons_yolo" default="/detected_persons/yolo" />
-    <arg name="detected_persons_all" default="/detected_persons/all" />
+    <arg name="fused_detections" default="yolofusion/detected_persons"/>
+    <arg name="queue_size" default="10"/>
+    <arg name="detection_id_offset" default="0"/>
+    <arg name="detection_id_increment" default="1"/>
+    <arg name="overlap_thresh" default="0.05"/>
     <!-- general yolo-v3 arg -->
     <arg name="launch_prefix" default=""/>
     <arg name="yolo_weights_path" default="$(find darknet_ros)/yolo_network_config/weights"/>
@@ -57,33 +55,6 @@
         <arg name="rate" value="$(arg rate)"/>
     </include>
 
-    <!-- Upper Body Detector -->
-    <include file="$(find rwth_upper_body_detector)/launch/upper_body_detector.launch" if="$(arg upper_body)">
-        <arg name="detected_persons" value="$(arg detected_persons_upperbody)"/>
-        <arg name="camera_namespace" value="$(arg camera_namespace)"/>
-        <arg name="upper_body_detections" value="$(arg upperbody_detections)" />
-        <arg name="upper_body_bb_centres" value="/upper_body_detector/bounding_box_centres" />
-        <arg name="upper_body_image" value="/upper_body_detector/image" />
-        <arg name="ground_plane" value="$(arg ground_plane)" />
-        <arg name="detection_id_offset" value="3"/>
-        <arg name="detection_id_increment" value="20"/>
-        <arg name="queue_size" value="10" />
-    </include>
-
-    <!-- Ground HOG -->
-    <include file="$(find rwth_ground_hog)/launch/ground_hog_with_GP.launch" if="$(arg hog)">
-        <arg name="world_scale" value="0.001"/>
-        <arg name="score_thresh" value="0.1"/>
-        <arg name="detected_persons" value="$(arg detected_persons_groundHOG)"/>
-        <arg name="camera_namespace" value="$(arg camera_namespace)"/>
-        <arg name="detections" value="$(arg groundHOG_detections)" />
-        <arg name="result_image" value="/groundHOG/image" />
-        <arg name="ground_plane" value="$(arg ground_plane)" />
-        <arg name="detection_id_offset" value="4"/>
-        <arg name="detection_id_increment" value="20"/>
-        <arg name="queue_size" value="10" />
-    </include>
-
     <!-- YOLO -->
     <rosparam command="load" ns="darknet_ros_kinect" file="$(find darknet_ros)/config/ros_kinect.yaml"/>
     <rosparam command="load" ns="darknet_ros_kinect" file="$(find darknet_ros)/config/yolo$(arg yolo_version).yaml"/>
@@ -91,7 +62,6 @@
       <param name="weights_path"          value="$(arg yolo_weights_path)" />
       <param name="config_path"           value="$(arg yolo_config_path)" />
     </node>
-    <!-- <include if="$(arg yolo)" file="$(find darknet_ros)/launch/darknet_ros.launch"  /> -->
     <include if="$(arg yolo)" file="$(find yoloconvertor)/launch/yoloconvertorwith_GP.launch">
         <arg name="ground_plane" value="$(arg ground_plane)" />
         <arg name="queue_size" value="10" />
@@ -101,43 +71,32 @@
         <arg name="detection_id_increment" value="20"/>
         <arg name="world_scale" value="1.0"/>
         <arg name="bounding_boxes" value="darknet_ros/bounding_boxes_kinect"/>
-
     </include>
+
+   <!-- run yolofusion-->
+   <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion" output="screen">
+       <param name="queue_size" value="$(arg queue_size)" type="int"/>
+       <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
+       <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
+       <param name="overlap_thresh" value="$(arg overlap_thresh)"/>
+       <param name="total_detected_persons" value="$(arg fused_detections)" type="string"/>
+       <param name="detected_persons_left" value="$(arg detected_persons_yolo)" type="string"/>
+       <param name="detected_persons_right" value="$(arg detected_persons_yolo)" type="string"/>
+       <param name="detected_persons_rear" value="$(arg detected_persons_yolo)" type="string"/>
+       <param name="world_frame" value="$(arg world_frame)" type="string"/>
+   </node>
 
     <!-- Pedestrian Tracking -->
     <include file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking.launch">
         <arg name="camera_namespace" value="$(arg camera_namespace)" />
         <arg name="ground_plane" value="$(arg ground_plane)" />
-        <arg name="detections" value="$(arg detected_persons_yolo)" />
+        <arg name="detections" value="$(arg fused_detections)" />
         <arg name="visual_odometry" value="$(arg motion_parameters)" />
         <arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
         <arg name="pedestrian_image" value="/rwth_tracker/image" />
         <arg name="tracked_persons" value="$(arg tracked_persons)" />
         <arg name="queue_size" value="10" />
     </include>
-
-    <!--<include if="$(arg hog)" file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking.launch">
-        <arg name="camera_namespace" value="$(arg camera_namespace)" />
-        <arg name="ground_plane" value="$(arg ground_plane)" />
-        <arg name="ground_hog" value="$(arg detected_persons_yolo)" />
-        <arg name="upper_body_detections" value="$(arg detected_persons_upperbody)" />
-        <arg name="visual_odometry" value="$(arg motion_parameters)" />
-        <arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
-        <arg name="pedestrian_image" value="/rwth_tracker/image" />
-        <arg name="tracked_persons" value="$(arg tracked_persons)" />
-        <arg name="queue_size" value="10" />
-    </include>
-
-    <include unless="$(arg hog)" file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking_no_HOG.launch">
-        <arg name="camera_namespace" value="$(arg camera_namespace)" />
-        <arg name="ground_plane" value="$(arg ground_plane)" />
-        <arg name="upper_body_detections" value="$(arg detected_persons_upperbody)" />
-        <arg name="visual_odometry" value="$(arg motion_parameters)" />
-        <arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
-        <arg name="pedestrian_image" value="/rwth_tracker/image" />
-        <arg name="tracked_persons" value="$(arg tracked_persons)" />
-        <arg name="queue_size" value="10" />
-    </include> -->
 
     <!-- Person Trajectories -->
     <include file="$(find rwth_pedestrian_trajectories)/launch/pedestrian_trajectories.launch">
@@ -147,14 +106,6 @@
         <arg name="queue_size" value="10" />
         <arg name="camera_frame" value="$(arg camera_frame)" />
     </include>
-
-    <!-- Pedestrian Localisation 
-    <include file="$(find rwth_pedestrian_localisation)/launch/pedestrian_localisation.launch">
-        <arg name="target_frame" value="$(arg tf_target_frame)"/>
-        <arg name="pedestrian_array" value="$(arg pedestrian_array)"/>
-        <arg name="localisations" value="$(arg pd_localisations)"/>
-        <arg name="marker" value="$(arg pd_marker)"/>
-    </include> -->
 
     <!-- adding rostopic tool relay -->
     <node name="topic_relay1" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/sync/SyncDepthImage /hardware/depth/kinect2/sd/image_depth" respawn="true" />

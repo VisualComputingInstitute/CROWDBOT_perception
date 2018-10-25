@@ -26,6 +26,7 @@
 
     <!-- yolofusion -->
     <arg name="overlap_thresh" default="0.05"/>
+    <arg name="fused_detections" default="yolofusion/detected_persons"/>
 
     <!-- VO -->
     <arg name="motion_parameters" default="/motion_matrix" />
@@ -117,19 +118,14 @@
 
    <!-- run yolofusion-->
    <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion" output="screen">
-       <param name="world_scale" value="$(arg world_scale)"/>
        <param name="queue_size" value="$(arg queue_size)" type="int"/>
-       <param name="detection_id_offset" value="0"/>
-       <param name="detection_id_increment" value="1"/>
-       <param name="pose_variance" value="0.05"/>
+       <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
+       <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
        <param name="overlap_thresh" value="$(arg overlap_thresh)"/>
-       <param name="total_detected_persons" value="yolofusion/detected_persons" type="string"/>
+       <param name="total_detected_persons" value="$(arg fused_detections)" type="string"/>
        <param name="detected_persons_left" value="$(arg detected_persons_left)" type="string"/>
        <param name="detected_persons_right" value="$(arg detected_persons_right)" type="string"/>
        <param name="detected_persons_rear" value="$(arg detected_persons_rear)" type="string"/>
-       <param name="left_camera_frame" value="/hardware/video/valeo/ValeoLeftImageFrame" type="string"/>
-       <param name="right_camera_frame" value="/hardware/video/valeo/ValeoRightImageFrame" type="string"/>
-       <param name="rear_camera_frame" value="/hardware/video/valeo/ValeoRearImageFrame" type="string"/>
        <param name="world_frame" value="$(arg world_frame)" type="string"/>
    </node>
 
@@ -144,7 +140,7 @@
     <include file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking.launch">
         <arg name="camera_namespace" value="$(arg camera_namespace)" />
         <arg name="ground_plane" value="$(arg ground_plane)" />
-        <arg name="detections" value="yolofusion/detected_persons" />
+        <arg name="detections" value="$(arg fused_detections)" />
         <arg name="visual_odometry" value="$(arg motion_parameters)" />
         <arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
         <arg name="pedestrian_image" value="/rwth_tracker/image" />

@@ -229,6 +229,7 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
             detected_person.pose.pose.position.y = pos3D(1);
             if(med_depth_50 < 30 && med_depth_50 > eps && use_depth_image){
                 detected_person.pose.pose.position.z = med_depth_50;//min(med_depth_50, pos3D(2));
+                detected_person.pose.pose.position.x = (pos3D(0)*med_depth_50)/pos3D(2);
             }else{
                 detected_person.pose.pose.position.z = pos3D(2);
             }
