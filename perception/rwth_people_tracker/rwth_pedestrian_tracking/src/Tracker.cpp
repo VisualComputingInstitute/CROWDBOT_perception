@@ -1280,52 +1280,54 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
         //vRDown.show();
         //printf("vVDown: \n");
         //vVDown.show();
-        xInit(0) = mAllXnewDown(0,0);
-        xInit(1) = mAllXnewDown(1,0);
-        xInit(2) = vvXDown(0);
-        xInit(3) = vvYDown(0);
-        Volume<double> colHistsInit = colHists(0);
-        Vector<double> bboxInit(4,0.0);
+	if (mAllXnewDown.total_size() != 0){
+	    xInit(0) = mAllXnewDown(0,0);
+	    xInit(1) = mAllXnewDown(1,0);
+            xInit(2) = vvXDown(0);
+            xInit(3) = vvYDown(0);
+            Volume<double> colHistsInit = colHists(0);
+            Vector<double> bboxInit(4,0.0);
 
-        EKalman kalmanBi;
-        kalmanBi.init(xInit, stateCovMats(0), Globals::dt);
-        //start where above KalmanDown has stopped (at mAllXnewDown(2,0)-1)
-        kalmanBi.runKalmanUp(det, /*tmin-1*/mAllXnewDown(2,0)-1, endFrame, mAllXnewDown, vvIdxDown, vvXDown, vvYDown, volHMean,
-                              stateCovMats, colHistsInit, colHists, xInit(1), bboxInit);
-        //*********************************
-        // swap data to make it consistent
-        //*********************************
-        //vRDown.swap();
-        //vVDown.swap();
-        //vvIdxDown.sortV();
-        //mAllXnewDown.swap();
+            EKalman kalmanBi;
+            kalmanBi.init(xInit, stateCovMats(0), Globals::dt);
+            //start where above KalmanDown has stopped (at mAllXnewDown(2,0)-1)
+            kalmanBi.runKalmanUp(det, /*tmin-1*/mAllXnewDown(2,0)-1, endFrame, mAllXnewDown, vvIdxDown, vvXDown, vvYDown, volHMean,
+                                  stateCovMats, colHistsInit, colHists, xInit(1), bboxInit);
+            //*********************************
+            // swap data to make it consistent
+            //*********************************
+            //vRDown.swap();
+            //vVDown.swap();
+            //vvIdxDown.sortV();
+            //mAllXnewDown.swap();
 
-        // SMOOTHING
-        //
-        //        // FIXME
-        //Matrix<double> pp;
-        //mAllXnewDown.cutPart(0,1,0,mAllXnewDown.y_size()-1,pp);
-        //Matrix<double> smoothed = AncillaryMethods::smoothTrajMatrix(pp, 12);
-        //smoothed = AncillaryMethods::smoothTrajMatrix(smoothed, 12);
-        //mAllXnewDown.insert(pp,0,0);
+            // SMOOTHING
+            //
+            //        // FIXME
+            //Matrix<double> pp;
+            //mAllXnewDown.cutPart(0,1,0,mAllXnewDown.y_size()-1,pp);
+            //Matrix<double> smoothed = AncillaryMethods::smoothTrajMatrix(pp, 12);
+            //smoothed = AncillaryMethods::smoothTrajMatrix(smoothed, 12);
+            //mAllXnewDown.insert(pp,0,0);
 
-        //AncillaryMethods::swapVectorMatrix(stateCovMats);
-        //AncillaryMethods::swapVectorVolume(colHists);
-        //printf("mAllXnewDown: \n");
-        //mAllXnewDown.Show();
-        //printf("swapped\n");
-        Hypo hypo;
-        hypo.setStateCovMats(stateCovMats);
-        hypo.setColHists(colHists);
+            //AncillaryMethods::swapVectorMatrix(stateCovMats);
+            //AncillaryMethods::swapVectorVolume(colHists);
+            //printf("mAllXnewDown: \n");
+            //mAllXnewDown.Show();
+            //printf("swapped\n");
+            Hypo hypo;
+            hypo.setStateCovMats(stateCovMats);
+            hypo.setColHists(colHists);
 
-        compute_hypo_entries(mAllXnewDown, vvXDown, vvYDown, vvIdxDown, det, hypo, normfct, endFrame);
-        hypo.setParentID(-1);
+            compute_hypo_entries(mAllXnewDown, vvXDown, vvYDown, vvIdxDown, det, hypo, normfct, endFrame);
+            hypo.setParentID(-1);
 
-        if (hypo.getCategory() != -1)
-        {
-            hypo.setLastSelected(endFrame);
-            hypos.pushBack(hypo);
-        }
+            if (hypo.getCategory() != -1)
+            {
+                hypo.setLastSelected(endFrame);
+                hypos.pushBack(hypo);
+            }
+	}
         vvIdxDown.clearContent();
     }
 }
