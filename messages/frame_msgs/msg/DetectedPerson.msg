@@ -9,7 +9,10 @@ float64         confidence
 
 # 3D pose (position + orientation) of the *center* of the detection
 # check covariance to see which dimensions are actually set! unset dimensions shall have a covariance > 9999
-geometry_msgs/PoseWithCovariance    pose    
+geometry_msgs/PoseWithCovariance    pose
+
+# height of detected person in 3D (in meters)
+float64 height
 
 # 2D bbox position (x and y is the top-left corner, width, height) 
 float64 bbox_x
