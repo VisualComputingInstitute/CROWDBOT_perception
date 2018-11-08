@@ -1,14 +1,14 @@
 // ROS includes.
 #include <ros/ros.h>
 //debug
-#include <QApplication>
+//#include <QApplication>
 //debugend
 
 #include <cmath>
 #include <ros/time.h>
-#include <image_transport/subscriber_filter.h>
+//#include <image_transport/subscriber_filter.h>
 #include <sensor_msgs/CameraInfo.h>
-#include <image_transport/image_transport.h>
+//#include <image_transport/image_transport.h>
 
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
@@ -22,7 +22,6 @@
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
 
-#include <rwth_perception_people_msgs/GroundHOGDetections.h>
 #include <rwth_perception_people_msgs/GroundPlane.h>
 #include <darknet_ros_msgs/BoundingBox.h>
 #include <darknet_ros_msgs/BoundingBoxes.h>
@@ -42,13 +41,13 @@ using namespace cv_bridge;
 tf::TransformListener* listener;
 
 //for debug image
-image_transport::Publisher pub_result_image;
+//image_transport::Publisher pub_result_image;
 
-#include <QImage>
-#include <QPainter>
-QImage image_rgb;
-cv_bridge::CvImagePtr cv_depth_ptr;	// cv_bridge for depth image
-cv::Mat img_depth_;
+//#include <QImage>
+//#include <QPainter>
+//QImage image_rgb;
+//cv_bridge::CvImagePtr cv_depth_ptr;	// cv_bridge for depth image
+//cv::Mat img_depth_;
 const double eps(1e-5);
 
 ros::Publisher pub_detected_persons;
@@ -60,16 +59,16 @@ double pose_variance; // used in output frame_msgs::DetectedPerson.pose.covarian
 
 float minPhi =  -1.775;
 float maxPhi =  1.775;
-float maxHeight = 1.400;
-float minHeight = -1.400;
-float iwidth = 1280;
-float iheight = 800;
+float maxHeight = 1.300;
+float minHeight = -1.300;
+float iwidth = 640;
+float iheight = 480;
 
 
 
 mira::camera::PanoramaCameraIntrinsic panorama_intrinsic(minPhi, maxPhi, minHeight, maxHeight, iwidth, iheight);
 
-void render_bbox_2D(float x_float,float y_float, float width, float height, QImage& image,
+/*void render_bbox_2D(float x_float,float y_float, float width, float height, QImage& image,
                     int r, int g, int b)
 {
 
@@ -93,9 +92,9 @@ void render_bbox_2D(float x_float,float y_float, float width, float height, QIma
     painter.drawLine(x+w,y, x+w,y+h);
     painter.drawLine(x,y+h, x+w,y+h);
 
-}
+}*/
 
-void render_distance(QString& distance, QImage& image, float x_float, float y_float, int r, int g, int b )
+/*void render_distance(QString& distance, QImage& image, float x_float, float y_float, int r, int g, int b )
 {
     QPainter painter(&image);
 
@@ -112,7 +111,7 @@ void render_distance(QString& distance, QImage& image, float x_float, float y_fl
     int x =(int) x_float;
     int y =(int) y_float;
     painter.drawText(x,y, distance);
-}
+}*/
 
 
 
@@ -161,19 +160,20 @@ void calc3DPosFromBBox( const Vector<double>& GPN_, double GPD_, double x, doubl
 
 
 
-void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneConstPtr &gp, const ImageConstPtr &color)
+void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneConstPtr &gp/*,const ImageConstPtr &color*/)
 {
-
+    ROS_DEBUG("entered yoloconvertor cb");
     // debug output, to show latency from yolo_v3
-    ROS_DEBUG_STREAM("time stamep of input image:" << boxes->header);
-    ROS_DEBUG_STREAM("current time:" << ros::Time::now());
-    ROS_DEBUG_STREAM("-----------------------------------------");
+    //ROS_DEBUG_STREAM("time stamep of input image:" << boxes->header);
+    //ROS_DEBUG_STREAM("current time:" << ros::Time::now());
+    //ROS_DEBUG_STREAM("-----------------------------------------");
 
 
     // Get GP
     Vector<double> GPN(3, (double*) &gp->n[0]);
     double GPd = ((double) gp->d);
-    std::string camera_frame_id = color->header.frame_id;
+    //std::string camera_frame_id = color->header.frame_id;
+    std::string camera_frame_id = boxes->image_header.frame_id;
     std::string gp_frame_id = gp->header.frame_id;
     if(camera_frame_id != gp_frame_id){
 
@@ -221,8 +221,8 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
 
         //debug image
         //convert opencv image to qimage
-        CvImagePtr cv_color_ptr(toCvCopy(color));
-        image_rgb = QImage(&(cv_color_ptr->image.data[0]), cv_color_ptr->image.cols, cv_color_ptr->image.rows, cv_color_ptr->image.step, QImage::Format_RGB888);
+        //CvImagePtr cv_color_ptr(toCvCopy(color));
+        //image_rgb = QImage(&(cv_color_ptr->image.data[0]), cv_color_ptr->image.cols, cv_color_ptr->image.rows, cv_color_ptr->image.step, QImage::Format_RGB888);
         //debugend
 
         for(unsigned int i=0;i<(boxes->bounding_boxes.size());i++)
@@ -237,8 +237,8 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
             calc3DPosFromBBox( GPN, GPd, x, y, width, height, worldScale, pos3D);
             // debug
             // draw 50 yolo box in depth image
-            render_bbox_2D(x,y,width,height, image_rgb, 255, 0, 0);
-           //debugend
+            //render_bbox_2D(x,y,width,height, image_rgb, 255, 0, 0);
+            //debugend
 
             // DetectedPerson for SPENCER
             frame_msgs::DetectedPerson detected_person;
@@ -254,15 +254,15 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
 
             // debug
             // show the 3d position
-            QString posx_str = QString("x: ")+QString::number(-pos3D[0],'g',3);
-            QString posy_str = QString("y: ")+QString::number(-pos3D[1],'g',3);
-            QString posz_str = QString("z: ")+QString::number(-pos3D[2],'g',3);
-            render_distance(posx_str, image_rgb, x, y-90, 0,255,0);
-            render_distance(posy_str, image_rgb, x, y-60, 0,255,0);
-            render_distance(posz_str, image_rgb, x, y-30, 0,255,0);
+            //QString posx_str = QString("x: ")+QString::number(-pos3D[0],'g',3);
+            //QString posy_str = QString("y: ")+QString::number(-pos3D[1],'g',3);
+            //QString posz_str = QString("z: ")+QString::number(-pos3D[2],'g',3);
+            //render_distance(posx_str, image_rgb, x, y-90, 0,255,0);
+            //render_distance(posy_str, image_rgb, x, y-60, 0,255,0);
+            //render_distance(posz_str, image_rgb, x, y-30, 0,255,0);
             // show distance
-            QString dist_str = QString("distance: ")+QString::number(pos3D.norm(),'g',3);
-            render_distance(dist_str, image_rgb, x, y, 255,0,0);
+            //QString dist_str = QString("distance: ")+QString::number(pos3D.norm(),'g',3);
+            //render_distance(dist_str, image_rgb, x, y, 255,0,0);
 
 
             const double LARGE_VARIANCE = 999999999;
@@ -290,15 +290,15 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
         pub_detected_persons.publish(detected_persons);
 
         //debug
-        const uchar *bits = image_rgb.constBits();
-        sensor_msgs::Image sensor_image;
-        sensor_image.header = color->header;
-        sensor_image.height = image_rgb.height();
-        sensor_image.width  = image_rgb.width();
-        sensor_image.step   = image_rgb.bytesPerLine();
-        sensor_image.data   = vector<uchar>(bits, bits + image_rgb.byteCount());
-        sensor_image.encoding = "rgb8";//depth->encoding;
-        pub_result_image.publish(sensor_image);
+        //const uchar *bits = image_rgb.constBits();
+        //sensor_msgs::Image sensor_image;
+        //sensor_image.header = color->header;
+        //sensor_image.height = image_rgb.height();
+        //sensor_image.width  = image_rgb.width();
+        //sensor_image.step   = image_rgb.bytesPerLine();
+        //sensor_image.data   = vector<uchar>(bits, bits + image_rgb.byteCount());
+        //sensor_image.encoding = "rgb8";//depth->encoding;
+        //pub_result_image.publish(sensor_image);
         //debugend
     }
 }
@@ -308,15 +308,15 @@ void connectCallback(ros::Subscriber &sub_msg,
                      ros::NodeHandle &n,
                      string gp_topic,
                      Subscriber<GroundPlane> &sub_gp,
-                     Subscriber<BoundingBoxes> &sub_boxes,
-                     image_transport::SubscriberFilter &sub_color,
-                     image_transport::ImageTransport &it){
+                     Subscriber<BoundingBoxes> &sub_boxes){
+                     //image_transport::SubscriberFilter &sub_color,
+                     //image_transport::ImageTransport &it){
     if(!pub_detected_persons.getNumSubscribers()) {
         ROS_DEBUG("yoloconvertor: No subscribers. Unsubscribing.");
         sub_msg.shutdown();
         sub_gp.unsubscribe();
         sub_boxes.unsubscribe();
-        sub_color.unsubscribe();
+        //sub_color.unsubscribe();
     } else {
         ROS_DEBUG("yoloconvertor: New subscribers. Subscribing.");
         if(strcmp(gp_topic.c_str(), "") == 0) {
@@ -324,7 +324,7 @@ void connectCallback(ros::Subscriber &sub_msg,
         }
         sub_gp.subscribe();
         sub_boxes.subscribe();
-        sub_color.subscribe(it,sub_color.getTopic().c_str(),1);
+        //sub_color.subscribe(it,sub_color.getTopic().c_str(),1);
     }
 
 }
@@ -332,7 +332,7 @@ void connectCallback(ros::Subscriber &sub_msg,
 int main(int argc, char **argv)
 {
     //debug
-    QApplication a(argc, argv);
+    //QApplication a(argc, argv);
     //debugend
 
     // Set up ROS.
@@ -342,7 +342,7 @@ int main(int argc, char **argv)
     // Declare variables that can be modified by launch file or command line.
     int queue_size;
     string ground_plane;
-    string pano_image;
+    //string pano_image;
     string pub_topic_detected_persons;
     string boundingboxes;
 
@@ -356,7 +356,7 @@ int main(int argc, char **argv)
     // while using different parameters.
     ros::NodeHandle private_node_handle_("~");
     private_node_handle_.param("queue_size", queue_size, int(10));
-    private_node_handle_.param("pano_image", pano_image, string("/oops_nothing"));
+    //private_node_handle_.param("pano_image", pano_image, string("/oops_nothing"));
     private_node_handle_.param("ground_plane", ground_plane, string(""));
     private_node_handle_.param("bounding_boxes", boundingboxes, string("darknet_ros/bounding_boxes"));
 
@@ -367,10 +367,10 @@ int main(int argc, char **argv)
     private_node_handle_.param("pose_variance",    pose_variance, 0.05);
     current_detection_id = detection_id_offset;
 
-    string image_color = pano_image;
+    //string image_color = pano_image;
 
     // Image transport handle
-    image_transport::ImageTransport it(private_node_handle_);
+    //image_transport::ImageTransport it(private_node_handle_);
 
     // Create a subscriber.
     // Name the topic, message queue, callback function with class name, and object containing callback function.
@@ -378,8 +378,8 @@ int main(int argc, char **argv)
     ros::Subscriber sub_message; //Subscribers have to be defined out of the if scope to have affect.
     Subscriber<GroundPlane> subscriber_ground_plane(n, ground_plane.c_str(), 1); subscriber_ground_plane.unsubscribe();
     Subscriber<BoundingBoxes> subscriber_bounding_boxes(n,boundingboxes.c_str(),1); subscriber_bounding_boxes.unsubscribe();
-    image_transport::SubscriberFilter subscriber_color;
-    subscriber_color.subscribe(it, image_color.c_str(), 1); subscriber_color.unsubscribe();
+    //image_transport::SubscriberFilter subscriber_color;
+    //subscriber_color.subscribe(it, image_color.c_str(), 1); subscriber_color.unsubscribe();
 
 
     ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
@@ -387,37 +387,41 @@ int main(int argc, char **argv)
                                                        boost::ref(n),
                                                        ground_plane,
                                                        boost::ref(subscriber_ground_plane),
-                                                       boost::ref(subscriber_bounding_boxes),
-                                                       boost::ref(subscriber_color),
-                                                       boost::ref(it));
+                                                       boost::ref(subscriber_bounding_boxes));
+                                                       //boost::ref(subscriber_color),
+                                                       //boost::ref(it));
 
-    image_transport::SubscriberStatusCallback image_cb = boost::bind(&connectCallback,
-                                                                     boost::ref(sub_message),
-                                                                     boost::ref(n),
-                                                                     ground_plane,
-                                                                     boost::ref(subscriber_ground_plane),
-                                                                     boost::ref(subscriber_bounding_boxes),
-                                                                     boost::ref(subscriber_color),
-                                                                     boost::ref(it));
+    //image_transport::SubscriberStatusCallback image_cb = boost::bind(&connectCallback,
+    //                                                                 boost::ref(sub_message),
+    //                                                                 boost::ref(n),
+    //                                                                 ground_plane,
+    //                                                                 boost::ref(subscriber_ground_plane),
+    //                                                                 boost::ref(subscriber_bounding_boxes));
+                                                                     //boost::ref(subscriber_color),
+                                                                     //boost::ref(it));
 
 
 
     //The real queue size for synchronisation is set here.
-    sync_policies::ApproximateTime<BoundingBoxes, GroundPlane, Image> MySyncPolicy(queue_size);
+    //sync_policies::ApproximateTime<BoundingBoxes, GroundPlane, Image> MySyncPolicy(queue_size);
+    sync_policies::ApproximateTime<BoundingBoxes, GroundPlane> MySyncPolicy(queue_size);
     MySyncPolicy.setAgePenalty(1000); //set high age penalty to publish older data faster even if it might not be correctly synchronized.
 
 
-    const sync_policies::ApproximateTime<BoundingBoxes, GroundPlane, Image> MyConstSyncPolicy = MySyncPolicy;
-    Synchronizer< sync_policies::ApproximateTime<BoundingBoxes, GroundPlane, Image> > sync(MyConstSyncPolicy,
-                                                                                        subscriber_bounding_boxes,
-                                                                                        subscriber_ground_plane,
-                                                                                        subscriber_color);
+    const sync_policies::ApproximateTime<BoundingBoxes, GroundPlane> MyConstSyncPolicy = MySyncPolicy;
+    //const sync_policies::ApproximateTime<BoundingBoxes, GroundPlane, Image> MyConstSyncPolicy = MySyncPolicy;
+    Synchronizer< sync_policies::ApproximateTime<BoundingBoxes, GroundPlane> > sync(MyConstSyncPolicy, subscriber_bounding_boxes, subscriber_ground_plane);
+    //Synchronizer< sync_policies::ApproximateTime<BoundingBoxes, GroundPlane, Image> > sync(MyConstSyncPolicy,
+    //                                                                                    subscriber_bounding_boxes,
+    //                                                                                    subscriber_ground_plane,
+    //                                                                                    subscriber_color);
 
     // Decide which call back should be used.
     if(strcmp(ground_plane.c_str(), "") == 0) {
         ROS_FATAL("ground_plane: need ground_plane to produce 3d information");
     } else {
-        sync.registerCallback(boost::bind(&yoloConvertorCallback, _1, _2, _3));
+        //sync.registerCallback(boost::bind(&yoloConvertorCallback, _1, _2, _3));
+        sync.registerCallback(boost::bind(&yoloConvertorCallback, _1, _2));
     }
 
     // Create publishers
@@ -425,8 +429,8 @@ int main(int argc, char **argv)
     pub_detected_persons = n.advertise<frame_msgs::DetectedPersons>(pub_topic_detected_persons, 10, con_cb, con_cb);
 
     //debug image publisher
-    private_node_handle_.param("yolo_depth_image", pub_topic_result_image, string("/yolo_depth_image"));
-    pub_result_image = it.advertise(pub_topic_result_image.c_str(), 1, image_cb, image_cb);
+    //private_node_handle_.param("yolo_depth_image", pub_topic_result_image, string("/yolo_depth_image"));
+    //pub_result_image = it.advertise(pub_topic_result_image.c_str(), 1, image_cb, image_cb);
 
     //double min_expected_frequency, max_expected_frequency;
     //private_node_handle_.param("min_expected_frequency", min_expected_frequency, 8.0);
