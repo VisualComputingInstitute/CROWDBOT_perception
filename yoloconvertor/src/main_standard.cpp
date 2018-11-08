@@ -110,6 +110,10 @@ void calc3DPosFromBBox(const Matrix<double>& K, const Vector<double>& GPN_, doub
 void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoConstPtr &camera_info,
                               const GroundPlaneConstPtr &gp, const ImageConstPtr &depth, const CameraInfoConstPtr &dep_info)
 {
+    //if (filter_frame_id!="" && filter_frame_id!=boxes->header.frame_id){
+    //    ROS_DEBUG("YoloBoxes have been filtered in YoloConvertor!")
+    //    return;
+    //}
     // Get GP
     Vector<double> GPN(3, (double*) &gp->n[0]);
     double GPd = ((double) gp->d);
@@ -165,6 +169,9 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
         //debug image
         //convert depth to rgb image for display
         cv_bridge::CvImagePtr cv_depth_ptr(cv_bridge::toCvCopy(depth,"32FC1"));
+        if (depth->encoding == "16UC1" || depth->encoding == "32FC1") {
+            cv_depth_ptr->image *= 0.001;
+        }
         img_depth_ = cv_depth_ptr->image;
         cv::Mat tmp_depth_mat;
         img_depth_.cv::Mat::convertTo(tmp_depth_mat,CV_8U);
