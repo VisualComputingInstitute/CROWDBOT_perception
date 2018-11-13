@@ -38,8 +38,9 @@ void callback(const TrackedPersons::ConstPtr &tps)
 {
     personTrajectories.header = tps->header;
     TrackedPerson tp;
-    int selected_trajectory_idx = 0;
+    int selected_trajectory_idx = -1;
     float selected_trajectory_min_dist = 10000.0f;
+    float max_dist = 3.0f; //maximum distance to be selected
     
     //for each trackedPerson tp in all trackedPersons tps
     for(int i = 0; i < tps->tracks.size(); i++){
@@ -69,9 +70,9 @@ void callback(const TrackedPersons::ConstPtr &tps)
             listener->transformPoint(camera_frame, distancePointStamped, distancePointStampedCamera);
             //std::cout << "ID: " << t_id << " camX: " << distancePointStampedCamera.point.x << " camY: " << distancePointStampedCamera.point.y << " camZ: " << distancePointStampedCamera.point.z << std::endl;
             polCo = cartesianToPolar(distancePointStampedCamera.point);
-            if(polCo.at(0) < selected_trajectory_min_dist){
+            if(polCo.at(0) < selected_trajectory_min_dist && polCo.at(0) <= max_dist){
                 new_min_found = true;
-                selected_trajectory_min_dist = polCo.at(0);
+	        selected_trajectory_min_dist = polCo.at(0);
             }
         }
         catch(tf::TransformException ex) {
@@ -107,12 +108,13 @@ void callback(const TrackedPersons::ConstPtr &tps)
     pub_person_trajectories.publish(personTrajectories);
 
     // publish "selected" (right now: closest) trajectory on a seperate topic
-    if(personTrajectories.trajectories.size()>0 && tps->tracks.size()>0){
+    if(selected_trajectory_idx!=-1 && personTrajectories.trajectories.size()>0 && tps->tracks.size()>0){
         pub_selected_person_trajectory.publish(personTrajectories.trajectories.at(selected_trajectory_idx));
     }else{
-        PersonTrajectory empty_pt;
-        empty_pt.track_id = 0;
-        pub_selected_person_trajectory.publish(empty_pt);
+        ROS_DEBUG("no person trajectory selected");
+        //PersonTrajectory empty_pt;
+        //empty_pt.track_id = 0;
+        //pub_selected_person_trajectory.publish(empty_pt);
     }
     
 }

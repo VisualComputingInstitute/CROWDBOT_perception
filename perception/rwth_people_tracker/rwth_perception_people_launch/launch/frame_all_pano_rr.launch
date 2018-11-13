@@ -16,7 +16,6 @@
     <!-- detectors -->
     <arg name="yolo" default="false"/>
     <arg name="camera_namespace" default="/hardware/depth/kinect2"/>
-    <arg name="detected_persons_yolo" default="/detected_persons/yolo" />
     <arg name="fused_detections" default="/yolofusion/detected_persons"/>
     <arg name="queue_size" default="10"/>
     <arg name="detection_id_offset" default="0"/>
@@ -27,6 +26,9 @@
     <arg name="yolo_weights_path" default="$(find darknet_ros)/yolo_network_config/weights"/>
     <arg name="yolo_config_path" default="$(find darknet_ros)/yolo_network_config/cfg"/>
     <arg name="yolo_version" default="v2"/>
+    <arg name="bounding_boxes_yolo" default="/darknet_ros/bounding_boxes_pano_rr"/>
+    <arg name="world_scale" default="1.0"/>
+    <arg name="detected_persons_yolo" default="/detected_persons/yolo"/>
     <!-- tracker -->
     <arg name="tracked_persons" default="/rwth_tracker/tracked_persons" />
     <!-- trajectories -->
@@ -55,7 +57,8 @@
         <arg name="rate" value="$(arg rate)"/>
     </include>
 
-    <include file="$(find yoloconvertor)/launch/yoloconvertorwith_GP.launch">
+   <!-- YOLO convertor -->
+   <!-- <include file="$(find yoloconvertor)/launch/yoloconvertorwith_GP.launch">
         <arg name="ground_plane" value="$(arg ground_plane)" />
         <arg name="queue_size" value="10" />
         <arg name="camera_namespace" value="$(arg camera_namespace)" />
@@ -64,10 +67,20 @@
         <arg name="detection_id_increment" value="20"/>
         <arg name="world_scale" value="1.0"/>
         <arg name="bounding_boxes" value="darknet_ros/bounding_boxes_kinect"/>
-    </include>
+    </include> -->
+    <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_pano_rr">
+        <param name="world_scale" value="$(arg world_scale)"/>
+        <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
+        <param name="queue_size" value="$(arg queue_size)" type="int"/>
+        <param name="detected_persons" value="$(arg detected_persons_yolo)" type="string"/>
+        <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
+        <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
+        <param name="bounding_boxes" value="$(arg bounding_boxes_yolo)"/>
+    </node>
+
 
    <!-- run yolofusion-->
-   <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion" output="screen">
+   <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion">
        <param name="queue_size" value="$(arg queue_size)" type="int"/>
        <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
        <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
