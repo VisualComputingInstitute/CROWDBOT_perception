@@ -151,8 +151,8 @@ void ReadConfigFile(string path_config_file)
     //====================================
     // Number of Frames / offset
     //====================================
-    Globals::numberFrames = config.read<int>("numberFrames");
-    Globals::nOffset = config.read<int>("nOffset");
+    //Globals::numberFrames = config.read<int>("numberFrames");
+    //Globals::nOffset = config.read<int>("nOffset");
 
     /////////////////////////////////TRACKING PART/////////////////////////
 
@@ -365,7 +365,10 @@ void callback(const ImageConstPtr &color,
 {
     ROS_DEBUG("Entered tracking callback");
 
-    // ---update framerate + framerateVector OR dt + dtVector---
+    //std::cout << "===> cnt: " << cnt << std::endl;
+    Globals::currentFrame = cnt;
+
+    // ---update framerate + framerateVector OR dt + dtVector (descending order! dtVector(0) is the latest!)---
     //printf("set new framerate to: %d / (%f-%f) \n", 1,color->header.stamp.toSec(),Globals::oldTimeForFPSUpdate);
     //printf("result: %d\n", (int) (1 / (color->header.stamp.toSec()-Globals::oldTimeForFPSUpdate)));
     // update framerate first after some tracking cycles, before use framerate from config file
@@ -390,18 +393,25 @@ void callback(const ImageConstPtr &color,
         else {
             Globals::dt = dt;
         }
-        Globals::dtVector.swap();
-        Globals::dtVector.pushBack(Globals::dt);
-        Globals::dtVector.swap();
-        Globals::dtVector.resize(min(cnt+1,1000));
+        // fill dtVector
+        if (Globals::dtVector.getSize() == 0){
+
+            Globals::dtVector.resize(1);
+            Globals::dtVector(0) = Globals::dt;
+        }
+        else{
+            Globals::dtVector.swap();
+            Globals::dtVector.pushBack(Globals::dt);
+            Globals::dtVector.swap();
+            Globals::dtVector.resize(min(cnt,Globals::history));
+        }
     }
     else{
-        //first cycle, setup frameRateVector
-        Globals::dtVector.setSize(1,0.0);
-        Globals::dtVector(0) = 1;//Globals::dt; //set to something, should be never used (there is no dt for the very first frame); convention: set Globals::nOffset to 1!
+        //first cycle, setup dtVector
+        Globals::dtVector.clearContent();
     }
     //printf("---\n");
-    //Globals::frameRateVector.show();
+    //Globals::dtVector.show();
     //printf("---\n");
     // ---end update framerate+frameRatevector OR dt + dtVector---
 

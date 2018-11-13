@@ -526,14 +526,13 @@ void Tracker::process_frame(Detections& det, Camera &cam, int t,  Vector< Hypo >
     //*****************************************************************
 
     int LTPmax = t;
-    int LTPmin = max(LTPmax-Globals::history, Globals::nOffset);
+    int LTPmin = max(LTPmax-Globals::history, 0); //Globals::nOffset
 
     //******************************************************************
     // Extend Trajectories Hypos
     //******************************************************************
 
     Vector<int> extendUsedDet;
-
     extend_trajectories(HyposAll,  det, LTPmax, LTPmin, normfct, HypoExtended, extendUsedDet/*, cam*/);
     ROS_DEBUG("\33[36;40;1m Extended %i trajectories\33[0m", HypoExtended.getSize());
 
@@ -541,7 +540,6 @@ void Tracker::process_frame(Detections& det, Camera &cam, int t,  Vector< Hypo >
     //******************************************************************
     // Find new Hypos
     //******************************************************************
-
     make_new_hypos(LTPmax, LTPmin, det, HypoNew, normfct, extendUsedDet);
     ROS_DEBUG("\33[31;40;1m     Created %i new Trajectories \33[0m", HypoNew.getSize());
 
@@ -914,6 +912,7 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
                                   double normfct, Vector< Hypo >& HypoExtended, Vector<int>& extendUsedDet/*,
                                   Camera &*/ /*cam*/)
 {
+    //std::cout << "EXTEND..." << std::endl;
     //*************************************************************************
     // Create trajectory hypotheses by extending the previously existing
     //*************************************************************************
@@ -925,9 +924,9 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
     //Vector<double> Lmax(3, Globals::pedSizeWCom);
     //Lmax(2) = Globals::pedSizeHCom;
 
-    double dLastT;
-    int nrFramesWithInlier;
-    Vector<double> vMeanPoint3D(3, 0.0);
+    //double dLastT;
+    //int nrFramesWithInlier;
+    //Vector<double> vMeanPoint3D(3, 0.0);
 
     //Matrix<double> Rot4D;
 
@@ -951,10 +950,11 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
     Vector<double>  vCurrVY;
 
     Volume<double> volHMean;
-    int pointPos;
-    Vector<int> inlier;
+    //int pointPos;
+    //Vector<int> inlier;
     int n_HypoId;
-    Vector<double> pos3DStl;
+    //Vector<double> pos3DStl;
+    Vector<double> bbox(4,0.0);
 
 
     int timeHorizon = Globals::coneTimeHorizon;
@@ -989,14 +989,15 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
         //auxHypo->getRot4D(Rot4D);
         n_HypoId = auxHypo->getHypoID();
 
-        nrFramesWithInlier = vvCurrIdx.getSize();
-        dLastT = vvCurrIdx(nrFramesWithInlier-1).getFrame();
+        // ---commented out some stuff here regarding (unused) positions and bboxes, which cannot be used anymore due to detection buffer (or save them in inlier) and 3d tracking---
+        //nrFramesWithInlier = vvCurrIdx.getSize();
+        //dLastT = vvCurrIdx(nrFramesWithInlier-1).getFrame();
+        //vMeanPoint3D.fill(0.0);
+        //inlier = vvCurrIdx(nrFramesWithInlier-1).getInlier();
 
-        vMeanPoint3D.fill(0.0);
-        inlier = vvCurrIdx(nrFramesWithInlier-1).getInlier();
-
-        Vector<double> bbox(4,0.0);
-        Vector<double>bbox_sum(4,0.0);
+        // BBOX not used anymore! 3d Tracking, cam_info unknown!
+        /*Vector<double> bbox(4,0.0);
+        Vector<double> bbox_sum(4,0.0);
         for(int j = 0; j < inlier.getSize(); j++)
         {
             det.getPos3D(dLastT, inlier(j), pos3DStl);
@@ -1007,13 +1008,12 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
             bbox_sum += bbox;
 
         }
-
         vMeanPoint3D *=(1.0/(inlier.getSize()));
         bbox_sum *=(1.0/(inlier.getSize()));
+        bbox = bbox_sum;*/
 
-        bbox = bbox_sum;
-
-        double minValue = 100000.0;
+        // not used?
+        /*double minValue = 100000.0;
 
         for(int j = 0; j < det.numberDetectionsAtFrame(dLastT); j++)
         {
@@ -1026,7 +1026,8 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
                 minValue = pos3DStl.norm();
                 pointPos = j;
             }
-        }
+        }*/
+        // ---end of comment section---
 
         Hypo newHypo;
 
@@ -1079,9 +1080,7 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
             extendedUseTemp = vvIdxUp(0).getInlier();
 
         if(extendedUseTemp.getSize() > 0)
-            extendUsedDet.append( extendedUseTemp);
-
-
+            extendUsedDet.append(extendedUseTemp);
 
         int newSize = mXProj.y_size() + 1;
 
@@ -1205,10 +1204,12 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
     {
         HypoExtended.pushBack(newHypos(i));
     }
+    //std::cout << "...EXTEND DONE." << std::endl;
 }
 
 void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hypo >& hypos,  double normfct, Vector<int>& extendUsedDet)
 {
+    //std::cout << "MAKE NEW..." << std::endl;
     Vector<double> xInit;
     Matrix<double> PInit;
     Vector<double> pos3d;
@@ -1241,9 +1242,7 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
 
 //    Vector<double> bbox;
 
-
     int nrOfDet = det.numberDetectionsAtFrame(endFrame);
-
 
     for(int j = 0; j < nrOfDet; j++)
     {
@@ -1280,9 +1279,9 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
         //vRDown.show();
         //printf("vVDown: \n");
         //vVDown.show();
-	if (mAllXnewDown.total_size() != 0){
-	    xInit(0) = mAllXnewDown(0,0);
-	    xInit(1) = mAllXnewDown(1,0);
+        if (mAllXnewDown.total_size() != 0){
+            xInit(0) = mAllXnewDown(0,0);
+            xInit(1) = mAllXnewDown(1,0);
             xInit(2) = vvXDown(0);
             xInit(3) = vvYDown(0);
             Volume<double> colHistsInit = colHists(0);
@@ -1330,10 +1329,12 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
 	}
         vvIdxDown.clearContent();
     }
+    //std::cout << "...NEW DONE." << std::endl;
 }
 
 void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Vector<double>& vY, Vector <FrameInlier >& Idx, Detections& det, Hypo& hypo, double normfct, int frame)
 {
+    //std::cout << "CHE..." << std::endl;
     // ***********************************************************************
     //   Init
     // ***********************************************************************
@@ -1394,15 +1395,17 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
 
             inlier = Idx(i).getInlier();
             weights = Idx(i).getWeight();
+            heightValue = Idx(i).getHeight();
             for( int j = 0; j < inlier.getSize(); j++)
             {
                 fct = exp(-(frame-currentFrame)/tau);
                 weights(j) =  weights(j)*fct;
                 sumW += weights(j);
-                heightValue += det.getHeight(currentFrame, inlier(j))*fct;
+                //heightValue += Idx(j).getHeight(); //det.getHeight(currentFrame, inlier(j))*fct;
                 sumFct += fct;
 
-                hypo.setCategory(det.getCategory(currentFrame, inlier(j)));
+                // we don't need category right now (if we need it safe it in inlier detection, just like height, due to the limit of the Detection buffer)
+                //hypo.setCategory(det.getCategory(currentFrame, inlier(j)));
 
             }
 
@@ -1412,7 +1415,7 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
 
         hypo.setIdx(Idx);
         hypo.setScoreW(sumW);
-        hypo.setHeight(heightValue/sumFct);
+        hypo.setHeight(heightValue);//hypo.setHeight(heightValue/sumFct);
 
         // ***********************************************************************
         // Holes // Assume that Idx(frames) are sorted "ascend"
@@ -1451,17 +1454,18 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
             int nrFrWithInl = Idx.getSize();
 
             // average position of all inlier detections at start
-            inlier = Idx(0).getInlier();
-            for( int i = 0; i < inlier.getSize(); i++)
-            {
-                det.getPos3D(Idx(0).getFrame(), inlier(i), pos3DStl);
-                point(0) += pos3DStl(0);
-                point(1) += pos3DStl(1);
-                point(2) += pos3DStl(2);
-            }
+            //inlier = Idx(0).getInlier();
+            //for( int i = 0; i < inlier.getSize(); i++)
+            //{
+            //    det.getPos3D(Idx(0).getFrame(), inlier(i), pos3DStl);
+            //    point(0) += pos3DStl(0);
+            //    point(1) += pos3DStl(1);
+            //    point(2) += pos3DStl(2);
+            //}
 
             //Extend the point by the fourth coordinate - the frame number
-            point *=(1.0/double(inlier.getSize()));
+            //point *=(1.0/double(inlier.getSize()));
+            point = Idx(0).getPos3D();
             oldX = point;
             point4D(0) = point(0);
             point4D(1) = point(1);
@@ -1472,16 +1476,17 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
             point.fill(0.0);
 
             // average position of all inlier detections at end
-            inlier = Idx(nrFrWithInl-1).getInlier();
+            /*inlier = Idx(nrFrWithInl-1).getInlier();
             for( int i = 0; i < inlier.getSize(); i++)
             {
                 det.getPos3D(Idx(nrFrWithInl-1).getFrame(), inlier(i), pos3DStl);
                 point(0) += pos3DStl(0);
                 point(1) += pos3DStl(1);
                 point(2) += pos3DStl(2);
-            }
+            }*/
 
-            point *=(1.0/double(inlier.getSize()));
+            point = Idx(nrFrWithInl-1).getPos3D();
+            //point *=(1.0/double(inlier.getSize()));
 
             //Extend the point by the fourth coordinate - the frame number
             point4D(0) = point(0);
@@ -1528,7 +1533,9 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
                 Vector<double> assistant(4, 0.0);
                 int c = 0;
 
-                for(int j = 1; j < 10; j++)
+                //std::cout << "allX: " << std::endl;
+                //allX.Show();
+                for(int j = 1; j < Globals::history+1; j++)
                 {
                     if(allX.y_size()-(j+1)<0)
                         break;
@@ -1537,12 +1544,12 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
                     assistant += moved - first;
                     //printf("assistant:\n");
                     //assistant.show();
-                    //printf("2: take element j-1 (%d)\n", j-1);
                     //assistant *= Globals::frameRateVector(j-1);
                     //printf("assistant*=frameRateVector(.):\n");
                     //assistant.show();
-                    avgSpeed(0) = assistant(0)*1.0/Globals::dtVector(j-1);
-                    avgSpeed(1) = assistant(1)*1.0/Globals::dtVector(j-1);
+                    //std::cout << "dtVector at " << (j-1) << std::endl;
+                    avgSpeed(0) += assistant(0)*1.0/Globals::dtVector(j-1);
+                    avgSpeed(1) += assistant(1)*1.0/Globals::dtVector(j-1);
                     c++;
                 }
 
@@ -1875,4 +1882,5 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
         hypo.setCategory(-1);
         ROS_DEBUG("Size of Idx is 1, so no hypo can be computed");
     }
+    //std::cout << "...CHE end!" << std::endl;
 }

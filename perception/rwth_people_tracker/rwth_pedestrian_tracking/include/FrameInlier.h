@@ -38,11 +38,22 @@ public:
     bool operator < (const FrameInlier& fO) const;
 
 
+    Vector<double> getPos3D() const;
+    void setPos3D(const Vector<double> &value);
+
+    double getHeight() const;
+    void setHeight(double value);
+
 protected:
 
     int frameC;
     Vector<int> inlierC;
     Vector<double> weightsC;
+
+private:
+
+    Vector<double> pos3D;
+    double height;
     
 };
 

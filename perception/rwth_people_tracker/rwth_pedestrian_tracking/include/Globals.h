@@ -27,10 +27,11 @@ public:
     static  int dImWidth;
 
     ////////////////////////////////////////
-    // Number of Frames / offset
+    // (Number of Frames / offset: deprecated) / currentFrame
     ////////////////////////////////////////
-    static  int numberFrames;
-    static int nOffset;
+    //static int numberFrames;
+    //static int nOffset;
+    static int currentFrame;
 
 /////////////////////////////////TRACKING PART/////////////////////////
 

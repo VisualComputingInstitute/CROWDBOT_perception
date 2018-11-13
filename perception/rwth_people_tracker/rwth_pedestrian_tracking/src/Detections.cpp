@@ -39,9 +39,15 @@ Detections::Detections(int x, const int flag)
         pos = 16 + offSet; //consists of 3 num
     }
 
-    colHists.setSize(Globals::numberFrames + Globals::nOffset);
-    cov3d.setSize(Globals::numberFrames+ Globals::nOffset);
-    detC.setSize(Globals::numberFrames + Globals::nOffset);
+    buff_size = Globals::history+1;
+
+    colHists.setSize(buff_size);
+    cov3d.setSize(buff_size);
+    detC.setSize(buff_size);
+
+//    colHists.setSize(Globals::numberFrames + Globals::nOffset);
+//    cov3d.setSize(Globals::numberFrames+ Globals::nOffset);
+//    detC.setSize(Globals::numberFrames + Globals::nOffset);
 //    gp.setSize(Globals::numberFrames + Globals::nOffset);
 //    points3D_.setSize(Globals::numberFrames + Globals::nOffset);
 //    occBins_.setSize(Globals::numberFrames + Globals::nOffset);
@@ -52,9 +58,22 @@ Detections::Detections(int x, const int flag)
 
 // ++++++++++++++++++++++++ Implementation ++++++++++++++++++++++++++++++++++++++
 
+int Detections::globalFrameToBufferFrame(int global_frame)
+{
+    if(Globals::currentFrame > buff_size-1){
+        //std::cout << "transfer global_frame " << global_frame << " to bufferFrame: " << ((buff_size - 1) - (Globals::currentFrame - global_frame)) << std::endl;
+        return ((buff_size - 1) - (Globals::currentFrame - global_frame));
+    }
+    else{
+        //std::cout << "transfer global_frame " << global_frame << " to bufferFrame: " << global_frame << std::endl;
+        return global_frame;
+    }
+}
+
 
 int Detections::numberDetectionsAtFrame(int frame)
 {
+    frame = globalFrameToBufferFrame(frame);
     if(frame >= detC.getSize())
     {
         return 0;
@@ -67,6 +86,7 @@ int Detections::numberDetectionsAtFrame(int frame)
 }
 
 double Detections::getHeight(int frame, int detec) {
+    frame = globalFrameToBufferFrame(frame);
     assert(detC.getSize() > frame);
     assert(detC(frame).getSize() > detec);
 
@@ -74,6 +94,7 @@ double Detections::getHeight(int frame, int detec) {
 }
 
 double Detections::getScore( int frame,  int detec) {
+    frame = globalFrameToBufferFrame(frame);
     assert(detC.getSize() > frame);
     assert(detC(frame).getSize() > detec);
 
@@ -82,6 +103,7 @@ double Detections::getScore( int frame,  int detec) {
 
 void Detections::getPos3D( int frame,  int detec, Vector<double>& v_pos)
 {
+    frame = globalFrameToBufferFrame(frame);
     v_pos.setSize(3);
     assert(detC.getSize() > frame);
     assert(detC(frame).getSize() > detec);
@@ -93,6 +115,7 @@ void Detections::getPos3D( int frame,  int detec, Vector<double>& v_pos)
 
 void Detections::getBBox( int frame,  int detec, Vector<double>& v_bbox)
 {
+    frame = globalFrameToBufferFrame(frame);
     v_bbox.clearContent();
     assert(detC.getSize() > frame);
     assert(detC(frame).getSize() > detec);
@@ -279,6 +302,7 @@ double Detections::get_mediandepth_inradius(Vector<double>& bbox, int radius, Ma
 #ifdef cim_v
 void Detections::addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & det, int frame, CImg<unsigned char>& imageLeft, Camera cam/*, Matrix<double>& depthMap*/)
 {
+    //std::cout << "addDets for frame: " << frame << std::endl;
 
     // FIXME find a different approach for determing a 3D cov.
 
@@ -291,10 +315,47 @@ void Detections::addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & d
 
     Vector<double>detContent;
 
+    int buffer_idx = min(frame, buff_size-1);
+
+    if (frame > buff_size-1){
+        detC.swap();
+        colHists.swap();
+        cov3d.swap();
+        //detC.resize_from_end(Globals::history);
+        //colHists.resize_from_end(Globals::history);
+        //cov3d.resize_from_end(Globals::history);
+        detC.resize(buff_size-1);
+        colHists.resize(buff_size-1);
+        cov3d.resize(buff_size-1);
+        detC.swap();
+        colHists.swap();
+        cov3d.swap();
+        detC.resize(buff_size);
+        colHists.resize(buff_size);
+        cov3d.resize(buff_size);
+    }
+
+
+    /*detC.resize(min(frame,Globals::history+1))
+    detC.swap();
+    detC.resize(Globals::history);
+    detC.swap();
+    detC.resize(Globals::history+1);
+    colHists.swap();
+    colHists.resize(Globals::history);
+    colHists.swap();
+    colHists.resize(Globals::history+1);
+    cov3d.swap();
+    cov3d.resize(Globals::history);
+    cov3d.swap();
+    cov3d.resize(Globals::history+1);*/
+
     for ( int i = 0; i < det->detections.size(); i++)
     {
+        //std::cout << "prepare det: " << det->detections[i].detection_id << std::endl;
         if(prepareDet(detContent, det, i, frame, true, cam, covariance))
         {
+            //std::cout << "add det: " << det->detections[i].detection_id << std::endl;
             pos3d(0) = (detContent(pos));
             pos3d(1) = (detContent(pos+1));
             pos3d(2) = (detContent(pos+2));
@@ -309,18 +370,6 @@ void Detections::addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & d
 
             computeColorHist(colhist, v_bbox, Globals::binSize, imageLeft);
 
-            detC(frame).pushBack(detContent);
-
-
-            colHists(frame).pushBack(colhist);
-
-            // FIX ME: sqrt already taken in compute3DCov in prepareDet, here again ?
-            //covariance(0,0) = sqrtf(covariance(0,0));
-            //covariance(2,2) = sqrtf(covariance(2,2));
-
-            //ROS_INFO("Covariance: ");
-            //covariance.Show();
-
             // covariance from detection message
             covariance(0,0) = det->detections[i].pose.covariance[0]; //0.05;
             covariance(1,1) = det->detections[i].pose.covariance[7];//0.05;
@@ -333,11 +382,49 @@ void Detections::addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & d
             covariance(2,1) = det->detections[i].pose.covariance[8];//0;
             //covariance.Show();
 
-            // DEBUG END
+            detC(buffer_idx).pushBack(detContent);
+            colHists(buffer_idx).pushBack(colhist);
+            cov3d(buffer_idx).pushBack(covariance);
 
-            cov3d(frame).pushBack(covariance);
+
+            //std::cout << "resizing det vec" << std::endl;
+            /*if(detC.getSize() < Globals::history+1){*/
+                //detC(frame).swap();
+                //detC(frame).pushBack(detContent);
+                //detC(frame).swap();
+                //detC(frame).resize(Globals::history+1);
+                //detC(frame).swap();
+                //colHists(frame).swap();
+                //colHists(frame).pushBack(colhist);
+                //colHists(frame).swap();
+                //colHists(frame).resize(Globals::history+1);
+                //colHists(frame).swap();
+                //cov3d(frame).swap();
+                //cov3d(frame).pushBack(covariance);
+                //cov3d(frame).swap();
+                //cov3d(frame).resize(Globals::history+1);
+                //cov3d(frame).swap();
+            /*}
+            else{
+                detC(frame).pushBack(detContent);
+                colHists(frame).pushBack(colhist);
+                cov3d(frame).pushBack(covariance);
+            }*/
+            //std::cout << "done" << std::endl;
         }
     }
+    //debug output of first detections in all history frames
+    /*Vector<double> d_pos;
+    for (int i = max(0,frame-Globals::history) ; i<frame+1 ; i++){
+        if (this->numberDetectionsAtFrame(i) > 0){
+            std::cout << "first detection in frame " << i << std::endl;
+            this->getPos3D(i,0,d_pos);
+            d_pos.show();
+        }
+        else{
+            std::cout << "no detections in frame " << i << std::endl;
+        }
+    }*/
 }
 #else
 void Detections::addHOGdetOneFrame(Vector<Vector <double> >& det, int frame, QImage& imageLeft, Camera cam, Matrix<double>& depthMap)
@@ -389,6 +476,7 @@ void Detections::addHOGdetOneFrame(Vector<Vector <double> >& det, int frame, QIm
 
 int Detections::getCategory(int frame, int detec)
 {
+    frame = globalFrameToBufferFrame(frame);
     return detC(frame)(detec)(categ);
 }
 
@@ -584,6 +672,7 @@ void Detections::computeColorHist(Volume<double>& colHist, Vector<double>& bbox,
 
 void Detections::getColorHist(int frame, int pos, Volume<double>& colHist)
 {
+    frame = globalFrameToBufferFrame(frame);
     colHist = colHists(frame)(pos);
 }
 
@@ -638,6 +727,7 @@ void Detections::compute3DCov(Vector<double> pos3d, Matrix<double>& cov, Camera 
 
 void Detections::get3Dcovmatrix(int frame, int pos, Matrix<double>& covariance)
 {
+    frame = globalFrameToBufferFrame(frame);
     covariance = cov3d(frame)(pos);
 }
 

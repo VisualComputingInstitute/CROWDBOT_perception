@@ -58,6 +58,26 @@ bool FrameInlier::operator< ( const FrameInlier& fO) const
     return (this->getFrame() < fO.getFrame());
 }
 
+Vector<double> FrameInlier::getPos3D() const
+{
+    return pos3D;
+}
+
+void FrameInlier::setPos3D(const Vector<double> &value)
+{
+    pos3D = value;
+}
+
+double FrameInlier::getHeight() const
+{
+    return height;
+}
+
+void FrameInlier::setHeight(double value)
+{
+    height = value;
+}
+
 void FrameInlier::showFrameInlier()
 {
     cout << "--------------------------------------------------------" << endl;

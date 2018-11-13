@@ -51,6 +51,7 @@ public:
     // getter methods
     //*******************************************************
 //    int numberFrames();
+    int globalFrameToBufferFrame(int global_frame);
     int numberDetectionsAtFrame( int frame);
     void getPos3D( int frame,  int detec, Vector<double>& pos);
     void getBBox( int frame,  int detec, Vector<double>& bbox);
@@ -118,6 +119,7 @@ protected:
     int offSet;
     int img_num, hypo_num, center_x, center_y, scale, categ, bbox, initscore,
     score, dist, height, rot, pos, numberAllAccDetections, numberOfFrames, nrColinDetFile, carOrient, det_id;
+    int buff_size;
 
 };
 

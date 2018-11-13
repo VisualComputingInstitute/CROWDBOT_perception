@@ -217,9 +217,10 @@ bool EKalman::findObservation(Detections& det, int frame, int /*detPos*/, int /*
 
 
         // IMAGE BASED
-        Vector<double> rectInter;
-        AncillaryMethods::IntersetRect(m_bbox, currBbox, rectInter);
-        double iou = rectInter(2)*rectInter(3)/(m_bbox(2)*m_bbox(3)+currBbox(2)*currBbox(3)-rectInter(2)*rectInter(3));
+        // !! deprecated: only 3d tracking now! bbox is not properly set (0.0), do not use!
+        //Vector<double> rectInter;
+        //AncillaryMethods::IntersetRect(m_bbox, currBbox, rectInter);
+        //double iou = rectInter(2)*rectInter(3)/(m_bbox(2)*m_bbox(3)+currBbox(2)*currBbox(3)-rectInter(2)*rectInter(3));
 
         //if(iou>0.2 /*&& colScore > Globals::kalmanObsColorModelthresh*/)
         //{
@@ -267,22 +268,25 @@ bool EKalman::findObservation(Detections& det, int frame, int /*detPos*/, int /*
         m_colHist *= 0.4;
         newColHist *= 0.6;
         m_colHist += newColHist;
+        m_height = 0.0;
 
-        m_height = det.getHeight(frame, inl(0));
-
-        det.get3Dcovmatrix(frame,inl(0), covMatrix);
+        det.get3Dcovmatrix(frame, inl(0), covMatrix);
 
         Vector<double> inlierPos;
         m_yPos.setSize(3,0.0);
         for(int i = 0; i < allInlierInOneFrame.getSize(); i++)
         {
             det.getPos3D(frame, allInlierInOneFrame(i), inlierPos);
+            m_height += det.getHeight(frame, allInlierInOneFrame(i));
             m_yPos += inlierPos;
         }
 
+        m_height *= 1.0/(double) allInlierInOneFrame.getSize();
         m_yPos *= 1.0/(double) allInlierInOneFrame.getSize();
 
         FrameInlier newInlier(frame);
+        newInlier.setHeight(m_height);
+        newInlier.setPos3D(m_yPos);
         newInlier.addInlier(inl(0));
         newInlier.addWeight(weights(0)*det.getScore(frame, inl(0)));
         m_Idx.pushBack(newInlier);
@@ -356,7 +360,7 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
     m_yPos.pushBack(startingDet(1));
     m_yPos.pushBack(m_xpost(1));
 
-    for(int i = frame+1; i > t; i--)
+    for(int i = frame; i > t; i--)
     {
 
         //take framerate from past
@@ -365,7 +369,9 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
         //printf("currentFrameRateVector:\n");
         //Globals::frameRateVector.show();
         //m_dt = 1.0 / Globals::frameRateVector(frame+1-i);
-        m_dt = Globals::dtVector(frame+1-i);
+        //std::cout << "access dt vector at " << frame-i << std::endl;
+        m_dt = Globals::dtVector(frame-i);
+
 
         predict();
         m_measurement_found = findObservation(det, i, pointPos, frame);
@@ -376,13 +382,13 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
             m_measurement = makeMeasurement();
             update();
 
-            if(i == frame+1)
+            if(i == frame)
             {
                 m_Ppost = copyInitStateUnc;
                 m_xpost = copyInitState;
             }
 
-            saveData(i-1);
+            saveData(i);
             tLastSupport = 0;
             pointPos = m_Idx(m_Idx.getSize()-1).getInlier()(0);
         }
@@ -393,7 +399,7 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
             if(tLastSupport > Globals::accepted_frames_without_det)
                 break;
             update();
-            saveData(i-1);
+            saveData(i);
         }
     }
 
@@ -417,6 +423,7 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
     hMean = m_colHist;
     colHists = m_colHists;
     stateCovMats = m_CovMats;
+    //ROS_INFO("...KD done.\n");
 }
 
 void EKalman::turnRotations(Vector<double> &dest,Vector<double> &src)
@@ -465,7 +472,7 @@ void EKalman::runKalmanUp(Detections& det, int frame, int t, Matrix<double>& all
 
         predict();
 
-        m_measurement_found = findObservation(det, i, i,i);
+        m_measurement_found = findObservation(det, i, i, i);
 
         if(m_measurement_found)
         {
@@ -492,4 +499,5 @@ void EKalman::runKalmanUp(Detections& det, int frame, int t, Matrix<double>& all
     hMean = m_colHist;
     colHists = m_colHists;
     stateCovMats = m_CovMats;
+    //ROS_INFO("...KU done.\n");
 }

@@ -13,10 +13,11 @@ int Globals::dImHeight;
 int Globals::dImWidth;
 
 ////////////////////////////////////////
-// Number of Frames / offset
+// (Number of Frames / offset : deprecated) / currenFrame
 ////////////////////////////////////////
-int Globals::numberFrames;
-int Globals::nOffset;
+//int Globals::numberFrames;
+//int Globals::nOffset;
+int Globals::currentFrame;
 
 
 /////////////////////////////////TRACKING PART/////////////////////////
