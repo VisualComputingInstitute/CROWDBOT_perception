@@ -970,8 +970,8 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
     Vector<Volume<double> > colHistsOld;
     for (int i = 0; i < numberHypos; i++)
     {
-
         auxHypo = &(vHypos(i));
+        mAllXnewUp.set_size(0,0,0.0);
 
         //**********************************************************
         // if a hypothesis was useless for too long, abandon it
@@ -1036,15 +1036,12 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
 
         Vector<double> xInit;
 
-        Vector<Vector<double> > vvTrajPTS;
-        auxHypo->getTrajPts(vvTrajPTS);
-
-        Vector<double> vX;
-        auxHypo->getVX(vX);
-
-
-        if(vvTrajPTS.getSize() < 2) continue;
-
+        // commented out to allow for track with length 1
+        //Vector<Vector<double> > vvTrajPTS;
+        //auxHypo->getTrajPts(vvTrajPTS);
+        //if(vvTrajPTS.getSize() < 2) continue;
+        //Vector<double> vX;
+        //auxHypo->getVX(vX);
 
         xInit.setSize(4, 0.0);
 
@@ -1130,6 +1127,8 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
                 mNewAllX(j,k) = mAllXnewUp(j,k - (mXProj.y_size()));
             }
         }
+        //printf("mNewAllX after KU (extend): \n");
+        //mNewAllX.Show();
 
         // FIXME (smooth trajectories)
         //Matrix<double> pp;
@@ -1273,7 +1272,7 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
         //*********************************
         // now run kf back upwards in time to get more precise tracks
         //*********************************
-        //printf("mAllXnewDown: \n");
+        //printf("mAllXnewDown after KD: \n");
         //mAllXnewDown.Show();
         //printf("vRDown: \n");
         //vRDown.show();
@@ -1290,7 +1289,7 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
             EKalman kalmanBi;
             kalmanBi.init(xInit, stateCovMats(0), Globals::dt);
             //start where above KalmanDown has stopped (at mAllXnewDown(2,0)-1)
-            kalmanBi.runKalmanUp(det, /*tmin-1*/mAllXnewDown(2,0)-1, endFrame, mAllXnewDown, vvIdxDown, vvXDown, vvYDown, volHMean,
+            kalmanBi.runKalmanUp(det, /*tmin-1*/mAllXnewDown(2,0), endFrame, mAllXnewDown, vvIdxDown, vvXDown, vvYDown, volHMean,
                                   stateCovMats, colHistsInit, colHists, xInit(1), bboxInit);
             //*********************************
             // swap data to make it consistent
@@ -1311,7 +1310,7 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
 
             //AncillaryMethods::swapVectorMatrix(stateCovMats);
             //AncillaryMethods::swapVectorVolume(colHists);
-            //printf("mAllXnewDown: \n");
+            //printf("mAllXnewDown after KU: \n");
             //mAllXnewDown.Show();
             //printf("swapped\n");
             Hypo hypo;
@@ -1326,7 +1325,7 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
                 hypo.setLastSelected(endFrame);
                 hypos.pushBack(hypo);
             }
-	}
+        }
         vvIdxDown.clearContent();
     }
     //std::cout << "...NEW DONE." << std::endl;
@@ -1358,9 +1357,9 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
 
     int nFrames = 10; // number of Frames for further extropolation of Traj.
 
-    if (numberInlier > 0 && Idx.getSize() > 1)
+    // num inliers shouldn't be a KO for a hypo (if we allow for tracklength=1 and/or allow for further extrapolation)
+    if ( true || numberInlier > 0 && Idx.getSize() > 1)
     {
-
         hypo.setVY(vY);
         hypo.setVX(vX);
         hypo.setXProj(allX);
@@ -1498,13 +1497,14 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
 //            hypo.setX4D(point4D);
 //            hypo.setX(point);
 
+
             if(Idx(0).getFrame() <= Idx(nrFrWithInl-1).getFrame()) // Changed to <= 22.10.09
             {
 
                 Vector<double>  first;
                 Vector<double>  moved;
                 Vector<double>  lengthL(2);
-                Vector<double>  avgSpeed(2);
+                Vector<double>  avgSpeed(2, 0.0);
                 Vector<double>  main4D;
                 Vector<double>  up4D(3, 0.0);
                 up4D(2) = 1.0;
@@ -1532,6 +1532,7 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
 
                 Vector<double> assistant(4, 0.0);
                 int c = 0;
+
 
                 //std::cout << "allX: " << std::endl;
                 //allX.Show();
@@ -1567,7 +1568,8 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
                 lengthL(0) = avgSpeed(0);
                 lengthL(1) = avgSpeed(1);
 
-                if (lengthL.norm() != 0)
+                // do not exclude not moving hypos (why would we?), especially to allow for tracks with length 1
+                if (true || lengthL.norm() != 0)
                 {
 
                     // recover the motion speed
@@ -1581,13 +1583,20 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
                     hypo.setMoving(true);
 
                     main4D = moved;
-                    main4D(2) = 0;
-                    main4D *=(1.0/main4D.norm());
+                    main4D(2) = 0.0;
+                    // if there is no main direction (especially for track with length 1), set to (arbitrary) 1,0,0-vector, otherwise normalize
+                    if(main4D.norm() != 0){
+                        main4D *=(1.0/main4D.norm());
+                    }
+                    else{
+                        main4D(0) = 1.0;
+                    }
 
                     //printf("main4d\n");
                     //main4D.show();
 
-                    if(main4D.norm() != 0)
+                    // also compute rectangles etc. if main dir is 0 (especially to handle tracks with length 1)
+                    if(true || main4D.norm() != 0)
                     {
                         // ***********************************************************************
                         // Prepare the spacetime object trajectory projected into 3D
@@ -1622,10 +1631,10 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
                         //startRect.Show();
 
                         AncillaryMethods::compute_rectangle(main4D, ort4D, Lmax, xLast, endRect);
+                        hypo.setEndRect(endRect);
                         //printf("endRect:\n");
                         //endRect.Show();
 
-                        hypo.setEndRect(endRect);
 
 //                        points(0,0) = endRect(0,0);
 //                        points(2,0) = endRect(1,0);
@@ -1684,6 +1693,8 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
                                 point.resize(3);
 
                                 AncillaryMethods::compute_rectangle(main4D, ort4D, Lmax, point, rect);
+                                //printf("rect inbetween:\n");
+                                //rect.Show();
 
                                 //---------------------------------------------------------
                                 // Fill in missing trajectory bboxes by linear interpolation
@@ -1856,6 +1867,7 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
                     else
                     {
                         hypo.setCategory(-1);
+                        //std::cout << "no main dir" << std::endl;
                         ROS_DEBUG("hypo has no main direction => reject!");
                     }
                 }
@@ -1863,22 +1875,26 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
                 {
                     hypo.setSpeed(0);
                     hypo.setCategory(-1);
+                    //std::cout << "not moving" << std::endl;
                     ROS_DEBUG("Hypo %i is not moving => reject!", hypo.getHypoID());
                 }
             }
             else
             {
+                //std::cout << "only single frame" << std::endl;
                 hypo.setCategory(-1);
                 ROS_DEBUG(" Hypo contains only single frame => reject! ");
             }
         }
         else
         {
+            //std::cout << "large holes" << std::endl;
             hypo.setCategory(-1);
             ROS_DEBUG("Hypo %i had large holes : MaxHoleLength - %i => reject", hypo.getHypoID(), maxHole);
         }
     }else
     {
+        //std::cout << "only one inlier" << std::endl;
         hypo.setCategory(-1);
         ROS_DEBUG("Size of Idx is 1, so no hypo can be computed");
     }

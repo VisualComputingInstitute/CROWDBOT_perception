@@ -131,6 +131,7 @@ void Kalman::init(Vector<double> xInit, Matrix<double> Pinit, double dt)
     m_xpost = xInit;
     m_Ppost = Pinit;
     m_dt = dt;
+    m_xprio = xInit; //to find and add first detection as inlier
     //xInit.show();
     //Pinit.Show();
     //std::cout << "---" << std::endl;

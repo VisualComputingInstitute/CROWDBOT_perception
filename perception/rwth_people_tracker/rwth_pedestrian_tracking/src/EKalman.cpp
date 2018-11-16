@@ -146,7 +146,7 @@ bool checkPointInsideElCylinder(double x, double y, double z, double centerX, do
     return false;
 }
 
-bool EKalman::findObservation(Detections& det, int frame, int /*detPos*/, int /*startTimeStemp*/)
+bool EKalman::findObservation(Detections& det, int frame)
 {
 
     Vector<double> succPoint;
@@ -360,6 +360,10 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
     m_yPos.pushBack(startingDet(1));
     m_yPos.pushBack(m_xpost(1));
 
+    // be sure to save the first frame (+corresponding inliers) to allow for tracks with length 1
+    saveData(frame);
+    m_measurement_found = findObservation(det, frame+1);
+
     for(int i = frame; i > t; i--)
     {
 
@@ -374,7 +378,7 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
 
 
         predict();
-        m_measurement_found = findObservation(det, i, pointPos, frame);
+        m_measurement_found = findObservation(det, i);
 
         if(m_measurement_found)
         {
@@ -388,7 +392,7 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
                 m_xpost = copyInitState;
             }
 
-            saveData(i);
+            saveData(i-1);
             tLastSupport = 0;
             pointPos = m_Idx(m_Idx.getSize()-1).getInlier()(0);
         }
@@ -399,7 +403,7 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
             if(tLastSupport > Globals::accepted_frames_without_det)
                 break;
             update();
-            saveData(i);
+            saveData(i-1);
         }
     }
 
@@ -463,6 +467,12 @@ void EKalman::runKalmanUp(Detections& det, int frame, int t, Matrix<double>& all
     m_yPos.pushBack(yPosOfStartingPoint);
     m_yPos.pushBack(m_xpost(1));
 
+    // if allXnew from previous KalmanDown are given (not empty) be sure to save the first frame (+corresponding inliers) to allow for tracks with length 1
+    if(allXnew.total_size()>0){
+        saveData(frame);
+        m_measurement_found = findObservation(det, frame-1);
+    }
+
     for(int i = frame; i < t; i++)
     {
         if(tLastSupport > Globals::maxHoleLen) break;
@@ -472,7 +482,7 @@ void EKalman::runKalmanUp(Detections& det, int frame, int t, Matrix<double>& all
 
         predict();
 
-        m_measurement_found = findObservation(det, i, i, i);
+        m_measurement_found = findObservation(det, i);
 
         if(m_measurement_found)
         {

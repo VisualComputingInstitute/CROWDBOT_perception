@@ -616,7 +616,6 @@ double Math::polyintersection(Vector<double>& ax, Vector<double>& ay, Vector<dou
         convexHull(v);
         result = fabs(area(v));
     }
-
     return result;
 }
 
@@ -674,7 +673,6 @@ double Math::area(const vector< Point2D >& points) {
         unsigned int pIdx2 = (pIdx + 1) % points.size();
         ret += points[pIdx].x * points[pIdx2].y - points[pIdx].y * points[pIdx2].x;
     }
-
     return 0.5 * ret;
 }
 

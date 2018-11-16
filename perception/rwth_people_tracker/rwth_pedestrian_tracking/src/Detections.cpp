@@ -61,8 +61,8 @@ Detections::Detections(int x, const int flag)
 int Detections::globalFrameToBufferFrame(int global_frame)
 {
     if(Globals::currentFrame > buff_size-1){
-        //std::cout << "transfer global_frame " << global_frame << " to bufferFrame: " << ((buff_size - 1) - (Globals::currentFrame - global_frame)) << std::endl;
-        return ((buff_size - 1) - (Globals::currentFrame - global_frame));
+        //std::cout << "transfer global_frame " << global_frame << " to bufferFrame: " << max(0, ((buff_size - 1) - (Globals::currentFrame - global_frame))) << std::endl;
+        return max(0, ((buff_size - 1) - (Globals::currentFrame - global_frame)));
     }
     else{
         //std::cout << "transfer global_frame " << global_frame << " to bufferFrame: " << global_frame << std::endl;

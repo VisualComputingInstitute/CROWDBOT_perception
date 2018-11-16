@@ -15,6 +15,9 @@ double MDL::solve_mdl_greedy(Matrix<double>& Q, Vector<double>& m, Vector < Hypo
     HypoIdx.clearContent();
     int x = Q.x_size();
 
+    //std::cout << "Q in MDL solver: " << std::endl;
+    //Q.Show();
+
     m.setSize(x, 0.0);
     Vector<double> result(x);
     Vector<double> bDropped(x, 0.0);
@@ -154,6 +157,7 @@ void MDL::build_mdl_matrix(Matrix<double>& Q, Vector<Hypo>& hypos, int t, double
     Vector<double> weights;
 
     int t0;
+    int tend;
     double ar;
     double overlap3D = 0;
     double error = 0;
@@ -199,7 +203,8 @@ void MDL::build_mdl_matrix(Matrix<double>& Q, Vector<Hypo>& hypos, int t, double
             hypos(i).getEnd(end1);
             hypos(j).getEnd(end2);
 
-            if (checkBBoxOverlap(bbox1, bbox2) && (t - start1(3)) >= 0 && (t - start2(3)) >= 0)
+            //if (checkBBoxOverlap(bbox1, bbox2) && (t - start1(3)) >= 0 && (t - start2(3)) >= 0)
+            if (checkBBoxOverlap(bbox1, bbox2) && (end1(3) >= start2(3)) && (end2(3) >= start1(3)))
             {
                 tLeni = max(1, int (end1(3) - start1(3) - 1));
                 tLenj = max(1, int (end2(3) - start2(3) - 1));
@@ -218,6 +223,7 @@ void MDL::build_mdl_matrix(Matrix<double>& Q, Vector<Hypo>& hypos, int t, double
                 mDj *= (1.0 /  double(tLenj));
 
                 t0 = max(start1(3), start2(3));
+                tend = min(end1(3), end2(3));
 
                 mPi0 = mDi;
                 mPi0 *= (t0 - start1(3));
@@ -244,7 +250,7 @@ void MDL::build_mdl_matrix(Matrix<double>& Q, Vector<Hypo>& hypos, int t, double
                     trJ[TrajTj(s)] = s;
                 }
 
-                for (int k = t0; k <= t; k++) {
+                for (int k = t0; k <= tend; k++) {
 
                     it = trI.find(k);
                     if (it != trI.end()) {
@@ -273,9 +279,7 @@ void MDL::build_mdl_matrix(Matrix<double>& Q, Vector<Hypo>& hypos, int t, double
                     mPj.getColumn(1, vYj);
                     vYj.swap();
 
-
                     ar = Math::polyintersection(vXi, vYi, vXj, vYj);
-
                     overlap3D += ar * exp(-(double(t) - double(k)) / double(dTau));
                 }
             }
@@ -334,8 +338,8 @@ bool MDL::checkBBoxOverlap(Matrix<double>& bbox1, Matrix<double>& bbox2)
 {
     double Rx1 = max(bbox1(0,0), bbox2(0,0));
     double Ry1 = max(bbox1(1,0), bbox2(1,0));
-    double Rx2 = max(bbox1(0,1), bbox2(0,1));
-    double Ry2 = max(bbox1(1,1), bbox2(1,1));
+    double Rx2 = min(bbox1(0,1), bbox2(0,1));
+    double Ry2 = min(bbox1(1,1), bbox2(1,1));
 
     if ((Rx2 >= Rx1) && (Ry2 >= Ry1))
     {

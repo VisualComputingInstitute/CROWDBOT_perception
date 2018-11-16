@@ -35,7 +35,7 @@ public:
                        Vector<double>& R, Vector<double>& Vel, Volume<double>& hMean, Vector<Matrix<double> >& stateCovMats,
                        Vector<Volume<double> >& colHists);
 
-    bool findObservation(Detections& det, int frame, int detPos, int startTimeStemp);
+    bool findObservation(Detections& det, int frame);
 
     Vector<double> non_lin_state_equation(Vector<double> x, double dt);
     Matrix<double> makeQ(Vector<double> x, double dt);

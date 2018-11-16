@@ -58,7 +58,7 @@ dMaxPedVel = 10 #! maximum speed of a person (of exceeded, it is set to this); u
 #====================================
 # Trajectory
 #====================================
-threshLengthTraj = 1 #! minimum trajectory length, if value is exceeded hypotheses score is set to -1.0 (but still kept)
+threshLengthTraj = 2 #! minimum trajectory length, if value is exceeded hypotheses score is set to -1.0 (but still kept)
 dSameIdThresh = 0.49 #! if this fraction of inliers is the same, two hypotheses get the same ID
 
 #=========================
@@ -89,15 +89,15 @@ sysUncVel = 1.0 #! (CURRENTLY UNUSED)
 sysUncAcc = 1 #! (CURRENTLY UNUSED)
 
 # P-init - the initial state covariance
-initPX = 0.5 #!
-initPY = 0.5 #!
-initPVX = 0.7 #!
-initPVY = 0.7 #!
+initPX = 0.2 #!
+initPY = 0.2 #!
+initPVX = 0.5 #!
+initPVY = 0.5 #!
 
-kalmanObsMotionModelthresh = 0.1 #! threshold deciding if a detection is counted as inlier based on motion model (covariance of Kalman Filter)
+kalmanObsMotionModelthresh = 0.05 #! threshold deciding if a detection is counted as inlier based on motion model (covariance of Kalman Filter)
 kalmanObsColorModelthresh = 0.5 #! threshold deciding if a detection is counted as inlier based on appearance model (color histogram distance)
 
-accepted_frames_without_det = 3 #! consecutive (!) frames without detections, when looking backwards for new hypos (running Kalman down)
+accepted_frames_without_det = 1 #! consecutive (!) frames without detections, when looking backwards for new hypos (running Kalman down)
 
 #=======EVALUATION========================================================================================================================
 save_for_eval = false

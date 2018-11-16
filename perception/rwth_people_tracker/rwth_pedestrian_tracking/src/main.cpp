@@ -394,7 +394,7 @@ void callback(const ImageConstPtr &color,
             Globals::dt = dt;
         }
         // fill dtVector
-        if (Globals::dtVector.getSize() == 0){
+        if (Globals::dtVector.getSize() == 0 || Globals::history<2){
 
             Globals::dtVector.resize(1);
             Globals::dtVector(0) = Globals::dt;
