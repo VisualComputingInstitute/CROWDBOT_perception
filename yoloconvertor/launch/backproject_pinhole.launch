@@ -1,0 +1,21 @@
+<launch>
+    <!-- arg of back projection -->
+    <arg name="tracked_persons" default="/rwth_tracker/tracked_persons" />
+    <arg name="world_frame" default="/robot/OdometryFrame" />
+    <arg name="camera_namespace" default="/hardware/depth/kinect2" /> 
+    <arg name="queue_size" default="10" />
+
+    <arg name="backproject_visual_image" default="/backproject_visual_image" />
+    <arg name="tracked_persons_2d" default="/tracked_persons_2d" />
+
+   <!-- run back projection-->
+   <node pkg="yoloconvertor" type="backprojection_pinhole" name= "backproject_pinhole" output="screen">
+       <param name="camera_namespace" value="$(arg camera_namespace)" type="string"/>
+       <param name="queue_size" value="$(arg queue_size)" type="int"/>
+       <param name="tracked_persons" value="$(arg tracked_persons)" type="string"/>
+       <param name="world_frame" value="$(arg world_frame)" type="string"/>
+       <param name="backproject_visual_image" value="$(arg backproject_visual_image)" type="string"/>
+   </node>
+
+</launch> 	
+

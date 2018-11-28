@@ -565,6 +565,7 @@ void callback(const ImageConstPtr &color,
         }
         trackedPerson2d.track_id = hyposMDL(i).getHypoID();
         trackedPerson2d.person_height = hyposMDL(i).getHeight();
+        trackedPerson.height = hyposMDL(i).getHeight();
 
         // prepare position and velocity of tracked person
         Vector<double> posInCamera = AncillaryMethods::fromWorldToCamera(trajPts(curr_idx), camera);
@@ -612,7 +613,7 @@ void callback(const ImageConstPtr &color,
         // Set pose (=position + orientation)
         pose.pose.position.x = trajPts(curr_idx)(0);//trajPts(curr_idx)(2);
         pose.pose.position.y = trajPts(curr_idx)(1);//-trajPts(curr_idx)(0);
-        pose.pose.position.z = trajPts(curr_idx)(2);//-trajPts(curr_idx)(1);
+        pose.pose.position.z = 0;//trajPts(curr_idx)(2);//-trajPts(curr_idx)(1);
 
         // Set orientation
         //pose.pose.orientation = tf::createQuaternionMsgFromYaw(atan2(robot_frame_dir(1), robot_frame_dir(0))); // determine orientation from current velocity estimate

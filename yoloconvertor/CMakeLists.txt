@@ -86,12 +86,18 @@ include_directories( include
 add_executable(yoloconvertor_standard src/main_standard.cpp)
 add_executable(yoloconvertor_panorama src/main_panorama.cpp)
 add_executable(yoloconvertor_fusion src/main_fusion.cpp)
+add_executable(backprojection_panorama src/main_backproject_panorama.cpp)
+add_executable(backprojection_pinhole src/main_backproject_pinhole.cpp)
+
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 add_dependencies(yoloconvertor_standard ${catkin_EXPORTED_TARGETS})
 add_dependencies(yoloconvertor_panorama ${catkin_EXPORTED_TARGETS})
 add_dependencies(yoloconvertor_fusion ${catkin_EXPORTED_TARGETS})
+add_dependencies(backprojection_panorama ${catkin_EXPORTED_TARGETS})
+add_dependencies(backprojection_pinhole ${catkin_EXPORTED_TARGETS})
+
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(yoloconvertor_standard
@@ -115,6 +121,25 @@ add_dependencies(yoloconvertor_fusion ${catkin_EXPORTED_TARGETS})
    ${QT_QTGUI_LIBRARY}
    X11
  )
+
+ target_link_libraries(backprojection_panorama
+   ${catkin_LIBRARIES}
+   ${OpenCV_LIBRARIES}
+   ${QT_LIBRARIES}
+   ${QT_QTCORE_LIBRARY}
+   ${QT_QTGUI_LIBRARY}
+   X11
+ )
+
+ target_link_libraries(backprojection_pinhole
+   ${catkin_LIBRARIES}
+   ${OpenCV_LIBRARIES}
+   ${QT_LIBRARIES}
+   ${QT_QTCORE_LIBRARY}
+   ${QT_QTGUI_LIBRARY}
+   X11
+ )
+
 
 
 ## Specify libraries to link a library or executable target against
