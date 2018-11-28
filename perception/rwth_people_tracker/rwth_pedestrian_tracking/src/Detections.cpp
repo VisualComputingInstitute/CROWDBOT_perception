@@ -198,7 +198,7 @@ int Detections::prepareDet(Vector<double> &detContent, const frame_msgs::Detecte
        ROS_DEBUG("Detection rejected due to inconsistency with DEPTH!!!");
        return 0;
     }*/
-    detContent(height) = 1.75; //TODO: de-hc height (with tf)
+    detContent(height) = currentDetection.height;
 
     //Vector<double> posInWorld = fromCamera2World(posInCamCord, cam);
     //compute3DCov(posInCamCord, covariance, camI, camI);

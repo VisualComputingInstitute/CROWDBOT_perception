@@ -158,6 +158,85 @@ void calc3DPosFromBBox( const Vector<double>& GPN_, double GPD_, double x, doubl
     pos3D(2) = posZ;
 }
 
+// here all ray_1 somehow are totally useless. Originally they are used to transfer the detection's frame from
+// camera to world. But now we do this in another node.
+// so here we simply set all ray_1 as 0. means we computer the result in camera frame:
+double calcHeightfromRay( const Vector<double>& GPN_, double GPD_, const BoundingBox& curBox )
+{
+
+        double x = curBox.xmin;
+        double y = curBox.ymin;
+        double w = curBox.xmax - x;
+        double h = curBox.ymax - y;
+
+        // bottom_left and bottom_right are the point of the BBOX
+        Vector<double> bottom_left(3, 1.0);
+        bottom_left(0) = x + w/2.0;
+        bottom_left(1) = y + h;
+
+        Vector<double> bottom_right(3, 1.0);
+        bottom_right(0) = x + w;
+        bottom_right(1) = y + h;
+
+        Vector<double> ray_bot_left_1(3,0.0);
+        Vector<double> ray_bot_left_2;
+
+        Vector<double> ray_bot_right_1(3,0.0);
+        Vector<double> ray_bot_right_2;
+
+        // Backproject through base point
+        mira::camera::PanoramaCameraModel::projectPixelTo3dRay(bottom_left, ray_bot_left_2, panorama_intrinsic); //here ray_upper_center is a unit vector
+        mira::camera::PanoramaCameraModel::projectPixelTo3dRay(bottom_right, ray_bot_right_2, panorama_intrinsic); //here ray_upper_center is a unit vector
+//        getRay(bottom_left, ray_bot_left_1, ray_bot_left_2);
+//        getRay(bottom_right, ray_bot_right_1, ray_bot_right_2);
+
+        Vector<double> gpPointLeft;
+        Vector<double> gpPointRight;
+
+        intersectPlane(GPN_, GPD_, ray_bot_left_1, ray_bot_left_2, gpPointLeft);
+        intersectPlane(GPN_, GPD_, ray_bot_right_1, ray_bot_right_2, gpPointRight);
+
+        // Find top point
+        Vector<double> ray_top_1(3,0.0);
+        Vector<double> ray_top_2;
+
+        Vector<double> aux(3, 1.0);
+        aux(0) = x + w/2.0; //FIXED: move top point in middle, s.t. height is computed correctly lateron
+        aux(1) = y;
+
+        mira::camera::PanoramaCameraModel::projectPixelTo3dRay(aux, ray_top_2, panorama_intrinsic); //here ray_upper_center is a unit vector
+
+        //getRay(aux, ray_top_1, ray_top_2);
+
+        // Vertical plane through base points + normal
+        Vector<double> point3;
+        point3 = gpPointLeft;
+        point3 -= (GPN_);
+        Vector<double> vpn(3,0.0);
+        Vector<double> diffGpo1Point3;
+        Vector<double> diffGpo2Point3;
+
+        diffGpo1Point3 = gpPointLeft;
+        diffGpo1Point3 -=(point3);
+
+        diffGpo2Point3 = gpPointRight;
+        diffGpo2Point3 -= point3;
+
+        vpn = cross(diffGpo1Point3,diffGpo2Point3);
+        double vpd = (-1.0)*DotProduct(vpn, point3);  // here may 1000*!
+
+        Vector<double> gpPointTop;
+        intersectPlane(vpn, vpd, ray_top_1, ray_top_2, gpPointTop);
+
+        // Results
+        gpPointTop -= gpPointLeft;
+
+        // Compute Size
+        double dSize = gpPointTop.norm();
+
+        return dSize;
+}
+
 
 
 void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneConstPtr &gp/*,const ImageConstPtr &color*/)
@@ -251,6 +330,9 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
             detected_person.pose.pose.position.z = pos3D(2);
             detected_person.pose.pose.orientation.w = 1.0;
 
+            // compute this bounding box's height
+            double detection_height = calcHeightfromRay(GPN, GPd, curBox);
+            detected_person.height = detection_height;
 
             // debug
             // show the 3d position

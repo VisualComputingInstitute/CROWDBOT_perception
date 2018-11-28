@@ -106,6 +106,82 @@ void calc3DPosFromBBox(const Matrix<double>& K, const Vector<double>& GPN_, doub
     pos3D(2) = posZ;
 }
 
+// we already has depth from Kinect, can we directly use this depth and the ground plane
+// directly get the new person's plane?
+double calcHeightfromRay(const Matrix<double>& K, const Vector<double>& GPN_, double GPD_, const BoundingBox& curBox )
+{
+
+        double x = curBox.xmin;
+        double y = curBox.ymin;
+        double w = curBox.xmax - x;
+        double h = curBox.ymax - y;
+
+        // bottom_left and bottom_right are the point of the BBOX
+        Vector<double> bottom_left(3, 1.0);
+        bottom_left(0) = x + w/2.0;
+        bottom_left(1) = y + h;
+
+        Vector<double> bottom_right(3, 1.0);
+        bottom_right(0) = x + w;
+        bottom_right(1) = y + h;
+
+        Vector<double> ray_bot_left_1(3,0.0);
+        Vector<double> ray_bot_left_2;
+
+        Vector<double> ray_bot_right_1(3,0.0);
+        Vector<double> ray_bot_right_2;
+
+        // Backproject through base point
+        getRay(K, bottom_left, ray_bot_left_1, ray_bot_left_2);
+        getRay(K, bottom_right, ray_bot_right_1, ray_bot_right_2);
+
+        Vector<double> gpPointLeft;
+        Vector<double> gpPointRight;
+
+        intersectPlane(GPN_, GPD_, ray_bot_left_1, ray_bot_left_2, gpPointLeft);
+        intersectPlane(GPN_, GPD_, ray_bot_right_1, ray_bot_right_2, gpPointRight);
+
+        // Find top point
+        Vector<double> ray_top_1(3,0.0);
+        Vector<double> ray_top_2;
+
+        Vector<double> aux(3, 1.0);
+        aux(0) = x + w/2.0; //FIXED: move top point in middle, s.t. height is computed correctly lateron
+        aux(1) = y;
+
+        getRay(K, aux, ray_top_1, ray_top_2);
+
+        // Vertical plane through base points + normal
+        Vector<double> point3;
+        point3 = gpPointLeft;
+        point3 -= (GPN_);
+        Vector<double> vpn(3,0.0);
+        Vector<double> diffGpo1Point3;
+        Vector<double> diffGpo2Point3;
+
+        diffGpo1Point3 = gpPointLeft;
+        diffGpo1Point3 -=(point3);
+
+        diffGpo2Point3 = gpPointRight;
+        diffGpo2Point3 -= point3;
+
+        vpn = cross(diffGpo1Point3,diffGpo2Point3);
+        double vpd = (-1.0)*DotProduct(vpn, point3);  // here may 1000*!
+
+        Vector<double> gpPointTop;
+        intersectPlane(vpn, vpd, ray_top_1, ray_top_2, gpPointTop);
+
+        // Results
+        gpPointTop -= gpPointLeft;
+
+        // Compute Size
+        double dSize = gpPointTop.norm();
+
+        return dSize;
+}
+
+
+
 
 void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoConstPtr &camera_info,
                               const GroundPlaneConstPtr &gp, const ImageConstPtr &depth, const CameraInfoConstPtr &dep_info)
@@ -257,6 +333,11 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
             detected_person.bbox_y = y;
             detected_person.bbox_w = width; 
             detected_person.bbox_h = height;
+
+            // compute this bounding box's height
+            double detection_height = calcHeightfromRay(K ,GPN, GPd, curBox);
+            detected_person.height = detection_height;
+
 
             detected_persons.detections.push_back(detected_person);
         }
