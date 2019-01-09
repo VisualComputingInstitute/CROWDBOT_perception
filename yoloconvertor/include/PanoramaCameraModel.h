@@ -71,6 +71,7 @@ inline void projectPixelTo3dRay(Vector<double> const& iImgPoint, Vector<double>&
 
 
 //	oRay = Point3f(std::cos(phi), std::sin(phi), height);
+    //oRay = Vector<double>(-std::sin(phi), height, std::cos(phi));
     oRay = Vector<double>(std::sin(phi), height, std::cos(phi));
     oRay = oRay * (1.0/oRay.norm());  // do normalization
 }
@@ -88,6 +89,7 @@ inline void project3dRayToPixel(Vector<double> const& iRay, Vector<double>& oImg
 //	float height = iRay.z() / std::hypot(iRay.y(), iRay.x());
 //	float phi = std::atan2(-iRay.x(), iRay.z());
 //	float height = iRay.y() / std::hypot(-iRay.x(), iRay.z());
+    //float phi = std::atan2(-iRay(0), iRay(2));
     float phi = std::atan2(iRay(0), iRay(2));
     float height = iRay(1) / std::sqrt(iRay(0)*iRay(0) + iRay(2)*iRay(2)); // hypot is for c++11, here we simply use sqrt(x^2, y^2)
 //	oImgPoint.x() = -1 * (iParam.minPhi - phi) / (iParam.maxPhi - iParam.minPhi)

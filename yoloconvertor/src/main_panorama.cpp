@@ -59,10 +59,15 @@ double pose_variance; // used in output frame_msgs::DetectedPerson.pose.covarian
 
 float minPhi =  -1.775;
 float maxPhi =  1.775;
+/*float maxHeight = 1.400;
+float minHeight = -1.400;
+float iwidth = 1280;
+float iheight = 800;*/
 float maxHeight = 1.300;
 float minHeight = -1.300;
 float iwidth = 640;
 float iheight = 480;
+
 
 
 
