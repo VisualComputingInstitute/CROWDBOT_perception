@@ -64,6 +64,7 @@
         <arg name="detection_id_increment" value="20"/>
         <arg name="world_scale" value="1.0"/>
         <arg name="bounding_boxes" value="darknet_ros/bounding_boxes_kinect"/>
+        <arg name="depth_scale" value="0.001"/>
     </include>
 
    <!-- run yolofusion-->

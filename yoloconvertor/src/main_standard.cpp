@@ -46,6 +46,7 @@ double worldScale; // for computing 3D positions from BBoxes
 
 int detection_id_increment, detection_id_offset, current_detection_id; // added for multi-sensor use in SPENCER
 double pose_variance; // used in output frame_msgs::DetectedPerson.pose.covariance
+double depth_scale; // used in output frame_msgs::DetectedPerson.pose.covariance
 
 const double eps(1e-5);
 
@@ -245,9 +246,10 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
         //debug image
         //convert depth to rgb image for display
         cv_bridge::CvImagePtr cv_depth_ptr(cv_bridge::toCvCopy(depth,"32FC1"));
-        if (depth->encoding == "16UC1" || depth->encoding == "32FC1") {
+        /*if (depth->encoding == "16UC1" || depth->encoding == "32FC1") {
             cv_depth_ptr->image *= 0.001;
-        }
+        }*/
+        cv_depth_ptr->image *= depth_scale;
         img_depth_ = cv_depth_ptr->image;
         cv::Mat tmp_depth_mat;
         img_depth_.cv::Mat::convertTo(tmp_depth_mat,CV_8U);
@@ -410,6 +412,7 @@ int main(int argc, char **argv)
     private_node_handle_.param("detection_id_increment", detection_id_increment, 1);
     private_node_handle_.param("detection_id_offset",    detection_id_offset, 0);
     private_node_handle_.param("pose_variance",    pose_variance, 0.05);
+    private_node_handle_.param("depth_scale",    depth_scale, 1.0);
     current_detection_id = detection_id_offset;
 
     //string image_color = camera_ns + "/hd/image_color_rect";

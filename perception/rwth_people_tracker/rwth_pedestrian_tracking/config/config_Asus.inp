@@ -37,9 +37,9 @@ binSize = 8                   #! bin size of color histogram
 #====================================
 # Visualisation
 #====================================
-render_bbox3D = true            #! renders 3d tracking boxes on output image
+render_bbox3D = false            #! renders 3d tracking boxes on output image
 render_bbox2D = false           #! renders 2d detection boxes on output image
-render_tracking_numbers = true  #! renders track IDs on output image
+render_tracking_numbers = false  #! renders track IDs on output image
 
 #========================
 # MDL parameters for trajectories
@@ -97,7 +97,7 @@ initPVY = 0.5 #!
 kalmanObsMotionModelthresh = 0.05 #! threshold deciding if a detection is counted as inlier based on motion model (covariance of Kalman Filter)
 kalmanObsColorModelthresh = 0.5 #! threshold deciding if a detection is counted as inlier based on appearance model (color histogram distance)
 
-accepted_frames_without_det = 1 #! consecutive (!) frames without detections, when looking backwards for new hypos (running Kalman down)
+accepted_frames_without_det = 0 #! consecutive (!) frames without detections, when looking backwards for new hypos (running Kalman down)
 
 #=======EVALUATION========================================================================================================================
 save_for_eval = false
