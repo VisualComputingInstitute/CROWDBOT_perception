@@ -481,14 +481,14 @@ void callback(const DetectedPersons::ConstPtr &detections)
         //frameInlier(0).showFrameInlier();
         //printf("last:\n");
         //frameInlier(frameInlier.getSize()-1).showFrameInlier();
-        Vector<int> currentInlier = frameInlier(frameInlier.getSize()-1).getInlier();
-        if (frameInlier(frameInlier.getSize()-1).getFrame() == cnt){
-            trackedPerson.is_matched = true;
-            trackedPerson.detection_id = currentInlier(0) + numAllDets; //current position in detVector + num of all (previous) dets = current DetID
-        }
-        else{
-            trackedPerson.is_matched = false;
-            trackedPerson.detection_id = 0; //actually 0 is wrong, as detection 0 exist, better use -1, but detection_id is unsigned
+        trackedPerson.is_matched = false;
+        trackedPerson.detection_id = 0; //actually 0 is wrong, as detection 0 exist, better use -1, but detection_id is unsigned
+        if(frameInlier.getSize() > 0){
+            Vector<int> currentInlier = frameInlier(frameInlier.getSize()-1).getInlier();
+            if (frameInlier(frameInlier.getSize()-1).getFrame() == cnt){
+                trackedPerson.is_matched = true;
+                trackedPerson.detection_id = currentInlier(0) + numAllDets; //current position in detVector + num of all (previous) dets = current DetID
+            }
         }
         trackedPerson.height = hyposMDL(i).getHeight();
 

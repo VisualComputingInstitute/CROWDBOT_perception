@@ -89,6 +89,7 @@
        <param name="detected_persons_left" value="$(arg detected_persons_yolo)" type="string"/>
        <param name="detected_persons_right" value="$(arg detected_persons_yolo)" type="string"/>
        <param name="detected_persons_rear" value="$(arg detected_persons_yolo)" type="string"/>
+       <param name="world_frame" value="$(arg world_frame)" type="string" />
    </node>
 
 

@@ -294,7 +294,7 @@ int main(int argc, char **argv)
     private_node_handle_.param("pose_variance",    pose_variance, 0.05);
     private_node_handle_.param("overlap_thresh",    overlap_thresh, 0.50);  //this overlap_thresh is for overlapping detection
 
-    private_node_handle_.param("world_frame", world_frame, string("oops!need param for world frame"));
+    private_node_handle_.param("world_frame", world_frame, string("/robot/OdometryFrame"));
 
 
     current_detection_id = detection_id_offset;
