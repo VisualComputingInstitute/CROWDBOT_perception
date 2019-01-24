@@ -324,45 +324,40 @@ void Tracker::process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allD
 }
 #else
 void Tracker::process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allDet, int frame,
-                                        const frame_msgs::DetectedPersons::ConstPtr &foundDetInFrame, CImg<unsigned char>& im, Camera &cam/*, Matrix<double> &depthMap*/)
+                                        const frame_msgs::DetectedPersons::ConstPtr &foundDetInFrame/*, CImg<unsigned char>& im, Camera &cam, Matrix<double> &depthMap*/)
 {
 
 //    Vector<double> camPos = cam.get_t();
-    allDet.addDetsOneFrame(foundDetInFrame, frame, im, cam/*, depthMap*/);
+    allDet.addDetsOneFrame(foundDetInFrame, frame/*, im, cam, depthMap*/);
 
     //*****************************************************************************************************
     HyposMDL.clearContent();
-    process_frame( allDet , cam, frame, HyposAll);
-
+    process_frame( allDet , /*cam,*/ frame, HyposAll);
 
     //***************************************************************************************
     // Visualization part 3D
     //***************************************************************************************
-    Vector<Vector<double> > vvHypoTrajPts;
-    Vector<double> vX(3);
-    Vector<double> bbox_img(4);
-    Vector<double> pos_img(2);
-    Vector<double> copyX;
-    Vector<double> vDir;
-//    Vector<FrameInlier> Idx;
+    //Vector<Vector<double> > hyposToWrite(HyposMDL.getSize());
 
-    Vector<unsigned char> colors;
-    Visualization vis;
+    //Vector<Vector<double> > vvHypoTrajPts;
+    //Vector<double> vX(3);
+    //Vector<double> bbox_img(4);
+    //Vector<double> pos_img(2);
+    //Vector<double> copyX;
+    //Vector<double> vDir;
+    //Vector<FrameInlier> Idx;
 
-    int number_of_frames_hypo_visualized_without_inlier = 8;
+    //Vector<unsigned char> colors;
+    //Visualization vis;
 
+    //int number_of_frames_hypo_visualized_without_inlier = 8;
 
-    Vector<Vector<double> > hyposToWrite(HyposMDL.getSize());
-
-
-    if(Globals::render_bbox3D)
+    /*if(Globals::render_bbox3D)
     {
 
         for(int i = 0; i < HyposMDL.getSize(); i++)
         {
-            //***************************************************************************************
             // Render only if the last occurence of an inlier is not far away
-            //***************************************************************************************
             Vector<FrameInlier> inlier;
             HyposMDL(i).getIdx(inlier);
             hyposToWrite(i).setSize(10);
@@ -476,17 +471,20 @@ void Tracker::process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allD
             }
         }
 
-    }
+    }*/
     //AncillaryMethods::exportBBOX(HyposMDL, cam, frame, *aStream);
 
-    if(Globals::save_for_eval){
+    // *********
+    // EVAL STUFF
+    // *********
+    /*if(Globals::save_for_eval){
         //static string path_to_results_hypos = "/home/stefan/results/spencer_tracker/tracking_result.txt";
         char imageSavePath[200];
         sprintf(imageSavePath, Globals::save_path_tracking.c_str());
         Matrix<double> result;
         result.transferVecVecToMat(hyposToWrite);
         result.appendToTXT(imageSavePath);
-    }
+    }*/
 
 }
 #endif
@@ -495,7 +493,7 @@ void Tracker::process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allD
 ////////////////////                                               STEREO                                                    ///////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void Tracker::process_frame(Detections& det, Camera &cam, int t,  Vector< Hypo >& HyposAll)
+void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hypo >& HyposAll)
 {
 
 

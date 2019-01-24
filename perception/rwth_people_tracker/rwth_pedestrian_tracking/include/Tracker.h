@@ -34,8 +34,8 @@ class Tracker
 
     public:
 #ifdef cim_v
-       void process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allDet, int frame, const frame_msgs::DetectedPersons::ConstPtr& foundDetInFrame,
-                                      CImg<unsigned char>& im, Camera& cam);
+       void process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allDet, int frame, const frame_msgs::DetectedPersons::ConstPtr& foundDetInFrame/*,
+                                      CImg<unsigned char>& im, Camera& cam*/);
 
        Vector<Hypo> getHyposMDL(){return HyposMDL;}
 
@@ -60,7 +60,7 @@ class Tracker
     //--------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     //--------------- Process --------------------------------------------------------------------------------------------------------------------------------------------
-    void process_frame(Detections& det, Camera& cam, int t, Vector< Hypo >& HyposAll);
+    void process_frame(Detections& det, /*Camera& cam,*/ int t, Vector< Hypo >& HyposAll);
     //--------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
     map<int, int, greater<int> > assignedBBoxCol;

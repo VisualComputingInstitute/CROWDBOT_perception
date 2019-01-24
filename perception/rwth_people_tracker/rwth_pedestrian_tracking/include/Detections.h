@@ -74,13 +74,13 @@ public:
     //*************************************************************
 
 #ifdef cim_v
-    void addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & det, int frame, CImg<unsigned char>& imageLeft, Camera cam);
+    void addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & det, int frame/*, CImg<unsigned char>& imageLeft, Camera cam*/);
 #else
     void addHOGdetOneFrame(const frame_msgs::DetectedPersons::ConstPtr & det, int frame, QImage& imageLeft, Camera cam, Matrix<double>& depth);
 #endif
 
     int prepareDet(Vector<double> &detContent, const frame_msgs::DetectedPersons::ConstPtr & det, int i, int frame, bool leftDet,
-                   Camera cam, Matrix<double> &covariance);
+                   /*Camera cam,*/ Matrix<double> &covariance);
 
     //*****************************************************************
     // Compute 3D Position out of BBox

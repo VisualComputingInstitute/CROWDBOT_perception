@@ -139,14 +139,14 @@ Detections::~Detections()
 }
 
 int Detections::prepareDet(Vector<double> &detContent, const frame_msgs::DetectedPersons::ConstPtr & det,
-                           int i, int frame, bool leftDet, Camera cam/*, Matrix<double>& depthMap*/, Matrix<double>& covariance)
+                           int i, int frame, bool leftDet/*, Camera cam, Matrix<double>& depthMap*/, Matrix<double>& covariance)
 {
-    int img_num_hog = 0;
+    /*int img_num_hog = 0;
     int hypo_num_hog = 1;
     int scale_hog = 2;
     int score_hog = 3;
     int bbox_hog = 4;
-    int distance_z = 8;
+    int distance_z = 8;*/
 
     detContent.setSize(24, 0.0);
 
@@ -168,7 +168,6 @@ int Detections::prepareDet(Vector<double> &detContent, const frame_msgs::Detecte
         detContent(22) = 1;
     }
 
-    //TODO: cam cord / world cord, here? dets in world? find solution! (use tf!)
     /*Matrix<double> camRot = Eye<double>(3);
     Vector<double> camPos(3, 0.0);
     Vector<double> gp = cam.get_GP();
@@ -198,10 +197,11 @@ int Detections::prepareDet(Vector<double> &detContent, const frame_msgs::Detecte
        ROS_DEBUG("Detection rejected due to inconsistency with DEPTH!!!");
        return 0;
     }*/
-    detContent(height) = currentDetection.height;
 
     //Vector<double> posInWorld = fromCamera2World(posInCamCord, cam);
     //compute3DCov(posInCamCord, covariance, camI, camI);
+
+    detContent(height) = currentDetection.height;
 
     detContent(pos) = currentDetection.pose.pose.position.x; //posInWorld(0);
     detContent(pos+1) = currentDetection.pose.pose.position.y; //posInWorld(1);
@@ -300,7 +300,7 @@ double Detections::get_mediandepth_inradius(Vector<double>& bbox, int radius, Ma
 }
 
 #ifdef cim_v
-void Detections::addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & det, int frame, CImg<unsigned char>& imageLeft, Camera cam/*, Matrix<double>& depthMap*/)
+void Detections::addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & det, int frame/*, CImg<unsigned char>& imageLeft, Camera cam, Matrix<double>& depthMap*/)
 {
     //std::cout << "addDets for frame: " << frame << std::endl;
 
@@ -353,7 +353,7 @@ void Detections::addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & d
     for ( int i = 0; i < det->detections.size(); i++)
     {
         //std::cout << "prepare det: " << det->detections[i].detection_id << std::endl;
-        if(prepareDet(detContent, det, i, frame, true, cam, covariance))
+        if(prepareDet(detContent, det, i, frame, true, /*cam,*/ covariance))
         {
             //std::cout << "add det: " << det->detections[i].detection_id << std::endl;
             pos3d(0) = (detContent(pos));
@@ -368,7 +368,8 @@ void Detections::addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & d
             v_bbox(2) = (detContent(bbox+2));
             v_bbox(3) = (detContent(bbox+3));
 
-            computeColorHist(colhist, v_bbox, Globals::binSize, imageLeft);
+            //TODO: delte color hists completely here and save elsewhere (e.g. in detection message... also not color hist but reid-emb?)
+            //computeColorHist(colhist, v_bbox, Globals::binSize, imageLeft);
 
             // covariance from detection message
             covariance(0,0) = det->detections[i].pose.covariance[0]; //0.05;

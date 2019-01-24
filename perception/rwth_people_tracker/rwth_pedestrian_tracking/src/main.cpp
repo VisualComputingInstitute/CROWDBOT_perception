@@ -48,8 +48,6 @@
 #include "frame_msgs/TrackedPersons.h"
 #include "frame_msgs/TrackedPersons2d.h"
 
-
-
 using namespace std;
 using namespace sensor_msgs;
 using namespace message_filters;
@@ -57,14 +55,10 @@ using namespace rwth_perception_people_msgs;
 using namespace frame_msgs;
 
 ros::Publisher pub_message;
-image_transport::Publisher pub_image;
 ros::Publisher pub_tracked_persons;
-ros::Publisher pub_tracked_persons_2d;
 
-cv::Mat img_depth_;
-cv_bridge::CvImagePtr cv_depth_ptr;	// cv_bridge for depth image
-
-//string path_config_file = "/home/mitzel/Desktop/sandbox/Demo/upper_and_cuda/bin/config_Asus.inp";
+//cv::Mat img_depth_;
+//cv_bridge::CvImagePtr cv_depth_ptr;	// cv_bridge for depth image
 
 Vector< Hypo > HyposAll;
 Detections *det_comb;
@@ -74,62 +68,6 @@ int cnt = 0;
 unsigned long track_seq = 0;
 int numAllDets = 0;
 
-//CImgDisplay* main_disp;
-//CImg<unsigned char> cim(1920,1080,1,3);
-CImg<unsigned char> cim;
-
-Vector<double> fromCam2World(Vector<double> posInCamera, Camera cam)
-{
-    Matrix<double> rotMat = cam.get_R();
-
-    Vector<double> posCam = cam.get_t();
-
-    Matrix<double> trMat(4,4,0.0);
-    trMat(3,3) = 1;
-    trMat(0,0) = rotMat(0,0);
-    trMat(0,1) = rotMat(0,1);
-    trMat(0,2) = rotMat(0,2);
-    trMat(1,0) = rotMat(1,0);
-    trMat(1,1) = rotMat(1,1);
-    trMat(1,2) = rotMat(1,2);
-    trMat(2,0) = rotMat(2,0);
-    trMat(2,1) = rotMat(2,1);
-    trMat(2,2) = rotMat(2,2);
-
-    posCam *= Globals::WORLD_SCALE;
-
-    trMat(3,0) = posCam(0);
-    trMat(3,1) = posCam(1);
-    trMat(3,2) = posCam(2);
-
-    Vector<double> transpoint = trMat*posInCamera;
-    return transpoint;
-
-}
-
-double computeDepthInCam(Vector<double> vbbox, Camera cam)
-{
-    Vector<double> pos3D;
-    double distance;
-
-    cam.bbToDetection(vbbox, pos3D, Globals::WORLD_SCALE, distance);
-    return pos3D(2);
-}
-
-void get_image(unsigned char* b_image, uint w, uint h, CImg<unsigned char>& cim)
-{
-    unsigned char* ptr = b_image;
-    for (unsigned int row = 0; row < h; ++row)
-    {
-        for (unsigned int col = 0; col < w; ++col)
-        {
-            // access the viewerImage as column, row
-            cim(col,row,0,0) = *(ptr++); // red component
-            cim(col,row,0,1) = *(ptr++); // green
-            cim(col,row,0,2) = *(ptr++); // blue
-        }
-    }
-}
 
 void ReadConfigFile(string path_config_file)
 {
@@ -357,11 +295,7 @@ Vector<double> projectPlaneToCam(Vector<double> p, Camera cam)
     return gpInCam;
 }
 
-void callback(const ImageConstPtr &color,
-              const CameraInfoConstPtr &info,
-              const GroundPlane::ConstPtr &gp,
-              const DetectedPersons::ConstPtr &detections,
-              const VisualOdometry::ConstPtr &vo)
+void callback(const DetectedPersons::ConstPtr &detections)
 {
     ROS_DEBUG("Entered tracking callback");
 
@@ -373,7 +307,7 @@ void callback(const ImageConstPtr &color,
     //printf("result: %d\n", (int) (1 / (color->header.stamp.toSec()-Globals::oldTimeForFPSUpdate)));
     // update framerate first after some tracking cycles, before use framerate from config file
     if (cnt>0) {
-        double dt = color->header.stamp.toSec() - Globals::oldTimeForFPSUpdate;
+        double dt = detections->header.stamp.toSec() - Globals::oldTimeForFPSUpdate;
         double fps = 1.0 / dt; //replaced with direct dt as discretization of dt for lower framerates is too coarse
 
         //framerate-based
@@ -415,19 +349,19 @@ void callback(const ImageConstPtr &color,
     //printf("---\n");
     // ---end update framerate+frameRatevector OR dt + dtVector---
 
-    cim.resize(info->width,info->height,1,3);
-    Globals::dImHeight = info->height;
-    Globals::dImWidth = info->width;
-    Globals::render_bbox3D = (pub_image.getNumSubscribers() > 0) || (Globals::save_for_eval);
+    // OLD IMAGE STUFF (IMAGE NOT USED ANYMORE)
+    //cim.resize(info->width,info->height,1,3);
+    //Globals::dImHeight = info->height;
+    //Globals::dImWidth = info->width;
 
     // safe strings for eval
     std::string safe_string;
     char safe_string_char[128];
 
-    // Get camera from VO and GP
-    Vector<double> GP(3, (double*) &gp->n[0]);
-    GP.pushBack((double) gp->d);
-    Camera camera = createCamera(GP, vo, info);
+    // Get camera from VO and GP (CAMERA+GP NOT USED ANYMORE)
+    //Vector<double> GP(3, (double*) &gp->n[0]);
+    //GP.pushBack((double) gp->d);
+    //Camera camera = createCamera(GP, vo, info);
 
     // Get detections from upper body
     //Vector<double> single_detection(9);
@@ -457,46 +391,41 @@ void callback(const ImageConstPtr &color,
     }
     */
 
-    get_image((unsigned char*)(&color->data[0]),info->width,info->height,cim);
+    //get_image((unsigned char*)(&color->data[0]),info->width,info->height,cim);
 
-    writeImageAndCamInfoToFile(color,info,camera);
+    //writeImageAndCamInfoToFile(color,info,camera);
 
-    if (Globals::save_for_eval){
+    /*if (Globals::save_for_eval){
         // save color image, going to be processed
         safe_string = Globals::save_path_img;
         safe_string.append("img_%08d.jpg");
         sprintf(safe_string_char, safe_string.c_str(), cnt);
         cim.save(safe_string_char);
-    }
+    }*/
 
     ///////////////////////////////////////////TRACKING///////////////////////////
-    tracker.process_tracking_oneFrame(HyposAll, *det_comb, cnt, detections, cim, camera);
+    tracker.process_tracking_oneFrame(HyposAll, *det_comb, cnt, detections/*, cim, camera*/);
     ///////////////////////////////////////////TRACKING-END///////////////////////////
 
-    if (Globals::save_for_eval){
+    /*if (Globals::save_for_eval){
         // save processed image
         safe_string = Globals::save_path_img;
         safe_string.append("track_%08d.jpg");
         sprintf(safe_string_char, safe_string.c_str(), cnt);
         cim.save(safe_string_char);
-    }
+    }*/
 
     // publish tracks
     Vector<Hypo> hyposMDL = tracker.getHyposMDL();
-    double currentTime = color->header.stamp.toSec();
+    //double currentTime = color->header.stamp.toSec();
     PedestrianTrackingArray allHypoMsg;
-    allHypoMsg.header = color->header;
+    allHypoMsg.header = detections->header;
 
     // also prepare tracks
     frame_msgs::TrackedPersons trackedPersons;
-    frame_msgs::TrackedPersons2d trackedPersons2d;
     trackedPersons.header.stamp = detections->header.stamp;
     trackedPersons.header.seq = ++track_seq;
     trackedPersons.header.frame_id = "/robot/OdometryFrame"; //FIXME: world frame, maybe should not be hardcoded
-
-    trackedPersons2d.header.stamp = detections->header.stamp;
-    trackedPersons2d.header.seq = track_seq;
-    trackedPersons2d.header.frame_id = color->header.frame_id;
 
     Vector<Vector<double> > trajPts;
     Vector<double> dir;
@@ -504,18 +433,18 @@ void callback(const ImageConstPtr &color,
     for(int i = 0; i < hyposMDL.getSize(); i++)
     {
         PedestrianTracking oneHypoMsg;
-        oneHypoMsg.header = color->header;
+        oneHypoMsg.header = detections->header;
         hyposMDL(i).getTrajPts(trajPts);
         for(int j = 0; j < trajPts.getSize(); j++)
         {
             oneHypoMsg.traj_x.push_back(trajPts(j)(0));
             oneHypoMsg.traj_y.push_back(trajPts(j)(1));
             oneHypoMsg.traj_z.push_back(trajPts(j)(2));
-            Vector<double> posInCamera = AncillaryMethods::fromWorldToCamera(trajPts(j), camera);
+            //Vector<double> posInCamera = AncillaryMethods::fromWorldToCamera(trajPts(j), camera);
 
-            oneHypoMsg.traj_x_camera.push_back(posInCamera(0));
+            /*oneHypoMsg.traj_x_camera.push_back(posInCamera(0));
             oneHypoMsg.traj_y_camera.push_back(posInCamera(1));
-            oneHypoMsg.traj_z_camera.push_back(posInCamera(2));
+            oneHypoMsg.traj_z_camera.push_back(posInCamera(2));*/
         }
 
         oneHypoMsg.id = hyposMDL(i).getHypoID();
@@ -538,10 +467,8 @@ void callback(const ImageConstPtr &color,
         //C(curr_idx).Show();
         //std::cout << "hypo " << hyposMDL(i).getHypoID() << " C size: " << C.getSize() << std::endl;
 
-
         // init one tracked person
         frame_msgs::TrackedPerson trackedPerson;
-        frame_msgs::TrackedPerson2d trackedPerson2d;
         trackedPerson.track_id = hyposMDL(i).getHypoID();
         ros::Time currentCreationTime;
         hyposMDL(i).getCreationTime(currentCreationTime);
@@ -563,38 +490,12 @@ void callback(const ImageConstPtr &color,
             trackedPerson.is_matched = false;
             trackedPerson.detection_id = 0; //actually 0 is wrong, as detection 0 exist, better use -1, but detection_id is unsigned
         }
-        trackedPerson2d.track_id = hyposMDL(i).getHypoID();
-        trackedPerson2d.person_height = hyposMDL(i).getHeight();
         trackedPerson.height = hyposMDL(i).getHeight();
 
         // prepare position and velocity of tracked person
-        Vector<double> posInCamera = AncillaryMethods::fromWorldToCamera(trajPts(curr_idx), camera);
 
-        Vector<double> bbox_topleftCornerInCam = posInCamera;
-        Vector<double> bbox_bottomrightCornerInCam = posInCamera;
-        bbox_topleftCornerInCam.pushBack(1);
-        bbox_bottomrightCornerInCam.pushBack(1);
-        bbox_topleftCornerInCam(0) -= Globals::pedSizeWVis/2.0;
-        bbox_bottomrightCornerInCam(0) += Globals::pedSizeWVis/2.0;
-        Vector<double> bbox_topleftCornerInWorld = AncillaryMethods::fromCameraToWorld(bbox_topleftCornerInCam, camera);
-        Vector<double> bbox_bottomrightCornerInWorld = AncillaryMethods::fromCameraToWorld(bbox_bottomrightCornerInCam, camera);
-        bbox_topleftCornerInWorld *= 1/bbox_topleftCornerInWorld(3);
-        bbox_topleftCornerInWorld.resize(3);
-        bbox_bottomrightCornerInWorld *= 1/bbox_bottomrightCornerInWorld(3);
-        bbox_bottomrightCornerInWorld.resize(3);
-        bbox_topleftCornerInWorld(1) -= hyposMDL(i).getHeight();
-        Vector<double> bbox_topleftCornerInImage;
-        Vector<double> bbox_bottomrightCornerInImage;
-        camera.WorldToImage(bbox_topleftCornerInWorld, Globals::WORLD_SCALE, bbox_topleftCornerInImage);
-        camera.WorldToImage(bbox_bottomrightCornerInWorld, Globals::WORLD_SCALE, bbox_bottomrightCornerInImage);
-        trackedPerson2d.x = bbox_topleftCornerInImage(0);
-        trackedPerson2d.y = bbox_topleftCornerInImage(1);
-        trackedPerson2d.w = bbox_bottomrightCornerInImage(0) - bbox_topleftCornerInImage(0);
-        trackedPerson2d.h = bbox_bottomrightCornerInImage(1) - bbox_topleftCornerInImage(1);
-        trackedPerson2d.depth = posInCamera(2);
-
-        Vector<double>  vCurrVX;
-        Vector<double>  vCurrVY;
+        Vector<double> vCurrVX;
+        Vector<double> vCurrVY;
         double currVX;
         double currVY;
         hyposMDL(i).getVX(vCurrVX);
@@ -644,70 +545,33 @@ void callback(const ImageConstPtr &color,
         trackedPerson.pose = pose;
         trackedPerson.twist = twist;
         trackedPersons.tracks.push_back(trackedPerson);
-        trackedPersons2d.boxes.push_back(trackedPerson2d);
 
 
-    }
-
-    if(pub_image.getNumSubscribers()) {
-        ROS_DEBUG("Publishing image");
-        Image res_img;
-        res_img.header = color->header;
-        res_img.height = cim._height;
-        res_img.width = cim._width;
-        res_img.step   = color->step;
-        for (std::size_t i = 0; i != cim._height*cim._width; ++i) {
-            res_img.data.push_back(cim.data()[i+0*cim._height*cim._width]);
-            res_img.data.push_back(cim.data()[i+1*cim._height*cim._width]);
-            res_img.data.push_back(cim.data()[i+2*cim._height*cim._width]);
-        }
-        res_img.encoding = color->encoding;
-
-        pub_image.publish(res_img);
     }
 
     pub_message.publish(allHypoMsg);
     pub_tracked_persons.publish(trackedPersons);
-    pub_tracked_persons_2d.publish(trackedPersons2d);
-    Globals::oldTimeForFPSUpdate = color->header.stamp.toSec(); //ros::Time::now().toSec();
+    Globals::oldTimeForFPSUpdate = detections->header.stamp.toSec(); //ros::Time::now().toSec();
     // number of detections over all Frames (for detID)
     numAllDets += detections->detections.size();
     cnt++;
 }
 
 // Connection callback that unsubscribes from the tracker if no one is subscribed.
-void connectCallback(message_filters::Subscriber<CameraInfo> &sub_cam,
-                     message_filters::Subscriber<GroundPlane> &sub_gp,
-                     message_filters::Subscriber<DetectedPersons> &sub_det,
-                     message_filters::Subscriber<VisualOdometry> &sub_vo,
-                     image_transport::SubscriberFilter &sub_col,
-                     image_transport::ImageTransport &it){
+void connectCallback(message_filters::Subscriber<DetectedPersons> &sub_det){
     if(!pub_message.getNumSubscribers()
-    && !pub_image.getNumSubscribers()
     && !pub_tracked_persons.getNumSubscribers()
-    && !pub_tracked_persons_2d.getNumSubscribers()
     ) {
         ROS_DEBUG("Tracker: No subscribers. Unsubscribing.");
-        sub_cam.unsubscribe();
-        sub_gp.unsubscribe();
         sub_det.unsubscribe();
-        sub_vo.unsubscribe();
-        sub_col.unsubscribe();
     } else {
         ROS_DEBUG("Tracker: New subscribers. Subscribing.");
-        sub_cam.subscribe();
-        sub_gp.subscribe();
         sub_det.subscribe();
-        sub_vo.subscribe();
-        sub_col.subscribe(it,sub_col.getTopic().c_str(),1);
     }
 }
 
 int main(int argc, char **argv)
 {
-    //Globals::render_bbox2D = true;
-    //Globals::render_tracking_numbers = true;
-
     // Set up ROS.
     ros::init(argc, argv, "pedestrian_tracking");
     ros::NodeHandle n;
@@ -717,15 +581,10 @@ int main(int argc, char **argv)
     // Declare variables that can be modified by launch file or command line.
     int queue_size;
     string config_file;
-    string cam_ns;
-    string topic_gp;
     string topic_detections;
-    string topic_vo;
 
     string pub_topic;
-    string pub_image_topic;
     string pub_topic_tracked_persons;
-    string pub_topic_tracked_persons_2d;
 
     // Initialize node parameters from launch file or command line.
     // Use a private node handle so that multiple instances of the node can be run simultaneously
@@ -734,13 +593,7 @@ int main(int argc, char **argv)
     private_node_handle_.param("queue_size", queue_size, int(10));
     private_node_handle_.param("config_file", config_file, string(""));
 
-    private_node_handle_.param("camera_namespace", cam_ns, string("/head_xtion"));
-    private_node_handle_.param("ground_plane", topic_gp, string("/ground_plane"));
     private_node_handle_.param("detections", topic_detections, string("/detected_persons"));
-    private_node_handle_.param("visual_odometry", topic_vo, string("/visual_odometry/motion_matrix"));
-
-    string topic_color_image = cam_ns + "/hd/image_color_rect";
-    string topic_camera_info = cam_ns + "/hd/camera_info";
 
     if(strcmp(config_file.c_str(),"") == 0) {
         ROS_ERROR("No config file specified.");
@@ -754,62 +607,39 @@ int main(int argc, char **argv)
     ROS_DEBUG("pedestrian_tracker: Queue size for synchronisation is set to: %i", queue_size);
 
     // Image transport handle
-    image_transport::ImageTransport it(private_node_handle_);
+    //image_transport::ImageTransport it(private_node_handle_);
 
     // Create a subscriber.
     // Set queue size to 1 because generating a queue here will only pile up images and delay the output by the amount of queued images
     // The immediate unsubscribe is necessary to start without subscribing to any topic because message_filters does nor allow to do it another way.
-    image_transport::SubscriberFilter subscriber_color;
-    subscriber_color.subscribe(it, topic_color_image.c_str(), 1); subscriber_color.unsubscribe(); //This subscribe and unsubscribe is just to set the topic name.
-    message_filters::Subscriber<CameraInfo> subscriber_camera_info(n, topic_camera_info.c_str(), 1); subscriber_camera_info.unsubscribe();
-    message_filters::Subscriber<GroundPlane> subscriber_gp(n, topic_gp.c_str(), 1); subscriber_gp.unsubscribe();
     message_filters::Subscriber<DetectedPersons> subscriber_detections(n, topic_detections.c_str(), 1); subscriber_detections.unsubscribe();
-    message_filters::Subscriber<VisualOdometry> subscriber_vo(n, topic_vo.c_str(), 1); subscriber_vo.unsubscribe();
 
     ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
-                                                       boost::ref(subscriber_camera_info),
-                                                       boost::ref(subscriber_gp),
-                                                       boost::ref(subscriber_detections),
-                                                       boost::ref(subscriber_vo),
-                                                       boost::ref(subscriber_color),
-                                                       boost::ref(it));
-    image_transport::SubscriberStatusCallback image_cb = boost::bind(&connectCallback,
-                                                                     boost::ref(subscriber_camera_info),
-                                                                     boost::ref(subscriber_gp),
-                                                                     boost::ref(subscriber_detections),
-                                                                     boost::ref(subscriber_vo),
-                                                                     boost::ref(subscriber_color),
-                                                                     boost::ref(it));
+                                                       boost::ref(subscriber_detections));
 
     ///////////////////////////////////////////////////////////////////////////////////
     //Registering callback
     ///////////////////////////////////////////////////////////////////////////////////
-    sync_policies::ApproximateTime<Image, CameraInfo, GroundPlane,
-            DetectedPersons, VisualOdometry> MySyncPolicy(queue_size); //The real queue size for synchronisation is set here.
-    MySyncPolicy.setAgePenalty(1000); //set high age penalty to publish older data faster even if it might not be correctly synchronized.
 
-    const sync_policies::ApproximateTime<Image, CameraInfo, GroundPlane,
-            DetectedPersons, VisualOdometry> MyConstSyncPolicy = MySyncPolicy;
+    // TRACKER NOW ONLY DEPENDS ON DETECTIONS: NO SYNC NEEDED
+    //sync_policies::ApproximateTime<DetectedPersons> MySyncPolicy(queue_size); //The real queue size for synchronisation is set here.
+    //MySyncPolicy.setAgePenalty(1000); //set high age penalty to publish older data faster even if it might not be correctly synchronized.
 
-    Synchronizer< sync_policies::ApproximateTime<Image, CameraInfo, GroundPlane,
-            DetectedPersons, VisualOdometry> >
-            sync(MyConstSyncPolicy, subscriber_color, subscriber_camera_info, subscriber_gp,
-                 subscriber_detections, subscriber_vo);
-    sync.registerCallback(boost::bind(&callback, _1, _2, _3, _4, _5));
+    //const sync_policies::ApproximateTime<DetectedPersons> MyConstSyncPolicy = MySyncPolicy;
+
+    //Synchronizer< sync_policies::ApproximateTime<DetectedPersons> > sync(MyConstSyncPolicy, subscriber_detections);
+    //sync.registerCallback(boost::bind(&callback, _1));
+
+    subscriber_detections.registerCallback(boost::bind(&callback, _1));
+
     ///////////////////////////////////////////////////////////////////////////////////
 
     // Create a topic publisher
     private_node_handle_.param("pedestrian_array", pub_topic, string("/pedestrian_tracking/pedestrian_array"));
     pub_message = n.advertise<PedestrianTrackingArray>(pub_topic.c_str(), 10, con_cb, con_cb);
 
-    private_node_handle_.param("pedestrian_image", pub_image_topic, string("/pedestrian_tracking/image"));
-    pub_image = it.advertise(pub_image_topic.c_str(), 1, image_cb, image_cb);
-
     private_node_handle_.param("tracked_persons", pub_topic_tracked_persons, string("/frame/perception/tracked_persons"));
     pub_tracked_persons = n.advertise<frame_msgs::TrackedPersons>(pub_topic_tracked_persons, 10, con_cb, con_cb);
-
-    private_node_handle_.param("tracked_persons_2d", pub_topic_tracked_persons_2d, (pub_topic_tracked_persons + "_2d"));
-    pub_tracked_persons_2d = n.advertise<frame_msgs::TrackedPersons2d>(pub_topic_tracked_persons_2d, 10, con_cb, con_cb);
 
     ros::spin();
     return 0;
