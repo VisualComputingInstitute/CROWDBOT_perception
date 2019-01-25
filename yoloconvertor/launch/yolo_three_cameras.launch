@@ -37,6 +37,10 @@
     <arg name="camera_namespace" default="/hardware/depth/kinect2"/>
     <arg name="tracked_persons" default="/rwth_tracker/tracked_persons" />
 
+    <!-- trajectories -->
+    <arg name="person_trajectories" default="/rwth_tracker/person_trajectories" />
+    <arg name="selected_person_trajectory" default="/rwth_tracker/selected_person_trajectory" />
+
     <!-- left yoloconvertor and yolo arg-->
     <arg name="pano_image_left" default="/hardware/video/valeo/rectificationNIKRLeft/PanoramaImage" />
     <arg name="detected_persons_left" default="/yoloconvertor_pano/detected_persons_left"/>
@@ -147,6 +151,16 @@
         <arg name="tracked_persons" value="$(arg tracked_persons)" />
         <arg name="queue_size" value="10" />
     </include>
+
+    <!-- Person Trajectories -->
+    <include file="$(find rwth_pedestrian_trajectories)/launch/pedestrian_trajectories.launch">
+        <arg name="tracked_persons" value="$(arg tracked_persons)" />
+        <arg name="person_trajectories" value="$(arg person_trajectories)" />
+        <arg name="selected_person_trajectory" value="$(arg selected_person_trajectory)" />
+        <arg name="queue_size" value="10" />
+        <arg name="camera_frame" value="$(arg camera_frame)" />
+    </include>
+
 
     <node name="topic_relay2" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/sync/SyncColorImage /hardware/depth/kinect2/hd/image_color_rect" respawn="true" />
     <node name="topic_relay3" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/ColorIntrinsic /hardware/depth/kinect2/hd/camera_info" respawn="true" />

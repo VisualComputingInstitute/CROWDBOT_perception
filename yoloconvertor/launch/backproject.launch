@@ -1,33 +1,69 @@
 <launch>
     <!-- arg of back projection -->
-    <arg name="image_topic" default="/hardware/video/valeo/rectificationNIKRLeft/PanoramaImage" />
+    <arg name="image_topic_left" default="/hardware/video/valeo/rectificationNIKRLeft/PanoramaImage" />
+    <arg name="image_topic_right" default="/hardware/video/valeo/rectificationNIKRRight/PanoramaImage" />
+    <arg name="image_topic_rear" default="/hardware/video/valeo/rectificationNIKRRear/PanoramaImage" />
     <arg name="tracked_persons" default="/rwth_tracker/tracked_persons" />
+    <arg name="person_trajectories" default="/rwth_tracker/person_trajectories" />
     <arg name="world_frame" default="/robot/OdometryFrame" />
     <arg name="camera_namespace" default="/hardware/depth/kinect2" /> 
     <arg name="queue_size" default="10" />
 
     <arg name="backproject_visual_image" default="/backproject_visual_image" />
-    <arg name="tracked_persons_2d" default="/tracked_persons_2d" />
+    <arg name="max_frame" default="20" />
 
     <arg name="pinhole" default="false" />
-    <arg name="panorama" default="false" />
+    <arg name="pano_left" default="false" />
+    <arg name="pano_right" default="false" />
+    <arg name="pano_rear" default="false" />
 
-   <!-- run back projection-->
+
+   <!-- run back projection kinect-->
    <node pkg="yoloconvertor" type="backprojection_pinhole" name= "backproject_pinhole" output="screen" if="$(arg pinhole)">
        <param name="camera_namespace" value="$(arg camera_namespace)" type="string"/>
        <param name="queue_size" value="$(arg queue_size)" type="int"/>
        <param name="tracked_persons" value="$(arg tracked_persons)" type="string"/>
+       <param name="tracked_persons_2d" value="$(arg tracked_persons)_2d_kinect" type="string"/>
        <param name="world_frame" value="$(arg world_frame)" type="string"/>
-       <param name="backproject_visual_image" value="$(arg backproject_visual_image)" type="string"/>
+       <param name="backproject_visual_image" value="$(arg backproject_visual_image)_kinect" type="string"/>
+       <param name="person_trajectories" value="$(arg person_trajectories)" />
+       <param name="max_frame" value="$(arg max_frame)" type="int"/>
    </node>
 
-   <!-- run back projection-->
-   <node pkg="yoloconvertor" type="backprojection_panorama" name= "backproject_pano" output="screen" if="$(arg panorama)">
-       <param name="image_topic" value="$(arg image_topic)" type="string"/>
+   <!-- run back projection pano_left-->
+   <node pkg="yoloconvertor" type="backprojection_panorama" name= "backproject_pano_left" output="screen" if="$(arg pano_left)">
+       <param name="image_topic" value="$(arg image_topic_left)" type="string"/>
        <param name="queue_size" value="$(arg queue_size)" type="int"/>
        <param name="tracked_persons" value="$(arg tracked_persons)" type="string"/>
+       <param name="tracked_persons_2d" value="$(arg tracked_persons)_2d_pano_left" type="string"/>
        <param name="world_frame" value="$(arg world_frame)" type="string"/>
-       <param name="backproject_visual_image" value="$(arg backproject_visual_image)" type="string"/>
+       <param name="backproject_visual_image" value="$(arg backproject_visual_image)_pano_left" type="string"/>
+       <param name="person_trajectories" value="$(arg person_trajectories)" />
+       <param name="max_frame" value="$(arg max_frame)" type="int"/>
+   </node>
+
+   <!-- run back projection pano_right-->
+   <node pkg="yoloconvertor" type="backprojection_panorama" name= "backproject_pano_right" output="screen" if="$(arg pano_right)">
+       <param name="image_topic" value="$(arg image_topic_right)" type="string"/>
+       <param name="queue_size" value="$(arg queue_size)" type="int"/>
+       <param name="tracked_persons" value="$(arg tracked_persons)" type="string"/>
+       <param name="tracked_persons_2d" value="$(arg tracked_persons)_2d_pano_right" type="string"/>
+       <param name="world_frame" value="$(arg world_frame)" type="string"/>
+       <param name="backproject_visual_image" value="$(arg backproject_visual_image)_pano_right" type="string"/>
+       <param name="person_trajectories" value="$(arg person_trajectories)" />
+       <param name="max_frame" value="$(arg max_frame)" type="int"/>
+   </node>
+
+   <!-- run back projection pano_rear-->
+   <node pkg="yoloconvertor" type="backprojection_panorama" name= "backproject_pano_rear" output="screen" if="$(arg pano_rear)">
+       <param name="image_topic" value="$(arg image_topic_rear)" type="string"/>
+       <param name="queue_size" value="$(arg queue_size)" type="int"/>
+       <param name="tracked_persons" value="$(arg tracked_persons)" type="string"/>
+       <param name="tracked_persons_2d" value="$(arg tracked_persons)_2d_pano_rear" type="string"/>
+       <param name="world_frame" value="$(arg world_frame)" type="string"/>
+       <param name="backproject_visual_image" value="$(arg backproject_visual_image)_pano_rear" type="string"/>
+       <param name="person_trajectories" value="$(arg person_trajectories)" />
+       <param name="max_frame" value="$(arg max_frame)" type="int"/>
    </node>
 
 </launch> 	

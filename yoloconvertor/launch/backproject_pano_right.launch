@@ -2,11 +2,12 @@
     <!-- arg of back projection -->
     <arg name="image_topic" default="/hardware/video/valeo/rectificationNIKRRight/PanoramaImage" />
     <arg name="tracked_persons" default="/rwth_tracker/tracked_persons" />
+    <arg name="person_trajectories" default="/rwth_tracker/person_trajectories" />
     <arg name="world_frame" default="/robot/OdometryFrame" />
     <arg name="queue_size" default="10" />
 
     <arg name="backproject_visual_image" default="/backproject_visual_image" />
-    <arg name="tracked_persons_2d" default="/tracked_persons_2d" />
+    <arg name="max_frame" default="20" />
 
    <!-- run back projection-->
    <node pkg="yoloconvertor" type="backprojection_panorama" name= "backproject_pano" output="screen" ns="/pano_right">
@@ -15,6 +16,8 @@
        <param name="tracked_persons" value="$(arg tracked_persons)" type="string"/>
        <param name="world_frame" value="$(arg world_frame)" type="string"/>
        <param name="backproject_visual_image" value="$(arg backproject_visual_image)" type="string"/>
+       <param name="person_trajectories" value="$(arg person_trajectories)" />
+       <param name="max_frame" value="$(arg max_frame)" type="int"/>
    </node>
 
 </launch> 	

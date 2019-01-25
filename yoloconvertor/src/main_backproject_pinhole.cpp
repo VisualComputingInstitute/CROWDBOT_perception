@@ -3,7 +3,7 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 
-
+#include <iostream>
 #include <cmath>
 #include <ros/time.h>
 #include <image_transport/subscriber_filter.h>
@@ -22,6 +22,7 @@
 
 #include <frame_msgs/TrackedPersons.h>
 #include <frame_msgs/TrackedPersons2d.h>
+#include <frame_msgs/PersonTrajectories.h>
 
 #include "Matrix.h"
 #include "Vector.h"
@@ -37,23 +38,37 @@ using namespace cv_bridge;
 tf::TransformListener* listener;
 cv::Mat image_rgb;
 image_transport::Publisher pub_result_image;
+Matrix<double> K;
 
 frame_msgs::TrackedPersons2dPtr tps2d_ptr; // this pointer point to the TrackedPersons2d msg, which we will publish in callback funciton.
 // this pointer is actually for share this TrackedPersons2d msg between two callback function.
 
 ros::Publisher pub_tracked_persons2d;
 
+
 string world_frame;
+tf::StampedTransform world2camera_transform; //this transform do transformation from world frame to camera frame.
+int max_traj_frame_num; // at most we draw trajectory from previous 10 frames
+
 
 float hard_code_person_width = 0.7;
+
+
+
+
+inline void ray_to_pixel( const Vector<double>& ray, Vector<double>& image_cord)
+{
+    image_cord = (K*ray)*(1.0/ray[2]);
+}
+
+
 
 void transfer_tracked_persons_to_camera_cord(const frame_msgs::TrackedPersonsConstPtr &sub_tps, frame_msgs::TrackedPersons &dst_tps, string camera_frame)
 {
     ros::Time tracked_time(sub_tps->header.stamp);
-    tf::StampedTransform transform;
     try {
         listener->waitForTransform(camera_frame, world_frame, tracked_time, ros::Duration(1.0));
-        listener->lookupTransform(camera_frame, world_frame, tracked_time, transform);  //from world to camera
+        listener->lookupTransform(camera_frame, world_frame, tracked_time, world2camera_transform);  //from world to camera
     }
     catch (tf::TransformException ex){
        ROS_WARN_THROTTLE(20.0, "Failed transform lookup from world frame to camera frame", ex.what());
@@ -64,7 +79,7 @@ void transfer_tracked_persons_to_camera_cord(const frame_msgs::TrackedPersonsCon
         frame_msgs::TrackedPerson tracked_person(sub_tps->tracks[i]);
 
         tf::Vector3 pos_vector_in_world(tracked_person.pose.pose.position.x, tracked_person.pose.pose.position.y, tracked_person.pose.pose.position.z);
-        tf::Vector3 pos_vector_in_camera = transform*pos_vector_in_world;
+        tf::Vector3 pos_vector_in_camera = world2camera_transform*pos_vector_in_world;
 
         Vector<double> pos3D;
         pos3D.setSize(3);
@@ -81,12 +96,52 @@ void transfer_tracked_persons_to_camera_cord(const frame_msgs::TrackedPersonsCon
 }
 
 
-void render_visualization(const frame_msgs::TrackedPersons2d& tracked_persons2d,const ImageConstPtr& color )
+void render_trajectory(unsigned int track_id, const frame_msgs::PersonTrajectoriesConstPtr &trajs_ptr)
 {
+    auto& persontrajs = trajs_ptr->trajectories;
+    size_t num = persontrajs.size();
+    for(size_t j=0;j<num;++j)
+    {
+        if(persontrajs[j].track_id == track_id) //this traj is this person's
+        {
+            // now transfer the traj from world frame to camera frame, and then go to the image frame.
+            auto& traj = persontrajs[j].trajectory;
+            Vector<double> prv_cord(2); // to draw line, we need the pos in previous frame;
+            // iterate over this traj's last traj_frame_num frames, transform to image space and draw points.
+            for(auto reverse_it = traj.rbegin(); reverse_it!=traj.rend();++reverse_it) // we reverse iterate the traj, since the end elements are the later pos and are more important.
+            {
+                unsigned int rend_count = reverse_it-traj.rbegin();
+                if(rend_count>max_traj_frame_num)
+                    break;  //if we already render enough pos of this traj, break.
+                tf::Vector3 pos_vector_in_world(reverse_it->pose.pose.position.x, reverse_it->pose.pose.position.y, reverse_it->pose.pose.position.z);
+                tf::Vector3 pos_vector_in_camera = world2camera_transform*pos_vector_in_world;
+                Vector<double> ray(pos_vector_in_camera[0], pos_vector_in_camera[1], pos_vector_in_camera[2]);
+                Vector<double> image_cord(2);
+                ray_to_pixel( ray, image_cord);
+
+                if(rend_count==0)
+                    prv_cord = image_cord; //initialize the previous pos
+                else{
+                    render_traj_line(image_cord[0],image_cord[1],prv_cord[0],prv_cord[1],image_rgb,track_id);
+                    prv_cord = image_cord;
+                }
+            }
+            return;  // have finished rendering this person's traj, return
+        }
+        else{
+            ; // do nothing
+        }
+    }
+}
+
+
+void render_visualization(const frame_msgs::TrackedPersons2d& tracked_persons2d,const ImageConstPtr& color,const frame_msgs::PersonTrajectoriesConstPtr &trajs_ptr)
+{
+    //debug image
     CvImagePtr cv_color_ptr(toCvCopy(color));
     image_rgb = cv_color_ptr->image;
 
-    for(unsigned int i=0; i<(tracked_persons2d.boxes.size()); i++)
+    for(unsigned int i=0;i<(tracked_persons2d.boxes.size());i++)
     {
         frame_msgs::TrackedPerson2d tracked_person2d(tracked_persons2d.boxes[i]);
 
@@ -96,27 +151,27 @@ void render_visualization(const frame_msgs::TrackedPersons2d& tracked_persons2d,
         float width = tracked_person2d.w;
         float x =(float)std::max(tracked_person2d.x, 0);  // make sure x and y are in the image.
         float y = (float)std::max(tracked_person2d.y, 0);
-
-        render_bbox_2D(x,y,width,height, image_rgb, 255, 0, 0);
+        auto track_id = tracked_person2d.track_id;
+        render_bbox_2D(x , y, width, height, image_rgb, track_id);
 
         // show the track id
-        string trackid_str = int_to_string((int)tracked_person2d.track_id);
-        render_text(trackid_str, image_rgb, x, y, 0, 255, 0);
+        string trickid_str = string("id: ")+int_to_string((int)track_id);
+        //render_text(trickid_str, image_rgb, x, y, 0,255,0);
+        render_text(trickid_str,image_rgb,x,y,track_id);
 
+        // render the trajectories
+        render_trajectory(track_id,trajs_ptr);
     }
 
     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(color->header, "bgr8", image_rgb).toImageMsg();
     //sensor_image.encoding = "rgb8";//depth->encoding;
     pub_result_image.publish(msg);
+    //debugend
 }
 
 
 
 
-inline void ray_to_pixel(const Matrix<double>& K, const Vector<double>& ray, Vector<double>& image_cord)
-{
-    image_cord = (K*ray)*(1.0/ray[2]);
-}
 
 void backProjectCallback(const frame_msgs::TrackedPersonsConstPtr &tpks_ptr, const CameraInfoConstPtr& cam_info)
 {
@@ -125,7 +180,7 @@ void backProjectCallback(const frame_msgs::TrackedPersonsConstPtr &tpks_ptr, con
     ROS_DEBUG_STREAM("current time:" << ros::Time::now());
     ROS_DEBUG_STREAM("-----------------------------------------");
 
-    Matrix<double> K(3,3, (double*)&cam_info->K[0]);
+    K = Matrix<double>(3,3, (double*)&cam_info->K[0]);
 
     // intersection box
     int ibox_top_x;
@@ -158,11 +213,8 @@ void backProjectCallback(const frame_msgs::TrackedPersonsConstPtr &tpks_ptr, con
             frame_msgs::TrackedPerson tracked_person(tkps_in_camera_frame.tracks[i]);
             Vector<double> bottom_center_3d(tracked_person.pose.pose.position.x, tracked_person.pose.pose.position.y, tracked_person.pose.pose.position.z);
             Vector<double> bottom_center_2d(3); //homogenous coordinator
-            ray_to_pixel(K, bottom_center_3d, bottom_center_2d);
+            ray_to_pixel( bottom_center_3d, bottom_center_2d);
 
-            // we only consider bottom_center_2d which located within the image as this tracked person belong to this camera
-            //if(true || bottom_center_2d[0]>0 && bottom_center_2d[0] < cam_info->width && bottom_center_2d[1]>0 && bottom_center_2d[1]<cam_info->height)
-            //{
             frame_msgs::TrackedPerson2d tracked_person_2d;
             tracked_person_2d.person_height = tracked_person.height;
 
@@ -174,9 +226,9 @@ void backProjectCallback(const frame_msgs::TrackedPersonsConstPtr &tpks_ptr, con
             bottom_right_3d[0] += hard_code_person_width/2.0;
 
             Vector<double> top_left_2d(3);
-            ray_to_pixel(K,top_left_3d,top_left_2d);
+            ray_to_pixel(top_left_3d,top_left_2d);
             Vector<double> bottom_right_2d(3);
-            ray_to_pixel(K,bottom_right_3d,bottom_right_2d);
+            ray_to_pixel(bottom_right_3d,bottom_right_2d);
 
             tracked_person_2d.depth = tracked_person.pose.pose.position.z;
             tracked_person_2d.x = (int)top_left_2d[0];
@@ -197,8 +249,6 @@ void backProjectCallback(const frame_msgs::TrackedPersonsConstPtr &tpks_ptr, con
             if (((float)ibox_w*ibox_h)/(tracked_person_2d.w*tracked_person_2d.h) >= 0.3 && tracked_person_2d.depth >= 0){
                 tracked_persons_2d.boxes.push_back(tracked_person_2d);
             }
-            //}
-
         }
         // Publish
         pub_tracked_persons2d.publish(tracked_persons_2d);
@@ -207,11 +257,11 @@ void backProjectCallback(const frame_msgs::TrackedPersonsConstPtr &tpks_ptr, con
 }
 
 
-void backProjectwithImageCallback(const frame_msgs::TrackedPersonsConstPtr &tracked_persons, const ImageConstPtr &color, const CameraInfoConstPtr &cam_info)
+void backProjectwithImageCallback(const frame_msgs::TrackedPersonsConstPtr &tracked_persons, const ImageConstPtr &color, const CameraInfoConstPtr &cam_info, const frame_msgs::PersonTrajectoriesConstPtr &trajs)
 {
     if(pub_tracked_persons2d.getNumSubscribers()||pub_result_image.getNumSubscribers()){
         backProjectCallback(tracked_persons,cam_info);
-        render_visualization(*tps2d_ptr, color);
+        render_visualization(*tps2d_ptr,color, trajs);
     }
 }
 
@@ -221,6 +271,7 @@ void connectCallback(//ros::Subscriber &sub_msg,    //why i need this??
                      Subscriber<frame_msgs::TrackedPersons> &sub_tps,
                      image_transport::SubscriberFilter &sub_color,
                      Subscriber<CameraInfo> &sub_cam_info,
+                     Subscriber<frame_msgs::PersonTrajectories> &sub_traj,
                      image_transport::ImageTransport &it){
     if(!pub_tracked_persons2d.getNumSubscribers() && !pub_result_image.getNumSubscribers()) {
         ROS_DEBUG("back projection: No subscribers. Unsubscribing.");
@@ -228,12 +279,13 @@ void connectCallback(//ros::Subscriber &sub_msg,    //why i need this??
         sub_tps.unsubscribe();
         sub_color.unsubscribe();
         sub_cam_info.unsubscribe();
+        sub_traj.unsubscribe();
     } else {
         ROS_DEBUG("back projection: New subscribers. Subscribing.");
         sub_tps.subscribe();
         sub_cam_info.subscribe();
         sub_color.subscribe(it,sub_color.getTopic().c_str(),1);
-
+        sub_traj.subscribe();
     }
 
 }
@@ -246,18 +298,21 @@ void connectCallback(//ros::Subscriber &sub_msg,    //why i need this??
  * subscribe:   1.tracked persons
  *              2.camera image
  *              3.camera info
- * publish:     tracked persons 2d. camera image with tracked person in image
+ *              4.PersonTrajectories
+ * publish:     1.tracked persons 2d.
+ *              2.image which show tracked object and its id and its traj
  *
  *
 ***************************************************/
 int main(int argc, char **argv)
 {
     // Set up ROS.
-    ros::init(argc, argv, "backproject_pinhole");
+    ros::init(argc, argv, "back_project_pinhole");
     ros::NodeHandle n;
 
     // create a tf listener
     listener = new tf::TransformListener();
+
 
     // Declare variables that can be modified by launch file or command line.
     int queue_size;
@@ -266,16 +321,18 @@ int main(int argc, char **argv)
     string pub_topic_result_image;
     string tracked_persons;
     string pub_tracked_persons_2d;
+    string trajectories;
 
     // Initialize node parameters from launch file or command line.
     // Use a private node handle so that multiple instances of the node can be run simultaneously
     // while using different parameters.
     ros::NodeHandle private_node_handle_("~");
     private_node_handle_.param("queue_size", queue_size, int(10));
-    private_node_handle_.param("world_frame", world_frame, string("/robot/OdometryFrame"));
-    private_node_handle_.param("tracked_persons", tracked_persons, string("/rwth_tracker/tracked_persons"));
-    private_node_handle_.param("camera_namespace", camera_ns, string("/hardware/depth/kinect2"));
-
+    private_node_handle_.param("world_frame", world_frame, string("oops!need param for world frame"));
+    private_node_handle_.param("tracked_persons", tracked_persons, string("oops!need param fo"));
+    private_node_handle_.param("camera_namespace", camera_ns, string("/head_xtion"));
+    private_node_handle_.param("person_trajectories", trajectories, string("/rwth_tracker/person_trajectories"));
+    private_node_handle_.param("max_frames", max_traj_frame_num, int(20));
     string image_color = camera_ns +"/hd/image_color_rect";
     string camera_info = camera_ns + "/hd/camera_info";
 
@@ -285,47 +342,59 @@ int main(int argc, char **argv)
     // Create a subscriber.
     // Name the topic, message queue, callback function with class name, and object containing callback function.
     // Set queue size to 1 because generating a queue here will only pile up images and delay the output by the amount of queued images
+    //ros::Subscriber sub_message;
     // Here these unsubscribes make at beginning this node doesn't subscribe any topic, until any other node subscribe this node, and want this node work.
     Subscriber<CameraInfo> subscriber_camera_info(n, camera_info.c_str(), 10); subscriber_camera_info.unsubscribe();
     Subscriber<frame_msgs::TrackedPersons> subscriber_tracked_persons(n, tracked_persons.c_str(), 1); subscriber_tracked_persons.unsubscribe();
+    Subscriber<frame_msgs::PersonTrajectories> subscriber_person_trajectories(n, trajectories.c_str(),1);subscriber_person_trajectories.unsubscribe();
     image_transport::SubscriberFilter subscriber_color;
     subscriber_color.subscribe(it, image_color.c_str(), 1); subscriber_color.unsubscribe();
 
     ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
+                                                       //boost::ref(sub_message),
                                                        boost::ref(subscriber_tracked_persons),
                                                        boost::ref(subscriber_color),
                                                        boost::ref(subscriber_camera_info),
+                                                       boost::ref(subscriber_person_trajectories),
                                                        boost::ref(it));
 
     image_transport::SubscriberStatusCallback image_cb = boost::bind(&connectCallback,
+                                                                     //boost::ref(sub_message),
                                                                      boost::ref(subscriber_tracked_persons),
                                                                      boost::ref(subscriber_color),
                                                                      boost::ref(subscriber_camera_info),
+                                                                     boost::ref(subscriber_person_trajectories),
                                                                      boost::ref(it));
 
 
-    sync_policies::ApproximateTime<frame_msgs::TrackedPersons, Image, CameraInfo> MySyncPolicy(queue_size);
-    const sync_policies::ApproximateTime<frame_msgs::TrackedPersons, Image,CameraInfo> MyConstSyncPolicy = MySyncPolicy;
 
-    Synchronizer< sync_policies::ApproximateTime<frame_msgs::TrackedPersons, Image,CameraInfo> > sync(MyConstSyncPolicy,
-                                                                                           subscriber_tracked_persons,
-                                                                                           subscriber_color,
-                                                                                           subscriber_camera_info);
 
-    sync.registerCallback(boost::bind(&backProjectwithImageCallback, _1, _2,_3));  //use the visualization callback
 
-    // Create publishers
-    private_node_handle_.param("tracked_persons_2d", pub_tracked_persons_2d, string("/tracked_persons_2d"));
-    pub_tracked_persons2d = n.advertise<frame_msgs::TrackedPersons2d>(pub_tracked_persons_2d, 10, con_cb, con_cb);
+        sync_policies::ApproximateTime<frame_msgs::TrackedPersons, Image, CameraInfo,frame_msgs::PersonTrajectories> MySyncPolicy(queue_size);
+        MySyncPolicy.setAgePenalty(1000); //set high age penalty to publish older data faster even if it might not be correctly synchronized.
 
-    //debug image publisher
-    private_node_handle_.param("backproject_visual_image", pub_topic_result_image, string("/backproject_visual_image"));
-    pub_result_image = it.advertise(pub_topic_result_image.c_str(), 1, image_cb, image_cb);
+        const sync_policies::ApproximateTime<frame_msgs::TrackedPersons, Image,CameraInfo,frame_msgs::PersonTrajectories> MyConstSyncPolicy = MySyncPolicy;
 
-    ros::spin();
+        Synchronizer< sync_policies::ApproximateTime<frame_msgs::TrackedPersons, Image,CameraInfo,frame_msgs::PersonTrajectories> > sync(MyConstSyncPolicy,
+                                                                                               subscriber_tracked_persons,
+                                                                                               subscriber_color,
+                                                                                               subscriber_camera_info,
+                                                                                               subscriber_person_trajectories);
+
+        sync.registerCallback(boost::bind(&backProjectwithImageCallback, _1, _2,_3,_4));  //use the visualization callback
+
+        // Create publishers
+        private_node_handle_.param("tracked_persons_2d", pub_tracked_persons_2d, tracked_persons + "_2d");
+        pub_tracked_persons2d = n.advertise<frame_msgs::TrackedPersons2d>(pub_tracked_persons_2d, 10, con_cb, con_cb);
+
+        //debug image publisher
+        private_node_handle_.param("backproject_visual_image", pub_topic_result_image, string("/yoloconvertor_visual_image"));
+        pub_result_image = it.advertise(pub_topic_result_image.c_str(), 1, image_cb, image_cb);
+        ros::spin();
+
+
 
     return 0;
 }
-
 
 
