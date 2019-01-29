@@ -51,20 +51,21 @@ int max_traj_frame_num; // at most we draw trajectory from previous 10 frames
 
 
 
-float minPhi =  -1.775;
-float maxPhi =  1.775;
-/*float maxHeight = 1.400;
-float minHeight = -1.400;
-float iwidth = 1280;
-float iheight = 800;*/
-float maxHeight = 1.300;
-float minHeight = -1.300;
-float iwidth = 640;
-float iheight = 480;
+//float minPhi =  -1.775;
+//float maxPhi =  1.775;
+///*float maxHeight = 1.400;
+//float minHeight = -1.400;
+//float iwidth = 1280;
+//float iheight = 800;*/
+//float maxHeight = 1.300;
+//float minHeight = -1.300;
+//float iwidth = 640;
+//float iheight = 480;
 
 float hard_code_person_width = 0.7;
 
-mira::camera::PanoramaCameraIntrinsic panorama_intrinsic(minPhi, maxPhi, minHeight, maxHeight, iwidth, iheight);
+//mira::camera::PanoramaCameraIntrinsic panorama_intrinsic(minPhi, maxPhi, minHeight, maxHeight, iwidth, iheight);
+extern mira::camera::PanoramaCameraIntrinsic panorama_intrinsic; // the defination is in PanoramaCamearIntrinsic.h
 
 
 inline void ray_to_pixel( const Vector<double>& ray, Vector<double>& image_cord)

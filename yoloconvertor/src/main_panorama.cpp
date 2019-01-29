@@ -8,6 +8,7 @@
 #include <ros/time.h>
 //#include <image_transport/subscriber_filter.h>
 #include <sensor_msgs/CameraInfo.h>
+#include <nav_msgs/OccupancyGrid.h>
 //#include <image_transport/image_transport.h>
 
 #include <message_filters/subscriber.h>
@@ -52,26 +53,33 @@ const double eps(1e-5);
 
 ros::Publisher pub_detected_persons;
 double worldScale; // for computing 3D positions from BBoxes
-
 int detection_id_increment, detection_id_offset, current_detection_id; // added for multi-sensor use in SPENCER
 double pose_variance; // used in output frame_msgs::DetectedPerson.pose.covariance
 
+nav_msgs::OccupancyGrid oc_map;
 
-float minPhi =  -1.775;
-float maxPhi =  1.775;
-/*float maxHeight = 1.400;
-float minHeight = -1.400;
-float iwidth = 1280;
-float iheight = 800;*/
-float maxHeight = 1.300;
-float minHeight = -1.300;
-float iwidth = 640;
-float iheight = 480;
+//// I should put all these staff to the panorama head file
+//float minPhi =  -1.775;
+//float maxPhi =  1.775;
+///*float maxHeight = 1.400;
+//float minHeight = -1.400;
+//float iwidth = 1280;
+//float iheight = 800;*/
+//float maxHeight = 1.300;
+//float minHeight = -1.300;
+//float iwidth = 640;
+//float iheight = 480;
+extern mira::camera::PanoramaCameraIntrinsic panorama_intrinsic;// the defination is in PanoramaCamearIntrinsic.h
 
 
 
 
-mira::camera::PanoramaCameraIntrinsic panorama_intrinsic(minPhi, maxPhi, minHeight, maxHeight, iwidth, iheight);
+
+void map_callback(const nav_msgs::OccupancyGridConstPtr& ogptr)
+{
+    oc_map = *ogptr;
+    cout<<"in map_callback and get map!"<<endl;
+}
 
 /*void render_bbox_2D(float x_float,float y_float, float width, float height, QImage& image,
                     int r, int g, int b)
@@ -432,9 +440,11 @@ int main(int argc, char **argv)
     //string pano_image;
     string pub_topic_detected_persons;
     string boundingboxes;
+    string map_topic;
 
     //debug
     string pub_topic_result_image;
+
 
     listener = new tf::TransformListener();
 
@@ -453,6 +463,11 @@ int main(int argc, char **argv)
     private_node_handle_.param("detection_id_offset",    detection_id_offset, 0);
     private_node_handle_.param("pose_variance",    pose_variance, 0.05);
     current_detection_id = detection_id_offset;
+
+    //map
+    private_node_handle_.param("map", map_topic, string("/map"));
+    ros::Subscriber sub_map = n.subscribe(map_topic, 1, map_callback);
+
 
     //string image_color = pano_image;
 
