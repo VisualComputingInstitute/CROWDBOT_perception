@@ -19,7 +19,7 @@
 #include <tf/transform_listener.h>
 
 #include <string.h>
-
+#include <stdio.h>
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
 
@@ -57,6 +57,7 @@ int detection_id_increment, detection_id_offset, current_detection_id; // added 
 double pose_variance; // used in output frame_msgs::DetectedPerson.pose.covariance
 
 nav_msgs::OccupancyGrid oc_map;
+bool is_get_map(false);
 
 //// I should put all these staff to the panorama head file
 //float minPhi =  -1.775;
@@ -78,6 +79,7 @@ extern mira::camera::PanoramaCameraIntrinsic panorama_intrinsic;// the definatio
 void map_callback(const nav_msgs::OccupancyGridConstPtr& ogptr)
 {
     oc_map = *ogptr;
+    is_get_map = true;
     cout<<"in map_callback and get map!"<<endl;
 }
 
@@ -259,6 +261,11 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
     //ROS_DEBUG_STREAM("time stamep of input image:" << boxes->header);
     //ROS_DEBUG_STREAM("current time:" << ros::Time::now());
     //ROS_DEBUG_STREAM("-----------------------------------------");
+    if(is_get_map==false)
+    {
+        cout<<"no map"<<endl;
+    }else
+        cout<<"get map"<<endl;
 
 
     // Get GP
