@@ -1,0 +1,180 @@
+<launch>
+
+    <!-- this launch file is used to test test backprojection of pinhole camera.. -->
+
+
+    <!-- general parameters -->
+    <arg name="camera_frame" default="/hardware/depth/kinect2/ColorImageFrame" />
+    <arg name="world_frame" default="/robot/OdometryFrame" />
+
+    <!-- GP -->
+    <arg name="rate" default="10.0"/>
+    <arg name="base_footprint" default="/robot/BaseFrame" />
+    <arg name="ground_plane" default="/ground_plane" />
+
+
+   <!-- Ground Plane (world) -->
+    <node pkg="rwth_ground_plane" type="ground_plane_tf_based_fixed" name="ground_plane" output="screen">
+        <param name="base_footprint" value="$(arg base_footprint)" />
+        <param name="camera_frame" value="$(arg world_frame)" />
+        <param name="ground_plane" value="$(arg ground_plane)" />
+        <param name="rate" value="$(arg rate)"/>
+    </node>
+
+
+
+    <!-- general yolo-v3 arg -->
+    <!-- Console launch prefix -->
+    <arg name="launch_prefix" default=""/>
+    <!-- Config and weights folder. -->
+    <arg name="yolo_weights_path"          default="$(find darknet_ros)/yolo_network_config/weights"/>
+    <arg name="yolo_config_path"           default="$(find darknet_ros)/yolo_network_config/cfg"/>
+
+    <!-- general yoloconvertor_panorama arg-->
+    <arg name="detection_id_offset" default="0"/>
+    <arg name="detection_id_increment" default="1"/>
+    <arg name="world_scale" default="1"/>
+    <arg name="queue_size" default="10" />
+
+    <!-- left yoloconvertor and yolo arg-->
+    <arg name="pano_image_left" default="/hardware/video/valeo/rectificationNIKRLeft/PanoramaImage" />
+    <arg name="detected_persons_left" default="/yoloconvertor_pano/detected_persons_left"/>
+    <arg name="bounding_boxes_left" default="darknet_ros/bounding_boxes_left"/>
+
+
+    <!-- left yoloconvertor and yolo-->
+    <!-- Start darknet and ros wrapper -->
+    <!-- Load parameters for left -->
+    <rosparam command="load" ns="darknet_ros_left" file="$(find darknet_ros)/config/ros_pano_left.yaml"/>
+    <rosparam command="load" ns="darknet_ros_left" file="$(find darknet_ros)/config/yolov3.yaml"/>
+    <node pkg="darknet_ros" type="darknet_ros" name="darknet_ros_left" output="screen" launch-prefix="$(arg launch_prefix)">
+      <param name="weights_path"          value="$(arg yolo_weights_path)" />
+      <param name="config_path"           value="$(arg yolo_config_path)" />
+    </node>
+
+
+    <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_panorama_left" output="screen">
+        <param name="world_scale" value="$(arg world_scale)"/>
+        <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
+        <param name="queue_size" value="$(arg queue_size)" type="int"/>
+        <param name="pano_image" value="$(arg pano_image_left)" type="string"/>
+        <param name="detected_persons" value="$(arg detected_persons_left)" type="string"/>
+        <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
+        <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
+        <param name="bounding_boxes" value="$(arg bounding_boxes_left)"/>
+    </node>
+
+
+
+
+
+
+
+
+
+   <!-- run two relay, to fake we have 3 output bounding box
+   <node name="topic_relay1" pkg="topic_tools" type="relay" args="$(arg detected_persons) /yoloconvertor_pano/detected_persons_right" respawn="true" />
+   <node name="topic_relay2" pkg="topic_tools" type="relay" args="$(arg detected_persons) /yoloconvertor_pano/detected_persons_rear" respawn="true" />
+-->
+
+
+
+   <!-- arg for yolofusion-->
+   <arg name="fused_detections" default="yolofusion/detected_persons" />
+   <!-- run yolofusion-->
+   <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="fuse_yolo" output="screen">
+       <param name="world_scale" value="$(arg world_scale)"/>
+       <param name="queue_size" value="$(arg queue_size)" type="int"/>
+       <param name="detection_id_offset" value="0"/>
+       <param name="detection_id_increment" value="1"/>
+       <param name="pose_variance" value="0.05"/>
+       <param name="threshold" value="0.05"/>
+       <param name="total_detected_persons" value="$(arg fused_detections)" type="string"/>
+       <param name="detected_persons_left" value="$(arg detected_persons_left)" type="string"/>
+       <param name="detected_persons_right" value="$(arg detected_persons_left)" type="string"/>
+       <param name="detected_persons_rear" value="$(arg detected_persons_left)" type="string"/>
+       <param name="left_camera_frame" value="/hardware/video/valeo/ValeoLeftImageFrame" type="string"/>
+       <param name="right_camera_frame" value="/hardware/video/valeo/ValeoLeftImageFrame" type="string"/>
+       <param name="rear_camera_frame" value="/hardware/video/valeo/ValeoLeftImageFrame" type="string"/>
+       <param name="world_frame" value="$(arg world_frame)" type="string"/>
+   </node>
+
+
+
+
+
+
+    <!-- VO -->
+    <arg name="motion_parameters" default="/motion_matrix" />
+    <arg name="sensor_frame_id" default="/hardware/depth/kinect2/ColorImageFrame" />
+    <arg name="odom_frame_id" default="/robot/OdometryFrame" />
+
+    <!-- Visual Odometry -->
+    <include file="$(find odometry_to_motion_matrix)/launch/tf2visual.launch">
+        <arg name="motion_parameters" value="$(arg motion_parameters)" />
+        <arg name="sensor_frame_id" value="$(arg sensor_frame_id)" />
+        <arg name="odom_frame_id" value="$(arg odom_frame_id)" />
+    </include>
+
+    <!-- tracker -->
+    <arg name="tracked_persons" default="/rwth_tracker/tracked_persons" />
+    <arg name="camera_namespace" default="/hardware/depth/kinect2" />
+    <!-- Pedestrian Tracking -->
+    <include file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking.launch">
+        <arg name="camera_namespace" value="$(arg camera_namespace)" />
+        <arg name="ground_plane" value="$(arg ground_plane)" />
+        <arg name="detections" value="$(arg fused_detections)" />
+        <arg name="visual_odometry" value="$(arg motion_parameters)" />
+        <arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
+        <arg name="pedestrian_image" value="/rwth_tracker/image" />
+        <arg name="tracked_persons" value="$(arg tracked_persons)" />
+        <arg name="queue_size" value="30" />
+    </include>
+
+
+
+
+    <!-- trajectories -->
+    <arg name="person_trajectories" default="/rwth_tracker/person_trajectories" />
+    <arg name="selected_person_trajectory" default="/rwth_tracker/selected_person_trajectory" />
+    <!-- Person Trajectories -->
+    <include file="$(find rwth_pedestrian_trajectories)/launch/pedestrian_trajectories.launch">
+        <arg name="tracked_persons" value="$(arg tracked_persons)" />
+        <arg name="person_trajectories" value="$(arg person_trajectories)" />
+        <arg name="selected_person_trajectory" value="$(arg selected_person_trajectory)" />
+        <arg name="queue_size" value="10" />
+        <arg name="camera_frame" value="$(arg camera_frame)" />
+    </include>
+
+
+    <!-- arg of back projection -->
+
+    <arg name="node_name" default="back_project_pinhole" />
+    <arg name="tracked_person_2d" default="tracked_person_2d" />
+    <arg name="back_project_visul_image" default="back_project_visul_image" />
+
+
+   <!-- run back projection--> 
+
+   <node pkg="yoloconvertor" type="backprojection_pinhole" name= "$(arg node_name)" output="screen">
+       <param name="camera_namespace" value="$(arg camera_namespace)" type="string"/>
+       <param name="queue_size" value="$(arg queue_size)" type="int"/>
+       <param name="tracked_persons" value="$(arg tracked_persons)" type="string"/>
+       <param name="world_frame" value="$(arg world_frame)" type="string"/>
+       <param name="tracked_person_2d" value="$(arg tracked_person_2d)" type="string"/>
+       <param name="back_project_visul_image" value="$(arg back_project_visul_image)" type="string"/>
+        <param name="person_trajectories" value="$(arg person_trajectories)" />
+   </node>
+
+
+
+
+
+    <!-- for test!!! -->
+    <!-- adding rostopic tool relay -->
+    <node name="topic_relay3" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/ColorIntrinsic /hardware/depth/kinect2/hd/camera_info" respawn="true" />
+    <!--
+    <node name="topic_relay5" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/sync/SyncRegisteredDepthImage /hardware/depth/kinect2/hd/image_depth_rect" respawn="true" />
+    -->
+    <node name="topic_relay2" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/sync/SyncColorImage /hardware/depth/kinect2/hd/image_color_rect" respawn="true" />	
+</launch> 	
