@@ -167,7 +167,9 @@
    </node>
 
 
-
+   <!-- run map-->
+   <arg name="map_path"          default="$(find yoloconvertor)/map/map.yaml"/>
+   <node pkg="map_server" type="map_server" name= "global_map" args="$(arg map_path)" output="screen" />
 
 
     <!-- for test!!! -->
