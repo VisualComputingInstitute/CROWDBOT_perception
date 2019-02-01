@@ -27,6 +27,7 @@
 #include "Matrix.h"
 #include "Vector.h"
 #include "PanoramaCameraModel.h"
+#include "map.h"
 
 using namespace std;
 using namespace sensor_msgs;
@@ -36,7 +37,7 @@ using namespace darknet_ros_msgs;
 using namespace cv_bridge;
 
 tf::TransformListener* listener;
-
+mymap* mmp;
 
 const double eps(1e-5);
 
@@ -45,19 +46,18 @@ double worldScale; // for computing 3D positions from BBoxes
 int detection_id_increment, detection_id_offset, current_detection_id; // added for multi-sensor use in SPENCER
 double pose_variance; // used in output frame_msgs::DetectedPerson.pose.covariance
 
-nav_msgs::OccupancyGrid oc_map;
 
 
 extern mira::camera::PanoramaCameraIntrinsic panorama_intrinsic;// the defination and all hardcode parameter is in PanoramaCamearIntrinsic.h
 
 
 
-
-// this call back only get called once, and get the map.
-void map_callback(const nav_msgs::OccupancyGridConstPtr& ogptr)
-{
-    oc_map = *ogptr;
-}
+//nav_msgs::OccupancyGrid oc_map;
+//// this call back only get called once, and get the map.
+//void map_callback(const nav_msgs::OccupancyGridConstPtr& ogptr)
+//{
+//    oc_map = *ogptr;
+//}
 
 
 
@@ -241,17 +241,17 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
     //
     // get the transformation from camera frame to map frame
     //
-    tf::StampedTransform camera2map; //this transform do transformation from camera frame to map frame.
-    string map_frame_id = oc_map.header.frame_id;
-    ros::Time tracked_time(boxes->image_header.stamp);
-    try {
-        listener->waitForTransform(map_frame_id, camera_frame_id, tracked_time, ros::Duration(1.0));
-        listener->lookupTransform(map_frame_id, camera_frame_id, tracked_time, camera2map);  //from camera to map
-    }
-    catch (tf::TransformException ex){
-       ROS_WARN_THROTTLE(20.0, "Failed transform lookup from camera frame to map frame. The map data is empty:%s", oc_map.data.empty() ? "true" : "false", ex.what());
-    }
-
+//    tf::StampedTransform camera2map; //this transform do transformation from camera frame to map frame.
+//    string map_frame_id = oc_map.header.frame_id;
+//    ros::Time tracked_time(boxes->image_header.stamp);
+//    try {
+//        listener->waitForTransform(map_frame_id, camera_frame_id, tracked_time, ros::Duration(1.0));
+//        listener->lookupTransform(map_frame_id, camera_frame_id, tracked_time, camera2map);  //from camera to map
+//    }
+//    catch (tf::TransformException ex){
+//       ROS_WARN_THROTTLE(20.0, "Failed transform lookup from camera frame to map frame. The map data is empty:%s", oc_map.data.empty() ? "true" : "false", ex.what());
+//    }
+    mmp->update_transform_camera2frame(camera_frame_id,boxes->image_header.stamp);
 
     //
     // Now create 3D coordinates for SPENCER DetectedPersons msg
@@ -305,26 +305,29 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
             detected_person.bbox_h = height;
 
             // now check if this bounding box can exsit in the map
-            // 1. transform this pos3D to map frame;
+//            // 1. transform this pos3D to map frame;
+//            tf::Vector3 pos3D_incam(detected_person.pose.pose.position.x,detected_person.pose.pose.position.y, detected_person.pose.pose.position.z);
+//            tf::Vector3 pos3D_inmap = camera2map*pos3D_incam;
+
+//            // 2. get the index for the map. Since the map's left corner (0,0 cordinate in map image) is not exactly the origin in map frame, it is biasd.
+//            double map_resolution = oc_map.info.resolution;
+//            tf::Vector3 map_origin(oc_map.info.origin.position.x, oc_map.info.origin.position.y, 0.0);  // this is in meter unit
+//            //oc_map.info.origin.orientation;  // we assume no rotation bias, since most systm ignore this map rotation
+//            pos3D_inmap -= map_origin;
+//            unsigned int map_ind_x = static_cast<unsigned int>(pos3D_inmap.x()*1.0/map_resolution);
+//            unsigned int map_ind_y = static_cast<unsigned int>(pos3D_inmap.y()*1.0/map_resolution);
+
+//            //3. see if it is occupanied in map
+//            auto grid_value = oc_map.data[map_ind_x+map_ind_y*oc_map.info.width]; //row-major
+//            if(grid_value == 100) // now with the map from map_serve, 100 is occupied
+//            {
+////                cout<<"hey grid_value is 100, id is "<<current_detection_id<<endl;
+////                cout<<"x= "<<map_ind_x/10<<" y= "<<map_ind_y/10<<endl;
+//                continue;   // do not pass the check, directly go to the next bounding box.
+//            }
             tf::Vector3 pos3D_incam(detected_person.pose.pose.position.x,detected_person.pose.pose.position.y, detected_person.pose.pose.position.z);
-            tf::Vector3 pos3D_inmap = camera2map*pos3D_incam;
-
-            // 2. get the index for the map. Since the map's left corner (0,0 cordinate in map image) is not exactly the origin in map frame, it is biasd.
-            double map_resolution = oc_map.info.resolution;
-            tf::Vector3 map_origin(oc_map.info.origin.position.x, oc_map.info.origin.position.y, 0.0);  // this is in meter unit
-            //oc_map.info.origin.orientation;  // we assume no rotation bias, since most systm ignore this map rotation
-            pos3D_inmap -= map_origin;
-            unsigned int map_ind_x = static_cast<unsigned int>(pos3D_inmap.x()*1.0/map_resolution);
-            unsigned int map_ind_y = static_cast<unsigned int>(pos3D_inmap.y()*1.0/map_resolution);
-
-            //3. see if it is occupanied in map
-            auto grid_value = oc_map.data[map_ind_x+map_ind_y*oc_map.info.width]; //row-major
-            if(grid_value == 100) // now with the map from map_serve, 100 is occupied
-            {
-//                cout<<"hey grid_value is 100, id is "<<current_detection_id<<endl;
-//                cout<<"x= "<<map_ind_x/10<<" y= "<<map_ind_y/10<<endl;
-                continue;   // do not pass the check, directly go to the next bounding box.
-            }
+            if(mmp->is_pos_occupied(pos3D_incam))
+                continue;
 
             // additional nan check
             if(!isnan(detected_person.pose.pose.position.x) && !isnan(detected_person.pose.pose.position.y) && !isnan(detected_person.pose.pose.position.z)){
@@ -403,8 +406,8 @@ int main(int argc, char **argv)
 
     //map
     private_node_handle_.param("map", map_topic, string("/map"));
-    ros::Subscriber sub_map = n.subscribe(map_topic, 1, map_callback);
-
+    //ros::Subscriber sub_map = n.subscribe(map_topic, 1, map_callback);
+    mmp = new mymap(n,map_topic);
 
 
     // Create a subscriber.
