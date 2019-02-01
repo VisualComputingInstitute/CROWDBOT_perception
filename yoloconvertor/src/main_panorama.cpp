@@ -384,7 +384,14 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
             detected_person.bbox_w = width;
             detected_person.bbox_h = height;
 
-            detected_persons.detections.push_back(detected_person);
+            // additional nan check
+            if(!isnan(detected_person.pose.pose.position.x) && !isnan(detected_person.pose.pose.position.y) && !isnan(detected_person.pose.pose.position.z)){
+                detected_persons.detections.push_back(detected_person);
+            }else{
+                std::cout << "A detection has been discarded because of nan values!" << std::endl;
+                ROS_DEBUG("A detection has been discarded because of nan values in panorama conversion!");
+            }
+
 
         }
 

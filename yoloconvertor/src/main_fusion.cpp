@@ -76,7 +76,12 @@ void transfer_detected_persons_to_world_cord(const DetectedPersonsConstPtr &sub_
         detected_person.pose.pose.position.y = pos3D(1);
         detected_person.pose.pose.position.z = pos3D(2);
 
-        pub_dp.detections.push_back(detected_person);
+        // additional nan check
+        if(!isnan(detected_person.pose.pose.position.x) && !isnan(detected_person.pose.pose.position.y) && !isnan(detected_person.pose.pose.position.z)){
+            pub_dp.detections.push_back(detected_person);
+        }else{
+            ROS_DEBUG("A detection has been discarded because of nan values during fusion!");
+        }
     }
 }
 
