@@ -282,23 +282,7 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
             detected_person.pose.pose.position.z = pos3D(2);
             detected_person.pose.pose.orientation.w = 1.0;
 
-            // now check if this bounding box can exsit in the map
-            // 1. transform this pos3D to map frame;
-            tf::Vector3 pos3D_incam(detected_person.pose.pose.position.x,detected_person.pose.pose.position.y, detected_person.pose.pose.position.z);
-            tf::Vector3 pos3D_inmap = camera2map*pos3D_incam;
 
-            // 2. get the index for the map. Since the map's left corner (0,0 cordinate in map image) is not exactly the origin in map frame, it is biasd.
-            double map_resolution = oc_map.info.resolution;
-            tf::Vector3 map_origin(oc_map.info.origin.position.x, oc_map.info.origin.position.y, 0.0);  // this is in meter unit
-            //oc_map.info.origin.orientation;  // we assume no rotation bias, since most systm ignore this map rotation
-            pos3D_inmap -= map_origin;
-            unsigned int map_ind_x = static_cast<unsigned int>(pos3D_inmap.x()*map_resolution);
-            unsigned int map_ind_y = static_cast<unsigned int>(pos3D_inmap.y()*map_resolution);
-
-            //3. see if it is occupanied in map
-            auto grid_value = oc_map.data[map_ind_x+map_ind_y*oc_map.info.width]; //row-major
-            if(grid_value == 100) // now with the map from map_serve, 100 is occupied
-                continue;   // do not pass the check, directly go to the next bounding box.
             // compute this bounding box's height
             double detection_height = calcHeightfromRay(GPN, GPd, curBox);
             detected_person.height = detection_height;
@@ -319,6 +303,28 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
             detected_person.bbox_y = y;
             detected_person.bbox_w = width;
             detected_person.bbox_h = height;
+
+            // now check if this bounding box can exsit in the map
+            // 1. transform this pos3D to map frame;
+            tf::Vector3 pos3D_incam(detected_person.pose.pose.position.x,detected_person.pose.pose.position.y, detected_person.pose.pose.position.z);
+            tf::Vector3 pos3D_inmap = camera2map*pos3D_incam;
+
+            // 2. get the index for the map. Since the map's left corner (0,0 cordinate in map image) is not exactly the origin in map frame, it is biasd.
+            double map_resolution = oc_map.info.resolution;
+            tf::Vector3 map_origin(oc_map.info.origin.position.x, oc_map.info.origin.position.y, 0.0);  // this is in meter unit
+            //oc_map.info.origin.orientation;  // we assume no rotation bias, since most systm ignore this map rotation
+            pos3D_inmap -= map_origin;
+            unsigned int map_ind_x = static_cast<unsigned int>(pos3D_inmap.x()*1.0/map_resolution);
+            unsigned int map_ind_y = static_cast<unsigned int>(pos3D_inmap.y()*1.0/map_resolution);
+
+            //3. see if it is occupanied in map
+            auto grid_value = oc_map.data[map_ind_x+map_ind_y*oc_map.info.width]; //row-major
+            if(grid_value == 100) // now with the map from map_serve, 100 is occupied
+            {
+//                cout<<"hey grid_value is 100, id is "<<current_detection_id<<endl;
+//                cout<<"x= "<<map_ind_x/10<<" y= "<<map_ind_y/10<<endl;
+                continue;   // do not pass the check, directly go to the next bounding box.
+            }
 
             // additional nan check
             if(!isnan(detected_person.pose.pose.position.x) && !isnan(detected_person.pose.pose.position.y) && !isnan(detected_person.pose.pose.position.z)){
