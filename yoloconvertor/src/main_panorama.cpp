@@ -1,15 +1,11 @@
 // ROS includes.
 #include <ros/ros.h>
-//debug
-//#include <QApplication>
-//debugend
+
 
 #include <cmath>
 #include <ros/time.h>
-//#include <image_transport/subscriber_filter.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <nav_msgs/OccupancyGrid.h>
-//#include <image_transport/image_transport.h>
 
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
@@ -41,14 +37,7 @@ using namespace cv_bridge;
 
 tf::TransformListener* listener;
 
-//for debug image
-//image_transport::Publisher pub_result_image;
 
-//#include <QImage>
-//#include <QPainter>
-//QImage image_rgb;
-//cv_bridge::CvImagePtr cv_depth_ptr;	// cv_bridge for depth image
-//cv::Mat img_depth_;
 const double eps(1e-5);
 
 ros::Publisher pub_detected_persons;
@@ -57,76 +46,19 @@ int detection_id_increment, detection_id_offset, current_detection_id; // added 
 double pose_variance; // used in output frame_msgs::DetectedPerson.pose.covariance
 
 nav_msgs::OccupancyGrid oc_map;
-bool is_get_map(false);
 
-//// I should put all these staff to the panorama head file
-//float minPhi =  -1.775;
-//float maxPhi =  1.775;
-///*float maxHeight = 1.400;
-//float minHeight = -1.400;
-//float iwidth = 1280;
-//float iheight = 800;*/
-//float maxHeight = 1.300;
-//float minHeight = -1.300;
-//float iwidth = 640;
-//float iheight = 480;
-extern mira::camera::PanoramaCameraIntrinsic panorama_intrinsic;// the defination is in PanoramaCamearIntrinsic.h
+
+extern mira::camera::PanoramaCameraIntrinsic panorama_intrinsic;// the defination and all hardcode parameter is in PanoramaCamearIntrinsic.h
 
 
 
 
-
+// this call back only get called once, and get the map.
 void map_callback(const nav_msgs::OccupancyGridConstPtr& ogptr)
 {
     oc_map = *ogptr;
-    is_get_map = true;
-    cout<<"in map_callback and get map!"<<endl;
 }
 
-/*void render_bbox_2D(float x_float,float y_float, float width, float height, QImage& image,
-                    int r, int g, int b)
-{
-
-    QPainter painter(&image);
-
-    QColor qColor;
-    qColor.setRgb(r, g, b);
-
-    QPen pen;
-    pen.setColor(qColor);
-    pen.setWidth(15.0);
-
-    painter.setPen(pen);
-    int x =(int) x_float;
-    int y =(int) y_float;
-    int w =(int) width;
-    int h =(int) height;
-
-    painter.drawLine(x,y, x+w,y);
-    painter.drawLine(x,y, x,y+h);
-    painter.drawLine(x+w,y, x+w,y+h);
-    painter.drawLine(x,y+h, x+w,y+h);
-
-}*/
-
-/*void render_distance(QString& distance, QImage& image, float x_float, float y_float, int r, int g, int b )
-{
-    QPainter painter(&image);
-
-    QColor qColor;
-    qColor.setRgb(r,g,b);
-
-    QPen pen;
-    pen.setColor(qColor);
-    pen.setWidth(15.0);
-
-    painter.setPen(pen);
-    painter.setFont(QFont("Times", 35, QFont::Bold));
-
-    int x =(int) x_float;
-    int y =(int) y_float;
-    painter.drawText(x,y, distance);
-}*/
 
 
 
@@ -261,11 +193,6 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
     //ROS_DEBUG_STREAM("time stamep of input image:" << boxes->header);
     //ROS_DEBUG_STREAM("current time:" << ros::Time::now());
     //ROS_DEBUG_STREAM("-----------------------------------------");
-    if(is_get_map==false)
-    {
-        cout<<"no map"<<endl;
-    }else
-        cout<<"get map"<<endl;
 
 
     // Get GP
@@ -312,17 +239,27 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
     }
 
     //
+    // get the transformation from camera frame to map frame
+    //
+    tf::StampedTransform camera2map; //this transform do transformation from camera frame to map frame.
+    string map_frame_id = oc_map.header.frame_id;
+    ros::Time tracked_time(boxes->image_header.stamp);
+    try {
+        listener->waitForTransform(map_frame_id, camera_frame_id, tracked_time, ros::Duration(1.0));
+        listener->lookupTransform(map_frame_id, camera_frame_id, tracked_time, camera2map);  //from camera to map
+    }
+    catch (tf::TransformException ex){
+       ROS_WARN_THROTTLE(20.0, "Failed transform lookup from camera frame to map frame. The map data is empty:%s", oc_map.data.empty() ? "true" : "false", ex.what());
+    }
+
+
+    //
     // Now create 3D coordinates for SPENCER DetectedPersons msg
     //
     if(pub_detected_persons.getNumSubscribers()) {
         frame_msgs::DetectedPersons detected_persons;
         detected_persons.header = boxes->image_header;
 
-        //debug image
-        //convert opencv image to qimage
-        //CvImagePtr cv_color_ptr(toCvCopy(color));
-        //image_rgb = QImage(&(cv_color_ptr->image.data[0]), cv_color_ptr->image.cols, cv_color_ptr->image.rows, cv_color_ptr->image.step, QImage::Format_RGB888);
-        //debugend
 
         for(unsigned int i=0;i<(boxes->bounding_boxes.size());i++)
         {
@@ -334,10 +271,6 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
 
             Vector<double> pos3D;
             calc3DPosFromBBox( GPN, GPd, x, y, width, height, worldScale, pos3D);
-            // debug
-            // draw 50 yolo box in depth image
-            //render_bbox_2D(x,y,width,height, image_rgb, 255, 0, 0);
-            //debugend
 
             // DetectedPerson for SPENCER
             frame_msgs::DetectedPerson detected_person;
@@ -346,26 +279,29 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
             detected_person.confidence = curBox.probability;
             detected_person.pose.pose.position.x = pos3D(0);
             detected_person.pose.pose.position.y = pos3D(1);
-
             detected_person.pose.pose.position.z = pos3D(2);
             detected_person.pose.pose.orientation.w = 1.0;
 
+            // now check if this bounding box can exsit in the map
+            // 1. transform this pos3D to map frame;
+            tf::Vector3 pos3D_incam(detected_person.pose.pose.position.x,detected_person.pose.pose.position.y, detected_person.pose.pose.position.z);
+            tf::Vector3 pos3D_inmap = camera2map*pos3D_incam;
+
+            // 2. get the index for the map. Since the map's left corner (0,0 cordinate in map image) is not exactly the origin in map frame, it is biasd.
+            double map_resolution = oc_map.info.resolution;
+            tf::Vector3 map_origin(oc_map.info.origin.position.x, oc_map.info.origin.position.y, 0.0);  // this is in meter unit
+            //oc_map.info.origin.orientation;  // we assume no rotation bias, since most systm ignore this map rotation
+            pos3D_inmap -= map_origin;
+            unsigned int map_ind_x = static_cast<unsigned int>(pos3D_inmap.x()*map_resolution);
+            unsigned int map_ind_y = static_cast<unsigned int>(pos3D_inmap.y()*map_resolution);
+
+            //3. see if it is occupanied in map
+            auto grid_value = oc_map.data[map_ind_x+map_ind_y*oc_map.info.width]; //row-major
+            if(grid_value == 100) // now with the map from map_serve, 100 is occupied
+                continue;   // do not pass the check, directly go to the next bounding box.
             // compute this bounding box's height
             double detection_height = calcHeightfromRay(GPN, GPd, curBox);
             detected_person.height = detection_height;
-
-            // debug
-            // show the 3d position
-            //QString posx_str = QString("x: ")+QString::number(-pos3D[0],'g',3);
-            //QString posy_str = QString("y: ")+QString::number(-pos3D[1],'g',3);
-            //QString posz_str = QString("z: ")+QString::number(-pos3D[2],'g',3);
-            //render_distance(posx_str, image_rgb, x, y-90, 0,255,0);
-            //render_distance(posy_str, image_rgb, x, y-60, 0,255,0);
-            //render_distance(posz_str, image_rgb, x, y-30, 0,255,0);
-            // show distance
-            //QString dist_str = QString("distance: ")+QString::number(pos3D.norm(),'g',3);
-            //render_distance(dist_str, image_rgb, x, y, 255,0,0);
-
 
             const double LARGE_VARIANCE = 999999999;
             detected_person.pose.covariance[0*6 + 0] = pose_variance;
@@ -398,17 +334,6 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
         // Publish
         pub_detected_persons.publish(detected_persons);
 
-        //debug
-        //const uchar *bits = image_rgb.constBits();
-        //sensor_msgs::Image sensor_image;
-        //sensor_image.header = color->header;
-        //sensor_image.height = image_rgb.height();
-        //sensor_image.width  = image_rgb.width();
-        //sensor_image.step   = image_rgb.bytesPerLine();
-        //sensor_image.data   = vector<uchar>(bits, bits + image_rgb.byteCount());
-        //sensor_image.encoding = "rgb8";//depth->encoding;
-        //pub_result_image.publish(sensor_image);
-        //debugend
     }
 }
 
@@ -418,14 +343,11 @@ void connectCallback(ros::Subscriber &sub_msg,
                      string gp_topic,
                      Subscriber<GroundPlane> &sub_gp,
                      Subscriber<BoundingBoxes> &sub_boxes){
-                     //image_transport::SubscriberFilter &sub_color,
-                     //image_transport::ImageTransport &it){
     if(!pub_detected_persons.getNumSubscribers()) {
         ROS_DEBUG("yoloconvertor: No subscribers. Unsubscribing.");
         sub_msg.shutdown();
         sub_gp.unsubscribe();
         sub_boxes.unsubscribe();
-        //sub_color.unsubscribe();
     } else {
         ROS_DEBUG("yoloconvertor: New subscribers. Subscribing.");
         if(strcmp(gp_topic.c_str(), "") == 0) {
@@ -433,16 +355,12 @@ void connectCallback(ros::Subscriber &sub_msg,
         }
         sub_gp.subscribe();
         sub_boxes.subscribe();
-        //sub_color.subscribe(it,sub_color.getTopic().c_str(),1);
     }
 
 }
 
 int main(int argc, char **argv)
 {
-    //debug
-    //QApplication a(argc, argv);
-    //debugend
 
     // Set up ROS.
     ros::init(argc, argv, "convert_yolo_pano");
@@ -467,7 +385,6 @@ int main(int argc, char **argv)
     // while using different parameters.
     ros::NodeHandle private_node_handle_("~");
     private_node_handle_.param("queue_size", queue_size, int(10));
-    //private_node_handle_.param("pano_image", pano_image, string("/oops_nothing"));
     private_node_handle_.param("ground_plane", ground_plane, string(""));
     private_node_handle_.param("bounding_boxes", boundingboxes, string("darknet_ros/bounding_boxes"));
 
@@ -483,10 +400,6 @@ int main(int argc, char **argv)
     ros::Subscriber sub_map = n.subscribe(map_topic, 1, map_callback);
 
 
-    //string image_color = pano_image;
-
-    // Image transport handle
-    //image_transport::ImageTransport it(private_node_handle_);
 
     // Create a subscriber.
     // Name the topic, message queue, callback function with class name, and object containing callback function.
@@ -494,8 +407,7 @@ int main(int argc, char **argv)
     ros::Subscriber sub_message; //Subscribers have to be defined out of the if scope to have affect.
     Subscriber<GroundPlane> subscriber_ground_plane(n, ground_plane.c_str(), 1); subscriber_ground_plane.unsubscribe();
     Subscriber<BoundingBoxes> subscriber_bounding_boxes(n,boundingboxes.c_str(),1); subscriber_bounding_boxes.unsubscribe();
-    //image_transport::SubscriberFilter subscriber_color;
-    //subscriber_color.subscribe(it, image_color.c_str(), 1); subscriber_color.unsubscribe();
+
 
 
     ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
@@ -504,17 +416,9 @@ int main(int argc, char **argv)
                                                        ground_plane,
                                                        boost::ref(subscriber_ground_plane),
                                                        boost::ref(subscriber_bounding_boxes));
-                                                       //boost::ref(subscriber_color),
-                                                       //boost::ref(it));
 
-    //image_transport::SubscriberStatusCallback image_cb = boost::bind(&connectCallback,
-    //                                                                 boost::ref(sub_message),
-    //                                                                 boost::ref(n),
-    //                                                                 ground_plane,
-    //                                                                 boost::ref(subscriber_ground_plane),
-    //                                                                 boost::ref(subscriber_bounding_boxes));
-                                                                     //boost::ref(subscriber_color),
-                                                                     //boost::ref(it));
+
+
 
 
 
@@ -525,12 +429,7 @@ int main(int argc, char **argv)
 
 
     const sync_policies::ApproximateTime<BoundingBoxes, GroundPlane> MyConstSyncPolicy = MySyncPolicy;
-    //const sync_policies::ApproximateTime<BoundingBoxes, GroundPlane, Image> MyConstSyncPolicy = MySyncPolicy;
     Synchronizer< sync_policies::ApproximateTime<BoundingBoxes, GroundPlane> > sync(MyConstSyncPolicy, subscriber_bounding_boxes, subscriber_ground_plane);
-    //Synchronizer< sync_policies::ApproximateTime<BoundingBoxes, GroundPlane, Image> > sync(MyConstSyncPolicy,
-    //                                                                                    subscriber_bounding_boxes,
-    //                                                                                    subscriber_ground_plane,
-    //                                                                                    subscriber_color);
 
     // Decide which call back should be used.
     if(strcmp(ground_plane.c_str(), "") == 0) {
@@ -544,9 +443,6 @@ int main(int argc, char **argv)
     private_node_handle_.param("detected_persons", pub_topic_detected_persons, string("/detected_persons"));
     pub_detected_persons = n.advertise<frame_msgs::DetectedPersons>(pub_topic_detected_persons, 10, con_cb, con_cb);
 
-    //debug image publisher
-    //private_node_handle_.param("yolo_depth_image", pub_topic_result_image, string("/yolo_depth_image"));
-    //pub_result_image = it.advertise(pub_topic_result_image.c_str(), 1, image_cb, image_cb);
 
     //double min_expected_frequency, max_expected_frequency;
     //private_node_handle_.param("min_expected_frequency", min_expected_frequency, 8.0);
