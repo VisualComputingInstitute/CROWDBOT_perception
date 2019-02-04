@@ -4,7 +4,7 @@ project(yoloconvertor)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs sensor_msgs rwth_perception_people_msgs message_filters frame_msgs darknet_ros_msgs image_transport cv_bridge tf nav_msgs)
+find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs sensor_msgs nav_msgs rwth_perception_people_msgs message_filters frame_msgs darknet_ros_msgs image_transport cv_bridge tf)
 
 
 find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
