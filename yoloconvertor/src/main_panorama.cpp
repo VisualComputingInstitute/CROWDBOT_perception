@@ -27,7 +27,7 @@
 #include "Matrix.h"
 #include "Vector.h"
 #include "PanoramaCameraModel.h"
-#include "map.h"
+#include "MapFunctions.hpp"
 
 using namespace std;
 using namespace sensor_msgs;
@@ -37,7 +37,7 @@ using namespace darknet_ros_msgs;
 using namespace cv_bridge;
 
 tf::TransformListener* listener;
-mymap* mmp;
+MapFunctions* g_map_func;
 
 const double eps(1e-5);
 
@@ -251,7 +251,7 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
 //    catch (tf::TransformException ex){
 //       ROS_WARN_THROTTLE(20.0, "Failed transform lookup from camera frame to map frame. The map data is empty:%s", oc_map.data.empty() ? "true" : "false", ex.what());
 //    }
-    mmp->update_transform_camera2frame(camera_frame_id,boxes->image_header.stamp);
+    g_map_func->updateCamera2frameTransform(camera_frame_id,boxes->image_header.stamp);
 
     //
     // Now create 3D coordinates for SPENCER DetectedPersons msg
@@ -326,7 +326,7 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
 //                continue;   // do not pass the check, directly go to the next bounding box.
 //            }
             tf::Vector3 pos3D_incam(detected_person.pose.pose.position.x,detected_person.pose.pose.position.y, detected_person.pose.pose.position.z);
-            if(mmp->is_pos_occupied(pos3D_incam))
+            if(g_map_func->isPosOccupied(pos3D_incam))
                 continue;
 
             // additional nan check
@@ -407,7 +407,7 @@ int main(int argc, char **argv)
     //map
     private_node_handle_.param("map", map_topic, string("/map"));
     //ros::Subscriber sub_map = n.subscribe(map_topic, 1, map_callback);
-    mmp = new mymap(n,map_topic);
+    g_map_func = new MapFunctions(n,map_topic);
 
 
     // Create a subscriber.
