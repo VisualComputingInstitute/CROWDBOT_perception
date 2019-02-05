@@ -13,7 +13,7 @@ class MapFunctions{
 public:
     MapFunctions(ros::NodeHandle n, string map_topic)
     {
-        listener_ = new tf::TransformListener();
+        //listener_ = new tf::TransformListener();
         mapname_ = map_topic;
         map_sub_ = n.subscribe(mapname_, 1, &MapFunctions::mapCallback, this);
         ROS_INFO("initialzie the map class");
@@ -28,11 +28,11 @@ public:
 
     }
 
-    void updateCamera2frameTransform(string camera_frame_id, ros::Time detected_time){
+    void updateCamera2frameTransform(string camera_frame_id, ros::Time detected_time, tf::TransformListener* listener){
         string map_frame_id = oc_map_.header.frame_id;
         try {
-            listener_->waitForTransform(map_frame_id, camera_frame_id, detected_time, ros::Duration(1.0));
-            listener_->lookupTransform(map_frame_id, camera_frame_id, detected_time, camera2map_);  //from camera to map
+            listener->waitForTransform(map_frame_id, camera_frame_id, detected_time, ros::Duration(1.0));
+            listener->lookupTransform(map_frame_id, camera_frame_id, detected_time, camera2map_);  //from camera to map
         }
         catch (tf::TransformException ex){
            ROS_WARN_THROTTLE(20.0, "Failed transform lookup from camera frame to map frame. The map data is empty:%s", oc_map_.data.empty() ? "true" : "false", ex.what());
@@ -77,7 +77,7 @@ private:
     std::string mapname_;
     ros::Subscriber map_sub_;
     tf::StampedTransform camera2map_;
-    tf::TransformListener* listener_;
+    //tf::TransformListener* listener_;
 };
 
 #endif // MAP_H
