@@ -1,0 +1,88 @@
+<launch>
+
+    <!-- this launch file is used to test test backprojection of pinhole camera.. -->
+
+
+    <!-- general parameters -->
+    <arg name="camera_frame" default="/hardware/depth/kinect2/ColorImageFrame" />
+    <arg name="world_frame" default="/robot/OdometryFrame" />
+
+    <!-- GP -->
+    <arg name="rate" default="10.0"/>
+    <arg name="base_footprint" default="/robot/BaseFrame" />
+    <arg name="ground_plane" default="/ground_plane" />
+
+
+   <!-- Ground Plane (world) -->
+    <node pkg="rwth_ground_plane" type="ground_plane_tf_based_fixed" name="ground_plane" output="screen">
+        <param name="base_footprint" value="$(arg base_footprint)" />
+        <param name="camera_frame" value="$(arg world_frame)" />
+        <param name="ground_plane" value="$(arg ground_plane)" />
+        <param name="rate" value="$(arg rate)"/>
+    </node>
+
+
+
+    <!-- general yolo-v3 arg -->
+    <!-- Console launch prefix -->
+    <arg name="launch_prefix" default=""/>
+    <!-- Config and weights folder. -->
+    <arg name="yolo_weights_path"          default="$(find darknet_ros)/yolo_network_config/weights"/>
+    <arg name="yolo_config_path"           default="$(find darknet_ros)/yolo_network_config/cfg"/>
+
+    <!-- general yoloconvertor_pinhole arg-->
+    <arg name="detection_id_offset" default="0"/>
+    <arg name="detection_id_increment" default="1"/>
+    <arg name="world_scale" default="1"/>
+    <arg name="queue_size" default="10" />
+
+    <!-- pinhole yoloconvertor and yolo arg-->
+    <arg name="camera_namespace" default="/hardware/depth/kinect2" />
+    <arg name="detected_persons_left" default="/yoloconvertor_pano/detected_persons_left"/>
+    <arg name="bounding_boxes" default="/darknet_ros/bounding_boxes"/>
+
+
+    <!-- left yoloconvertor and yolo-->
+    <!-- Start darknet and ros wrapper -->
+    <!-- Load parameters for left -->
+    <rosparam command="load" ns="darknet_ros_left" file="$(find darknet_ros)/config/ros.yaml"/>
+    <rosparam command="load" ns="darknet_ros_left" file="$(find darknet_ros)/config/yolov3.yaml"/>
+    <node pkg="darknet_ros" type="darknet_ros" name="darknet_ros_left" output="screen" launch-prefix="$(arg launch_prefix)">
+      <param name="weights_path"          value="$(arg yolo_weights_path)" />
+      <param name="config_path"           value="$(arg yolo_config_path)" />
+    </node>
+
+
+    <node pkg="yoloconvertor" type="yoloconvertor_standard" name="yoloconvertor_standar" output="screen">
+        <param name="world_scale" value="$(arg world_scale)"/>
+        <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
+        <param name="queue_size" value="$(arg queue_size)" type="int"/>
+        <param name="camera_namespace" value="$(arg camera_namespace)" type="string"/>
+        <param name="detected_persons" value="$(arg detected_persons_left)" type="string"/>
+        <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
+        <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
+        <param name="bounding_boxes" value="$(arg bounding_boxes)"/>
+    </node>
+
+
+
+
+
+
+
+
+   <!-- run map-->
+   <arg name="map_path"          default="$(find yoloconvertor)/map/map.yaml"/>
+   <node pkg="map_server" type="map_server" name= "global_map" args="$(arg map_path)" output="screen" />
+
+
+    <!-- for test!!! -->
+    <!-- adding rostopic tool relay -->
+    <node name="topic_relay3" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/ColorIntrinsic /hardware/depth/kinect2/sd/camera_info" respawn="true" />
+    <node name="topic_relay1" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/DepthIntrinsic /hardware/depth/kinect2/hd/camera_info" respawn="true" />
+    <node name="topic_relay5" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/sync/SyncRegisteredDepthImage /hardware/depth/kinect2/hd/image_depth_rect" respawn="true" />
+
+
+    <node name="topic_relay2" pkg="topic_tools" type="relay" args="/hardware/depth/kinect2/sync/SyncColorImage /hardware/depth/kinect2/hd/image_color_rect" respawn="true" />
+	
+</launch> 	
