@@ -5,6 +5,7 @@
 #include <image_transport/subscriber_filter.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <image_transport/image_transport.h>
+#include <nav_msgs/OccupancyGrid.h>
 
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
@@ -24,6 +25,7 @@
 
 #include "Matrix.h"
 #include "Vector.h"
+#include "MapFunctions.hpp"
 
 using namespace std;
 using namespace sensor_msgs;
@@ -32,6 +34,7 @@ using namespace rwth_perception_people_msgs;
 using namespace darknet_ros_msgs;
 
 tf::TransformListener* listener;
+MapFunctions* g_map_func;
 
 //for debug image
 //image_transport::Publisher pub_result_image;
@@ -236,6 +239,9 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
         }
     }
 
+    g_map_func->updateCamera2frameTransform(camera_frame_id,boxes->image_header.stamp);
+
+
     //
     // Now create 3D coordinates for SPENCER DetectedPersons msg
     //
@@ -340,6 +346,11 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
             double detection_height = calcHeightfromRay(K ,GPN, GPd, curBox);
             detected_person.height = detection_height;
 
+            // check map occupancy
+            tf::Vector3 pos3D_incam(detected_person.pose.pose.position.x,detected_person.pose.pose.position.y, detected_person.pose.pose.position.z);
+            if(g_map_func->isPosOccupied(pos3D_incam))
+                continue;
+
             // additional nan check
             if(!isnan(detected_person.pose.pose.position.x) && !isnan(detected_person.pose.pose.position.y) && !isnan(detected_person.pose.pose.position.z)){
                 detected_persons.detections.push_back(detected_person);
@@ -424,6 +435,11 @@ int main(int argc, char **argv)
     string topic_depth_info = camera_ns + "/sd/camera_info";
     string topic_depth_image = camera_ns + "/hd/image_depth_rect";
 
+    //map
+    string map_topic;
+    private_node_handle_.param("map", map_topic, string("/map"));
+    //ros::Subscriber sub_map = n.subscribe(map_topic, 1, map_callback);
+    g_map_func = new MapFunctions(n,map_topic);
 
 
     ROS_DEBUG("yoloconvertor: Queue size for synchronisation is set to: %i", queue_size);
