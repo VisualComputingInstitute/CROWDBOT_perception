@@ -53,7 +53,10 @@
     </node>
 
 
-    <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_panorama_left" output="screen">
+    <arg name="occupancy_threshold" default="75.0"/>
+    <arg name="occupancy_check_box_half_length" default="1"/>
+    <arg name="map" default="/map"/>
+    <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_panorama_left" output="screen" launch-prefix="xterm -e gdb --args">
         <param name="world_scale" value="$(arg world_scale)"/>
         <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
         <param name="queue_size" value="$(arg queue_size)" type="int"/>
@@ -62,6 +65,9 @@
         <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
         <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
         <param name="bounding_boxes" value="$(arg bounding_boxes_left)"/>
+	<param name="occupancy_threshold" value="$(arg occupancy_threshold)" type="double"/> <!--from 0 to 100-->
+        <param name="occupancy_check_box_half_length" value="$(arg occupancy_check_box_half_length)" type="int"/>
+        <param name="map" value="$(arg map)" type="string"/>
     </node>
 
 
