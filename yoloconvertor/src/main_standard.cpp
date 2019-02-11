@@ -239,7 +239,7 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
         }
     }
 
-    g_map_func->updateCamera2frameTransform(camera_frame_id,boxes->image_header.stamp);
+    g_map_func->updateCamera2frameTransform(camera_frame_id,boxes->image_header.stamp,listener);
 
 
     //
@@ -437,10 +437,13 @@ int main(int argc, char **argv)
 
     //map
     string map_topic;
+    double opt;
+    int half_length;
     private_node_handle_.param("map", map_topic, string("/map"));
+    private_node_handle_.param("occupancy_threshold",opt, 75.0);  // from 0 to 100
+    private_node_handle_.param("occupancy_check_box_half_length",half_length, int(1));
     //ros::Subscriber sub_map = n.subscribe(map_topic, 1, map_callback);
-    g_map_func = new MapFunctions(n,map_topic);
-
+    g_map_func = new MapFunctions(n,map_topic,opt,half_length);
 
     ROS_DEBUG("yoloconvertor: Queue size for synchronisation is set to: %i", queue_size);
 
