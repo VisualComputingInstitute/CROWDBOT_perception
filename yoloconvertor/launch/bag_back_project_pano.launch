@@ -56,7 +56,7 @@
     <arg name="occupancy_threshold" default="75.0"/>
     <arg name="occupancy_check_box_half_length" default="1"/>
     <arg name="map" default="/map"/>
-    <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_panorama_left" output="screen" launch-prefix="xterm -e gdb --args">
+    <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_panorama_left" output="screen"> 
         <param name="world_scale" value="$(arg world_scale)"/>
         <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
         <param name="queue_size" value="$(arg queue_size)" type="int"/>
@@ -157,12 +157,12 @@
    </node>
 
 
-
-
-
    <!-- run map-->
-   <arg name="map_path"          default="$(find yoloconvertor)/map/map.yaml"/>
-   <node pkg="map_server" type="map_server" name= "global_map" args="$(arg map_path)" output="screen" />
+   <arg name="map_path"          default="$(find yoloconvertor)/map/first_floor.yaml"/>
+   <arg name="map_frame_id"  default="/maps/Zuse/Floor1MapFrame" />
+   <node pkg="map_server" type="map_server" name= "global_map" args="$(arg map_path)" output="screen" >
+       <param name="frame_id" value="$(arg map_frame_id)" type="string"/>
+   </node>	
 
     <!-- for test!!! -->
     <arg name="use_sim_time" default="true" />

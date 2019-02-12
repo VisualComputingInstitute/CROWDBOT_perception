@@ -1,0 +1,9 @@
+<launch>
+
+   <!-- run map-->
+   <arg name="map_path"          default="$(find yoloconvertor)/map/first_floor.yaml"/>
+   <arg name="frame_id"  default="/maps/Zuse/Floor1MapFrame" />
+   <node pkg="map_server" type="map_server" name= "global_map" args="$(arg map_path)" output="screen" >
+       <param name="frame_id" value="$(arg frame_id)" type="string"/>
+   </node>	
+</launch> 	
