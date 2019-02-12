@@ -259,9 +259,11 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
 
             //check if the midpoint in boundingbox is in left side or right side image.
             float mid_point_x = x + width/2.0f;
-            if(mid_point_x < 100 || mid_point_x > panorama_intrinsic.width - 100)
+            if((mid_point_x < 100) || (mid_point_x > panorama_intrinsic.width - 100))
+            {
+                //ROS_DEBUG("mid_point_x is %f", mid_point_x);
                 continue; // if it do in these two part of image, we skip this boundingbox since it is distorted too much.
-
+            }
             Vector<double> pos3D;
             calc3DPosFromBBox( GPN, GPd, x, y, width, height, worldScale, pos3D);
 

@@ -247,6 +247,7 @@ void render_visualization(const frame_msgs::TrackedPersons2d& tracked_persons2d,
         float x =(float)std::max(tracked_person2d.x, 0);  // make sure x and y are in the image.
         float y = (float)std::max(tracked_person2d.y, 0);
         auto track_id = tracked_person2d.track_id;
+        //ROS_DEBUG("this track id is %d, position x is %f\n", track_id, x + width/2);
         render_bbox_2D(x, y, width, height, image_rgb,track_id);
         // show the track id
         string trackid_str = string("id: ")+int_to_string((int)track_id);
