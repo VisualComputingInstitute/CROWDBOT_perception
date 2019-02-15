@@ -88,6 +88,7 @@ add_executable(yoloconvertor_panorama src/main_panorama.cpp)
 add_executable(yoloconvertor_fusion src/main_fusion.cpp)
 add_executable(backprojection_panorama src/main_backproject_panorama.cpp)
 add_executable(backprojection_pinhole src/main_backproject_pinhole.cpp)
+add_executable(tensorrt_yolo src/main_tensorrtyolo.cpp)
 
 
 ## Add cmake target dependencies of the executable/library
@@ -97,6 +98,7 @@ add_dependencies(yoloconvertor_panorama ${catkin_EXPORTED_TARGETS})
 add_dependencies(yoloconvertor_fusion ${catkin_EXPORTED_TARGETS})
 add_dependencies(backprojection_panorama ${catkin_EXPORTED_TARGETS})
 add_dependencies(backprojection_pinhole ${catkin_EXPORTED_TARGETS})
+add_dependencies(tensorrt_yolo ${catkin_EXPORTED_TARGETS})
 
 
 ## Specify libraries to link a library or executable target against
@@ -139,6 +141,15 @@ add_dependencies(backprojection_pinhole ${catkin_EXPORTED_TARGETS})
    ${QT_QTGUI_LIBRARY}
    X11
  )
+
+target_link_libraries(tensorrt_yolo
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+  ${QT_LIBRARIES}
+  ${QT_QTCORE_LIBRARY}
+  ${QT_QTGUI_LIBRARY}
+  X11
+)
 
 
 
