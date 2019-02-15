@@ -26,20 +26,23 @@
 using namespace darknet_ros_msgs;
 using namespace message_filters;
 
+ros::Publisher pub_boundingboxes;
 
 
-void connectCallback(ros::Subscriber &sub_msg,
-                     image_transport::SubscriberFilter &sub_img,
-                     image_transport::ImageTransport &it){
-    if(!pub_detected_persons.getNumSubscribers()) {
-        ROS_DEBUG("yoloconvertor: No subscribers. Unsubscribing.");
-        sub_msg.shutdown();
-        sub_img.unsubscribe();
-    } else {
-        ROS_DEBUG("yoloconvertor: New subscribers. Subscribing.");
-        sub_img.subscribe(it,sub_img.getTopic().c_str(),1);
-    }
-}
+//void connectCallback(ros::Subscriber &sub_msg,
+//                     image_transport::Subscriber &sub_img,
+//                     image_transport::ImageTransport &it){
+//    if(!pub_boundingboxes.getNumSubscribers()) {
+//        ROS_DEBUG("yoloconvertor: No subscribers. Unsubscribing.");
+//        sub_msg.shutdown();
+//        sub_img.unsubscribe();
+
+//    } else {
+//        ROS_DEBUG("yoloconvertor: New subscribers. Subscribing.");
+//        sub_img.subscribe(it,sub_img.getTopic().c_str(),1);
+//        it.subscribe();
+//            }
+//}
 
 void Callback(const sensor_msgs::ImageConstPtr& img)
 {
@@ -75,39 +78,33 @@ int main(int argc, char **argv)
 
     // Image transport handle
     image_transport::ImageTransport it(private_node_handle_);
-
-    // Create a subscriber.
-    // Name the topic, message queue, callback function with class name, and object containing callback function.
-    // Set queue size to 1 because generating a queue here will only pile up images and delay the output by the amount of queued images
     ros::Subscriber sub_message; //Subscribers have to be defined out of the if scope to have affect.
+    image_transport::Subscriber subscriber_img = it.subscribe(image_topic.c_str(),queue_size,Callback);
 
-    image_transport::SubscriberFilter subscriber_img;
-    subscriber_img.subscribe(it, image_topic.c_str(),1); subscriber_img.unsubscribe();
-
-    ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
-                                                       boost::ref(sub_message),
-                                                       boost::ref(subscriber_img),
-                                                       boost::ref(it));
+//    ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
+//                                                       boost::ref(sub_message),
+//                                                       boost::ref(subscriber_img),
+//                                                       boost::ref(it));
 
 
 
-    //The real queue size for synchronisation is set here.
-    sync_policies::ApproximateTime<Image> MySyncPolicy(queue_size);
+//    //The real queue size for synchronisation is set here.
+//    sync_policies::ApproximateTime<Image> MySyncPolicy(queue_size);
 
-    const sync_policies::ApproximateTime< Image> MyConstSyncPolicy = MySyncPolicy;
-    Synchronizer< sync_policies::ApproximateTime<Image> > sync(MyConstSyncPolicy,
-                                                               subscriber_img);
+//    const sync_policies::ApproximateTime< Image> MyConstSyncPolicy = MySyncPolicy;
+//    Synchronizer< sync_policies::ApproximateTime<Image> > sync(MyConstSyncPolicy,
+//                                                               subscriber_img);
 
-    // Decide which call back should be used.
-    if(strcmp(ground_plane.c_str(), "") == 0) {
-        ROS_FATAL("ground_plane: need ground_plane to produce 3d information");
-    } else {
-        sync.registerCallback(boost::bind(&Callback, _1));
-    }
+//    // Decide which call back should be used.
+//    if(strcmp(ground_plane.c_str(), "") == 0) {
+//        ROS_FATAL("ground_plane: need ground_plane to produce 3d information");
+//    } else {
+//        sync.registerCallback(boost::bind(&Callback, _1));
+//    }
 
     // Create publishers
     private_node_handle_.param("bounding_boxs", boundingboxes, string("/bounding_boxs"));
-    pub_detected_persons = n.advertise<darknet_ros_msgs::BoundingBoxes>(boundingboxes, 10, con_cb, con_cb);
+    pub_boundingboxes = n.advertise<darknet_ros_msgs::BoundingBoxes>(boundingboxes, 10);/* con_cb, con_cb)*/;
 
 
 
