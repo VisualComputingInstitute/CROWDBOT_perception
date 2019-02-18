@@ -23,16 +23,17 @@
 #include "Visual.h"
 
 #include "TrtNet.h"
-#include "argsParser.h"
+//#include "argsParser.h"
 #include "configs.h"
 #include "YoloLayer.h"
 #include "dataReader.h"
 #include "eval.h"
+#include <chrono>
 
 using namespace darknet_ros_msgs;
 using namespace message_filters;
 using namespace std;
-using namespace argsParser;
+//using namespace argsParser;
 using namespace Tn;
 using namespace Yolo;
 
@@ -42,9 +43,13 @@ vector<float> prepareImage(cv::Mat& img)
 {
     using namespace cv;
 
-    int c = parser::getIntValue("C");
-    int h = parser::getIntValue("H");   //net h
-    int w = parser::getIntValue("W");   //net w
+//    int c = parser::getIntValue("C");
+//    int h = parser::getIntValue("H");   //net h
+//    int w = parser::getIntValue("W");   //net w
+
+    int h = 608;
+    int w = 608; //hardcode .... what this mean?
+    int c = 3;
 
     float scale = min(float(w)/img.cols,float(h)/img.rows);
     auto scaleSize = cv::Size(img.cols * scale,img.rows * scale);
@@ -144,8 +149,11 @@ vector<Bbox> postProcessImg(cv::Mat& img,vector<Detection>& detections,int class
 {
     using namespace cv;
 
-    int h = parser::getIntValue("H");   //net h
-    int w = parser::getIntValue("W");   //net w
+//    int h = parser::getIntValue("H");   //net h
+//    int w = parser::getIntValue("W");   //net w
+
+    int h = 608;
+    int w = 608;
 
     //scale bbox to img
     int width = img.cols;
@@ -164,7 +172,8 @@ vector<Bbox> postProcessImg(cv::Mat& img,vector<Detection>& detections,int class
     }
 
     //nms
-    float nmsThresh = parser::getFloatValue("nms");
+    //float nmsThresh = parser::getFloatValue("nms");
+    float nmsThresh = 0.45; //hardcode now
     if(nmsThresh > 0)
         DoNms(detections,classes,nmsThresh);
 
@@ -218,7 +227,7 @@ vector<string> split(const string& str, char delim)
 //            }
 //}
 trtNet* net_ptr;
-int outputCount = net.getOutputSize()/sizeof(float);
+int outputCount;
 unique_ptr<float[]> outputData;
 
 void Callback(const sensor_msgs::ImageConstPtr& img)
@@ -237,6 +246,7 @@ void Callback(const sensor_msgs::ImageConstPtr& img)
     }
     cv::Mat cvmat = cv_ptr->image;
     vector<float> inputData = prepareImage(cvmat);
+    ROS_INFO("inputData size is %d", inputData.size());
     net_ptr->doInference(inputData.data(), outputData.get());
 
     //Get Output
@@ -248,17 +258,18 @@ void Callback(const sensor_msgs::ImageConstPtr& img)
     vector<Detection> result;
     result.resize(count);
     memcpy(result.data(), &output[1], count*sizeof(Detection));
-
+    int classNum = 80;
     auto boxes = postProcessImg(cvmat,result,classNum);  // Ithink here we get boxes.
 
-
+    cout<<"boxes number"<<boxes.size()<<endl;
         for(const auto& item : boxes)
         {
+//            if(item.score<0.1)
+//                continue;
             cv::rectangle(cvmat,cv::Point(item.left,item.top),cv::Point(item.right,item.bot),cv::Scalar(0,0,255),3,8,0);
             cout << "class=" << item.classId << " prob=" << item.score*100 << endl;
             cout << "left=" << item.left << " right=" << item.right << " top=" << item.top << " bot=" << item.bot << endl;
         }
-        cv::imwrite("result.jpg",cvmat);
         cv::imshow("result",cvmat);
         cv::waitKey(25);
 
@@ -275,7 +286,7 @@ int main(int argc, char **argv)
     int queue_size;
     string image_topic;
     string boundingboxes;
-
+    string engine_path;
 
 
     // Initialize node parameters from launch file or command line.
@@ -285,7 +296,7 @@ int main(int argc, char **argv)
     private_node_handle_.param("queue_size", queue_size, int(10));
     private_node_handle_.param("image", image_topic, string("/hardware/video/valeo/rectificationNIKRLeft/PanoramaImage"));
     private_node_handle_.param("bounding_boxes", boundingboxes, string("darknet_ros/bounding_boxes"));
-
+    private_node_handle_.param("engine_path", engine_path, string("oops I need engine!"));
 
 
     ROS_DEBUG("yoloconvertor: Queue size for synchronisation is set to: %i", queue_size);
@@ -321,9 +332,9 @@ int main(int argc, char **argv)
     pub_boundingboxes = n.advertise<darknet_ros_msgs::BoundingBoxes>(boundingboxes, 10);/* con_cb, con_cb)*/;
 
     //build engine
-    string saveName = "yolov3_fp16.engine";
-    net_ptr = new net(saveName);
-    outputCount = net->getOutputSize()/sizeof(float);
+//    string saveName = "../tensorRT_yolo/yolov3_fp16.engine";  //hardcode
+    net_ptr = new trtNet(engine_path);
+    outputCount = net_ptr->getOutputSize()/sizeof(float);
 
     ros::spin();
 
