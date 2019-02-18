@@ -340,7 +340,7 @@ int main(int argc, char **argv)
 //    }
 
     // Create publishers
-    private_node_handle_.param("bounding_boxs", boundingboxes, string("/bounding_boxs"));
+    private_node_handle_.param("bounding_boxes", boundingboxes, string("/bounding_boxes"));
     pub_boundingboxes = n.advertise<darknet_ros_msgs::BoundingBoxes>(boundingboxes, 10);/* con_cb, con_cb)*/;
     //debug image publisher
     string pub_topic_result_image;
