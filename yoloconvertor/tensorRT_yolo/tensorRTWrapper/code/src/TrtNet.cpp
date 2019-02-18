@@ -69,7 +69,7 @@ namespace Tn
         Int8EntropyCalibrator * calibrator = nullptr;
         if (calibratorData.size() > 0 ){
             auto endPos= prototxt.find_last_of(".");
-	        auto beginPos= prototxt.find_last_of('/') + 1;
+                auto beginPos= prototxt.find_last_of('/') + 1;
             std::string calibratorName = prototxt.substr(beginPos,endPos - beginPos);
             std::cout << "create calibrator,Named:" << calibratorName << std::endl;
             calibrator = new Int8EntropyCalibrator(maxBatchSize,calibratorData,calibratorName);
@@ -86,7 +86,7 @@ namespace Tn
         tmpEngine->destroy();
         pluginFactorySerialize.destroyPlugin();
 
-        mTrtRunTime = createInferRuntime(gLogger);     
+        mTrtRunTime = createInferRuntime(gLogger);
         assert(mTrtRunTime != nullptr);
         mTrtEngine= mTrtRunTime->deserializeCudaEngine(trtModelStream->data(), trtModelStream->size(), &mTrtPluginFactory);
         assert(mTrtEngine != nullptr);
@@ -101,16 +101,16 @@ namespace Tn
     {
         using namespace std;
         fstream file;
-        
+
         file.open(engineFile,ios::binary | ios::in);
         if(!file.is_open())
         {
             cout << "read engine file" << engineFile <<" failed" << endl;
             return;
         }
-        file.seekg(0, ios::end); 
-        int length = file.tellg();         
-        file.seekg(0, ios::beg); 
+        file.seekg(0, ios::end);
+        int length = file.tellg();
+        file.seekg(0, ios::beg);
         std::unique_ptr<char[]> data(new char[length]);
         file.read(data.get(), length);
 
@@ -230,7 +230,7 @@ namespace Tn
         auto t_end = std::chrono::high_resolution_clock::now();
         float total = std::chrono::duration<float, std::milli>(t_end - t_start).count();
 
-        std::cout << "Time taken for inference is " << total << " ms." << std::endl;
+        //std::cout << "Time taken for inference is " << total << " ms." << std::endl;
 
         for (size_t bindingIdx = mTrtInputCount; bindingIdx < mTrtBindBufferSize.size(); ++bindingIdx)
         {

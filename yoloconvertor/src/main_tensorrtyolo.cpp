@@ -27,7 +27,6 @@
 #include "YoloLayer.h"
 #include "dataReader.h"
 #include "eval.h"
-#include <chrono>
 
 using namespace darknet_ros_msgs;
 using namespace message_filters;
@@ -37,7 +36,13 @@ using namespace Yolo;
 
 ros::Publisher pub_boundingboxes;
 image_transport::Publisher pub_result_image;
+float g_detect_threshold;
+float g_nms_threshold;
 
+// yolo network parameter, should be fixed with the given engine file?
+int g_net_h = 608;
+int g_net_w = 608;
+int g_net_c = 3;
 
 vector<float> prepareImage(cv::Mat& img)
 {
@@ -47,9 +52,9 @@ vector<float> prepareImage(cv::Mat& img)
 //    int h = parser::getIntValue("H");   //net h
 //    int w = parser::getIntValue("W");   //net w
 
-    int h = 608;
-    int w = 608; //hardcode .... what this mean?
-    int c = 3;
+    int h = g_net_h;
+    int w = g_net_w; //hardcode .... what this mean?
+    int c = g_net_c;
 
     float scale = min(float(w)/img.cols,float(h)/img.rows);
     auto scaleSize = cv::Size(img.cols * scale,img.rows * scale);
@@ -86,8 +91,6 @@ vector<float> prepareImage(cv::Mat& img)
 
 void DoNms(vector<Detection>& detections,int classes ,float nmsThresh)
 {
-    auto t_start = chrono::high_resolution_clock::now();
-
     vector<vector<Detection>> resClass;
     resClass.resize(classes);
 
@@ -138,10 +141,6 @@ void DoNms(vector<Detection>& detections,int classes ,float nmsThresh)
 
     //swap(detections,result);
     detections = move(result);
-
-    auto t_end = chrono::high_resolution_clock::now();
-    float total = chrono::duration<float, milli>(t_end - t_start).count();
-    cout << "Time taken for nms is " << total << " ms." << endl;
 }
 
 
@@ -152,8 +151,8 @@ vector<Bbox> postProcessImg(cv::Mat& img,vector<Detection>& detections,int class
 //    int h = parser::getIntValue("H");   //net h
 //    int w = parser::getIntValue("W");   //net w
 
-    int h = 608;
-    int w = 608;
+    int h = g_net_h;
+    int w = g_net_w;
 
     //scale bbox to img
     int width = img.cols;
@@ -173,7 +172,7 @@ vector<Bbox> postProcessImg(cv::Mat& img,vector<Detection>& detections,int class
 
     //nms
     //float nmsThresh = parser::getFloatValue("nms");
-    float nmsThresh = 0.45; //hardcode now
+    float nmsThresh = g_nms_threshold; //hardcode now
     if(nmsThresh > 0)
         DoNms(detections,classes,nmsThresh);
 
@@ -196,17 +195,6 @@ vector<Bbox> postProcessImg(cv::Mat& img,vector<Detection>& detections,int class
     return boxes;
 }
 
-vector<string> split(const string& str, char delim)
-{
-    stringstream ss(str);
-    string token;
-    vector<string> container;
-    while (getline(ss, token, delim)) {
-        container.push_back(token);
-    }
-
-    return container;
-}
 
 
 
@@ -232,7 +220,6 @@ unique_ptr<float[]> outputData;
 
 void Callback(const sensor_msgs::ImageConstPtr& img)
 {
-    ROS_INFO("get image");
     outputData = unique_ptr<float[]>(new float[outputCount]);
     cv_bridge::CvImagePtr cv_ptr;
     try
@@ -246,7 +233,6 @@ void Callback(const sensor_msgs::ImageConstPtr& img)
     }
     cv::Mat cvmat = cv_ptr->image;
     vector<float> inputData = prepareImage(cvmat);
-    ROS_INFO("inputData size is %d", inputData.size());
     net_ptr->doInference(inputData.data(), outputData.get());
 
     //Get Output
@@ -261,17 +247,6 @@ void Callback(const sensor_msgs::ImageConstPtr& img)
     int classNum = 80;
     auto boxes = postProcessImg(cvmat,result,classNum);  // Ithink here we get boxes.
 
-//        for(const auto& item : boxes)
-//        {
-////            if(item.score<0.1)
-////                continue;
-//            cv::rectangle(cvmat,cv::Point(item.left,item.top),cv::Point(item.right,item.bot),cv::Scalar(0,0,255),3,8,0);
-//            cout << "class=" << item.classId << " prob=" << item.score*100 << endl;
-//            cout << "left=" << item.left << " right=" << item.right << " top=" << item.top << " bot=" << item.bot << endl;
-//        }
-//        cv::imshow("result",cvmat);
-//        cv::waitKey(25);
-
      // generate darknet bounding box
      darknet_ros_msgs::BoundingBoxes bbs;
      bbs.image_header = img->header;
@@ -279,10 +254,10 @@ void Callback(const sensor_msgs::ImageConstPtr& img)
      bbs.header.frame_id = "detection";
      for(const auto& item: boxes)
      {
-         if(item.classId == 0 && item.score > 0.7) // classid=0 is pedstrain, threshold hardcode
+         if(item.classId == 0 && item.score > g_detect_threshold) // classid=0 is pedstrain, threshold hardcode
          {
             darknet_ros_msgs::BoundingBox box;
-            box.Class = 'person';
+            box.Class =std::string("person");
             box.probability = item.score;
             box.xmax = item.right;
             box.xmin = item.left;
@@ -293,12 +268,13 @@ void Callback(const sensor_msgs::ImageConstPtr& img)
      }
 
      // generate darkent detection image
-     for(const auto& it = bbs.bounding_boxes.begin();it!=bbs.bounding_boxes.end();++it)
+
+     for(auto it = bbs.bounding_boxes.begin();it!=bbs.bounding_boxes.end();++it)
      {
          float height = it->ymax - it->ymin;
          float width = it->xmax - it->xmin;
-         float x =(float)std::max(it->xmin, 0);  // make sure x and y are in the image.
-         float y = (float)std::max(it->ymin, 0);
+         float x =(float)(it->xmin>0?it->xmin:0);// make sure x and y are in the image.
+         float y = (float)(it->ymin>0?it->ymin:0);
          render_bbox_2D(x,y,width,height,cvmat,0);
          render_text(it->Class,cvmat,x,y,0);
      }
@@ -332,7 +308,8 @@ int main(int argc, char **argv)
     private_node_handle_.param("image", image_topic, string("/hardware/video/valeo/rectificationNIKRLeft/PanoramaImage"));
     private_node_handle_.param("bounding_boxes", boundingboxes, string("darknet_ros/bounding_boxes"));
     private_node_handle_.param("engine_path", engine_path, string("oops I need engine!"));
-
+    private_node_handle_.param("detect_threshold",g_detect_threshold, float(0.7));
+    private_node_handle_.param("nms_threshold", g_nms_threshold, float(0.45));
 
     ROS_DEBUG("yoloconvertor: Queue size for synchronisation is set to: %i", queue_size);
 
@@ -367,7 +344,7 @@ int main(int argc, char **argv)
     pub_boundingboxes = n.advertise<darknet_ros_msgs::BoundingBoxes>(boundingboxes, 10);/* con_cb, con_cb)*/;
     //debug image publisher
     string pub_topic_result_image;
-    private_node_handle_.param("tensorRT_yolo_image", pub_topic_result_image, string("/tensorRT_yolo_image"));
+    private_node_handle_.param("tensorRT_yolo_out_image", pub_topic_result_image, string("/tensorRT_yolo_image"));
     pub_result_image = it.advertise(pub_topic_result_image.c_str(), 1);  // con_cb maybe...
     //build engine
 //    string saveName = "../tensorRT_yolo/yolov3_fp16.engine";  //hardcode
