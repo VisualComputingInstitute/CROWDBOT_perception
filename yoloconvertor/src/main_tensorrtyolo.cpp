@@ -303,7 +303,7 @@ void Callback(const sensor_msgs::ImageConstPtr& img)
          render_text(it->Class,cvmat,x,y,0);
      }
      // publish image
-     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(color->header, "bgr8", image_rgb).toImageMsg();
+     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(img->header, "bgr8", cvmat).toImageMsg();
      pub_result_image.publish(msg);
      // publish boundingbox
      pub_boundingboxes.publish(bbs);
