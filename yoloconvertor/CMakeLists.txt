@@ -10,6 +10,10 @@ find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs sensor_msgs nav_ms
 find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
 include(${QT_USE_FILE})
 
+find_package(OpenCV)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
+
 set(CMAKE_BUILD_TYPE Release)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
