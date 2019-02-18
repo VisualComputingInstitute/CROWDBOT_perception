@@ -23,7 +23,6 @@
 #include "Visual.h"
 
 #include "TrtNet.h"
-//#include "argsParser.h"
 #include "configs.h"
 #include "YoloLayer.h"
 #include "dataReader.h"
@@ -33,11 +32,12 @@
 using namespace darknet_ros_msgs;
 using namespace message_filters;
 using namespace std;
-//using namespace argsParser;
 using namespace Tn;
 using namespace Yolo;
 
 ros::Publisher pub_boundingboxes;
+image_transport::Publisher pub_result_image;
+
 
 vector<float> prepareImage(cv::Mat& img)
 {
@@ -261,17 +261,52 @@ void Callback(const sensor_msgs::ImageConstPtr& img)
     int classNum = 80;
     auto boxes = postProcessImg(cvmat,result,classNum);  // Ithink here we get boxes.
 
-    cout<<"boxes number"<<boxes.size()<<endl;
-        for(const auto& item : boxes)
-        {
-//            if(item.score<0.1)
-//                continue;
-            cv::rectangle(cvmat,cv::Point(item.left,item.top),cv::Point(item.right,item.bot),cv::Scalar(0,0,255),3,8,0);
-            cout << "class=" << item.classId << " prob=" << item.score*100 << endl;
-            cout << "left=" << item.left << " right=" << item.right << " top=" << item.top << " bot=" << item.bot << endl;
-        }
-        cv::imshow("result",cvmat);
-        cv::waitKey(25);
+//        for(const auto& item : boxes)
+//        {
+////            if(item.score<0.1)
+////                continue;
+//            cv::rectangle(cvmat,cv::Point(item.left,item.top),cv::Point(item.right,item.bot),cv::Scalar(0,0,255),3,8,0);
+//            cout << "class=" << item.classId << " prob=" << item.score*100 << endl;
+//            cout << "left=" << item.left << " right=" << item.right << " top=" << item.top << " bot=" << item.bot << endl;
+//        }
+//        cv::imshow("result",cvmat);
+//        cv::waitKey(25);
+
+     // generate darknet bounding box
+     darknet_ros_msgs::BoundingBoxes bbs;
+     bbs.image_header = img->header;
+     bbs.header = img->header;
+     bbs.header.frame_id = "detection";
+     for(const auto& item: boxes)
+     {
+         if(item.classId == 0 && item.score > 0.7) // classid=0 is pedstrain, threshold hardcode
+         {
+            darknet_ros_msgs::BoundingBox box;
+            box.Class = 'person';
+            box.probability = item.score;
+            box.xmax = item.right;
+            box.xmin = item.left;
+            box.ymax = item.bot;
+            box.ymin = item.top;
+            bbs.bounding_boxes.push_back(box);
+         }
+     }
+
+     // generate darkent detection image
+     for(const auto& it = bbs.bounding_boxes.begin();it!=bbs.bounding_boxes.end();++it)
+     {
+         float height = it->ymax - it->ymin;
+         float width = it->xmax - it->xmin;
+         float x =(float)std::max(it->xmin, 0);  // make sure x and y are in the image.
+         float y = (float)std::max(it->ymin, 0);
+         render_bbox_2D(x,y,width,height,cvmat,0);
+         render_text(it->Class,cvmat,x,y,0);
+     }
+     // publish image
+     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(color->header, "bgr8", image_rgb).toImageMsg();
+     pub_result_image.publish(msg);
+     // publish boundingbox
+     pub_boundingboxes.publish(bbs);
 
 }
 
@@ -330,7 +365,10 @@ int main(int argc, char **argv)
     // Create publishers
     private_node_handle_.param("bounding_boxs", boundingboxes, string("/bounding_boxs"));
     pub_boundingboxes = n.advertise<darknet_ros_msgs::BoundingBoxes>(boundingboxes, 10);/* con_cb, con_cb)*/;
-
+    //debug image publisher
+    string pub_topic_result_image;
+    private_node_handle_.param("tensorRT_yolo_image", pub_topic_result_image, string("/tensorRT_yolo_image"));
+    pub_result_image = it.advertise(pub_topic_result_image.c_str(), 1);  // con_cb maybe...
     //build engine
 //    string saveName = "../tensorRT_yolo/yolov3_fp16.engine";  //hardcode
     net_ptr = new trtNet(engine_path);
