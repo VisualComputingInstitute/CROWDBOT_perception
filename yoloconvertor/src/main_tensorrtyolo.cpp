@@ -200,27 +200,27 @@ vector<Bbox> postProcessImg(cv::Mat& img,vector<Detection>& detections,int class
 
 
 
-//void connectCallback(ros::Subscriber &sub_msg,
-//                     image_transport::Subscriber &sub_img,
-//                     image_transport::ImageTransport &it){
-//    if(!pub_boundingboxes.getNumSubscribers()) {
-//        ROS_DEBUG("yoloconvertor: No subscribers. Unsubscribing.");
-//        sub_msg.shutdown();
-//        sub_img.unsubscribe();
+void connectCallback(ros::Subscriber &sub_msg,
+                     image_transport::Subscriber &sub_img,
+                     image_transport::ImageTransport &it){
+    if(!pub_boundingboxes.getNumSubscribers()) {
+        ROS_DEBUG("yoloconvertor: No subscribers. Unsubscribing.");
+        sub_msg.shutdown();
+        sub_img.unsubscribe();
 
-//    } else {
-//        ROS_DEBUG("yoloconvertor: New subscribers. Subscribing.");
-//        sub_img.subscribe(it,sub_img.getTopic().c_str(),1);
-//        it.subscribe();
-//            }
-//}
+    } else {
+        ROS_DEBUG("yoloconvertor: New subscribers. Subscribing.");
+        sub_img.subscribe(it,sub_img.getTopic().c_str(),1);
+            }
+}
 trtNet* net_ptr;
 int outputCount;
-unique_ptr<float[]> outputData;
 
 void Callback(const sensor_msgs::ImageConstPtr& img)
 {
-    outputData = unique_ptr<float[]>(new float[outputCount]);
+    if(pub_boundingboxes.getNumSubscribers()==0&&pub_result_image.getNumSubscribers()==0)
+        return;  // no one subscribe me, just do nothing.
+    unique_ptr<float[]> outputData(new float[outputCount]);
     cv_bridge::CvImagePtr cv_ptr;
     try
     {
@@ -318,10 +318,10 @@ int main(int argc, char **argv)
     ros::Subscriber sub_message; //Subscribers have to be defined out of the if scope to have affect.
     image_transport::Subscriber subscriber_img = it.subscribe(image_topic.c_str(),queue_size,Callback);
 
-//    ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
-//                                                       boost::ref(sub_message),
-//                                                       boost::ref(subscriber_img),
-//                                                       boost::ref(it));
+    ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
+                                                       boost::ref(sub_message),
+                                                       boost::ref(subscriber_img),
+                                                       boost::ref(it));
 
 
 
@@ -341,11 +341,11 @@ int main(int argc, char **argv)
 
     // Create publishers
     private_node_handle_.param("bounding_boxs", boundingboxes, string("/bounding_boxs"));
-    pub_boundingboxes = n.advertise<darknet_ros_msgs::BoundingBoxes>(boundingboxes, 10);/* con_cb, con_cb)*/;
+    pub_boundingboxes = n.advertise<darknet_ros_msgs::BoundingBoxes>(boundingboxes, 10, con_cb,con_cb);/* con_cb, con_cb)*/;
     //debug image publisher
     string pub_topic_result_image;
     private_node_handle_.param("tensorRT_yolo_out_image", pub_topic_result_image, string("/tensorRT_yolo_image"));
-    pub_result_image = it.advertise(pub_topic_result_image.c_str(), 1);  // con_cb maybe...
+    pub_result_image = it.advertise(pub_topic_result_image.c_str(), 1,con_cb,con_cb);  // con_cb maybe...
     //build engine
 //    string saveName = "../tensorRT_yolo/yolov3_fp16.engine";  //hardcode
     net_ptr = new trtNet(engine_path);
