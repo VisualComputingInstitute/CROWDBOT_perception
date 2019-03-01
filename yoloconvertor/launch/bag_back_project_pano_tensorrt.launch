@@ -23,12 +23,6 @@
 
 
 
-    <!-- general yolo-v3 arg -->
-    <!-- Console launch prefix -->
-    <arg name="launch_prefix" default=""/>
-    <!-- Config and weights folder. -->
-    <arg name="yolo_weights_path"          default="$(find darknet_ros)/yolo_network_config/weights"/>
-    <arg name="yolo_config_path"           default="$(find darknet_ros)/yolo_network_config/cfg"/>
 
     <!-- general yoloconvertor_panorama arg-->
     <arg name="detection_id_offset" default="0"/>
@@ -45,11 +39,11 @@
     <!-- left yoloconvertor and yolo-->
     <!-- Start darknet and ros wrapper -->
     <!-- Load parameters for left -->
-   <arg name="engine_path" default="$(find yoloconvertor)/tensorRT_yolo/yolov3_fp16.engine"/>
+   <arg name="engine_path" default="$(find trtyolo)/tensorRT_yolo/yolov3_fp16.engine"/>
    <arg name="detect_threshold" default="0.7"/>
    <arg name="nms_threshold" default="0.45"/>
    <arg name="tensorRT_yolo_out_image" default="/tensorRT_yolo_image"/>
-   <node pkg="yoloconvertor" type="tensorrt_yolo" name= "tensorrtyolo" output="screen">
+   <node pkg="trtyolo" type="tensorrt_yolo" name= "tensorrtyolo" output="screen">
        <param name="engine_path" value="$(arg engine_path)" type="string"/>
        <param name="detect_threshold" value="$(arg detect_threshold)"/>
        <param name="nms_threshold" value="$(arg nms_threshold)"/>
