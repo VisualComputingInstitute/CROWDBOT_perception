@@ -2,20 +2,21 @@ cmake_minimum_required(VERSION 2.8.3)
 project(trtyolo)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-# add_compile_options(-std=c++11)
+add_compile_options(-std=c++11)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED roscpp rospy std_msgs message_filters darknet_ros_msgs image_transport cv_bridge)
+find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs sensor_msgs message_filters darknet_ros_msgs image_transport cv_bridge)
+
+find_package(OpenCV)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
 set(CMAKE_BUILD_TYPE Release)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
     set(CMAKE_CXX_FLAGS "-O3")        ## Optimize
 endif()
-
-## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -104,20 +105,37 @@ endif()
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS ../yoloconvertor/include
-#  LIBRARIES convert_yolo
-#  CATKIN_DEPENDS roscpp rospy std_msgs
+  INCLUDE_DIRS include
+#  LIBRARIES trtyolo
+#  CATKIN_DEPENDS other_catkin_pkg
 #  DEPENDS system_lib
 )
 
 ###########
 ## Build ##
 ###########
+#add wrapper
+set(TRT_WRAPPER_DIR tensorRT_yolo/tensorRTWrapper/code)
+add_subdirectory(${TRT_WRAPPER_DIR})
+include_directories(${TRT_WRAPPER_DIR}/include)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories( include
   ${catkin_INCLUDE_DIRS}
+  # for tensorRT_yolo
+  tensorRT_yolo/include
+)
+
+add_executable(tensorrt_yolo src/main_tensorrtyolo.cpp tensorRT_yolo/eval.cpp tensorRT_yolo/dataReader.cpp)
+
+add_dependencies(tensorrt_yolo ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(tensorrt_yolo
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
+  X11
+  TrtNet
 )
 
 ## Declare a C++ library

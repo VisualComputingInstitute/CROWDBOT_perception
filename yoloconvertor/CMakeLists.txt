@@ -73,10 +73,6 @@ catkin_package(
 ## Build ##
 ###########
 
-#add wrapper
-set(TRT_WRAPPER_DIR tensorRT_yolo/tensorRTWrapper/code)
-add_subdirectory(${TRT_WRAPPER_DIR})
-include_directories(${TRT_WRAPPER_DIR}/include)
 
 
 ## Specify additional locations of header files
@@ -84,9 +80,6 @@ include_directories(${TRT_WRAPPER_DIR}/include)
 # include_directories(include)
 include_directories( include
   ${catkin_INCLUDE_DIRS}
-
-  # for tensorRT_yolo
-  tensorRT_yolo/include
 )
 
 ## Declare a cpp library
@@ -101,7 +94,7 @@ add_executable(yoloconvertor_panorama src/main_panorama.cpp)
 add_executable(yoloconvertor_fusion src/main_fusion.cpp)
 add_executable(backprojection_panorama src/main_backproject_panorama.cpp)
 add_executable(backprojection_pinhole src/main_backproject_pinhole.cpp)
-add_executable(tensorrt_yolo src/main_tensorrtyolo.cpp tensorRT_yolo/eval.cpp tensorRT_yolo/dataReader.cpp)
+
 
 
 ## Add cmake target dependencies of the executable/library
@@ -111,7 +104,7 @@ add_dependencies(yoloconvertor_panorama ${catkin_EXPORTED_TARGETS})
 add_dependencies(yoloconvertor_fusion ${catkin_EXPORTED_TARGETS})
 add_dependencies(backprojection_panorama ${catkin_EXPORTED_TARGETS})
 add_dependencies(backprojection_pinhole ${catkin_EXPORTED_TARGETS})
-add_dependencies(tensorrt_yolo ${catkin_EXPORTED_TARGETS})
+
 
 
 
@@ -156,15 +149,7 @@ add_dependencies(tensorrt_yolo ${catkin_EXPORTED_TARGETS})
    X11
  )
 
-target_link_libraries(tensorrt_yolo
-  ${catkin_LIBRARIES}
-  ${OpenCV_LIBRARIES}
-  ${QT_LIBRARIES}
-  ${QT_QTCORE_LIBRARY}
-  ${QT_QTGUI_LIBRARY}
-  X11
-  TrtNet
-)
+
 
 
 ## Specify libraries to link a library or executable target against

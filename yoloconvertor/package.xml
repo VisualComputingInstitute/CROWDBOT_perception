@@ -10,7 +10,7 @@
 
   <url type="website">http://www.vision.rwth-aachen.de/</url>
 
-  <author email="neng.qian@lincoln.ac.uk">Neng Qian</author>
+  <author email="neng.qian@rwth-aachen.de">Neng Qian</author>
   <author email="breuers@vision.rwth-aachen.de">Stefan Breuers</author>
 
   <buildtool_depend>catkin</buildtool_depend>
