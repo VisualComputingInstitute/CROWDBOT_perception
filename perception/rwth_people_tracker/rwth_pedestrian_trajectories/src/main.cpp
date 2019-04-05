@@ -8,6 +8,7 @@
 #include "frame_msgs/PersonTrajectories.h"
 #include "frame_msgs/PersonTrajectory.h"
 #include "frame_msgs/PersonTrajectoryEntry.h"
+#include "frame_msgs/DetectedPersons.h"
 
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
@@ -18,10 +19,17 @@ using namespace frame_msgs;
 
 ros::Publisher pub_person_trajectories;
 ros::Publisher pub_selected_person_trajectory;
+ros::Publisher pub_selected_helper_vis;
+ros::Publisher pub_potential_helpers_vis;
 PersonTrajectories personTrajectories;
 
 tf::TransformListener* listener;
 string camera_frame;
+
+bool keep = true; //if true, a selected ID is kept, even if others fulfill the criteria better
+bool strict = true; //if true, a selected ID needs to fulfill the criteria all the time
+bool remember = false; //TODO: if true, a selected ID had to fulfill the criteria at one point in time and can be selected later
+int last_selected_person_id = -1;
 
 vector<double> cartesianToPolar(geometry_msgs::Point point) {
     ROS_DEBUG("cartesianToPolar: Cartesian point: x: %f, y: %f, z %f", point.x, point.y, point.z);
@@ -41,6 +49,10 @@ void callback(const TrackedPersons::ConstPtr &tps)
     int selected_trajectory_idx = -1;
     float selected_trajectory_min_dist = 10000.0f;
     float max_dist = 3.0f; //maximum distance to be selected
+
+    DetectedPersons potentialHelpersVis;
+    potentialHelpersVis.header = tps->header;
+    bool last_selected_person_found = false;
     
     //for each trackedPerson tp in all trackedPersons tps
     for(int i = 0; i < tps->tracks.size(); i++){
@@ -68,11 +80,18 @@ void callback(const TrackedPersons::ConstPtr &tps)
         try {
             listener->waitForTransform(distancePointStamped.header.frame_id, camera_frame, ros::Time(), ros::Duration(1.0));
             listener->transformPoint(camera_frame, distancePointStamped, distancePointStampedCamera);
-            //std::cout << "ID: " << t_id << " camX: " << distancePointStampedCamera.point.x << " camY: " << distancePointStampedCamera.point.y << " camZ: " << distancePointStampedCamera.point.z << std::endl;
             polCo = cartesianToPolar(distancePointStampedCamera.point);
-            if(polCo.at(0) < selected_trajectory_min_dist && polCo.at(0) <= max_dist){
-                new_min_found = true;
-	        selected_trajectory_min_dist = polCo.at(0);
+            if(polCo.at(0) <= max_dist){
+                // fulfills criterion, add to potential helpers
+                DetectedPerson potentialHelper;
+                potentialHelper.confidence = 0.5;
+                potentialHelper.pose.pose.position = tp.pose.pose.position;
+                potentialHelpersVis.detections.push_back(potentialHelper);
+                if(polCo.at(0) < selected_trajectory_min_dist){
+                    // fulfills criterion best, set new min
+                    new_min_found = true;
+                    selected_trajectory_min_dist = polCo.at(0);
+                }
             }
         }
         catch(tf::TransformException ex) {
@@ -85,8 +104,14 @@ void callback(const TrackedPersons::ConstPtr &tps)
                 // ...and add this personTrajectoryEntry pje to this id
                 personTrajectories.trajectories.at(j).trajectory.push_back(pje);
                 t_id_exists = true;
-                if(new_min_found){
+                if(last_selected_person_id==t_id && !strict && keep){
+                    //std::cout << "last selected person found! it is " << t_id << std::endl;
+                    last_selected_person_found = true;
                     selected_trajectory_idx = j;
+                    //std::cout << "set selected index to: " << selected_trajectory_idx << std::endl;
+                }else if(new_min_found && !last_selected_person_found){
+                    selected_trajectory_idx = j;
+                    //std::cout << "set selected index to: " << selected_trajectory_idx << std::endl;
                 }
                 break;
             }
@@ -98,23 +123,41 @@ void callback(const TrackedPersons::ConstPtr &tps)
             pj.track_id = t_id;
             pj.trajectory.push_back(pje);
             personTrajectories.trajectories.push_back(pj);
-            if(new_min_found){
+            if(new_min_found && !keep && !last_selected_person_found){
+                //std::cout << "new min found and last selected person was not found (or should not be kept) " << std::endl;
                 selected_trajectory_idx = personTrajectories.trajectories.size()-1;
+                //std::cout << "set selected index to: " << selected_trajectory_idx << std::endl;
             }
         }
             
     }
-    //publish all personTrajectories 
+
+    //publish all personTrajectories and the visualization of potential helpers
     pub_person_trajectories.publish(personTrajectories);
+    pub_potential_helpers_vis.publish(potentialHelpersVis);
 
     // publish "selected" (right now: closest) trajectory on a seperate topic
     if(selected_trajectory_idx!=-1 && personTrajectories.trajectories.size()>0 && tps->tracks.size()>0){
-        pub_selected_person_trajectory.publish(personTrajectories.trajectories.at(selected_trajectory_idx));
+        PersonTrajectory selectedPersonTrajectory = personTrajectories.trajectories.at(selected_trajectory_idx);
+        pub_selected_person_trajectory.publish(selectedPersonTrajectory);
+        last_selected_person_id = selectedPersonTrajectory.track_id;
+        //std::cout << "new last ID: " << last_selected_person_id << std::endl;
+        // publish a DetectedPersonsArray of this for visualization purposes1
+        DetectedPersons selectedHelperVis;
+        selectedHelperVis.header = tps->header;
+        DetectedPerson currentSelectedPersonSolo;
+        currentSelectedPersonSolo.confidence = 1.0;
+        currentSelectedPersonSolo.pose.pose.position = selectedPersonTrajectory.trajectory.at(selectedPersonTrajectory.trajectory.size()-1).pose.pose.position;
+        selectedHelperVis.detections.push_back(currentSelectedPersonSolo);
+        pub_selected_helper_vis.publish(selectedHelperVis);
     }else{
         ROS_DEBUG("no person trajectory selected");
         //PersonTrajectory empty_pt;
         //empty_pt.track_id = 0;
         //pub_selected_person_trajectory.publish(empty_pt);
+        DetectedPersons currentSelectedPersonVis;
+        currentSelectedPersonVis.header = tps->header;
+        pub_selected_helper_vis.publish(currentSelectedPersonVis);
     }
     
 }
@@ -123,6 +166,7 @@ void callback(const TrackedPersons::ConstPtr &tps)
 void connectCallback(message_filters::Subscriber<TrackedPersons> &sub_tra){
     if(!pub_person_trajectories.getNumSubscribers()
         && !pub_selected_person_trajectory.getNumSubscribers()
+        && !pub_selected_helper_vis.getNumSubscribers()
     ) {
         ROS_DEBUG("Trajectories: No subscribers. Unsubscribing.");
         sub_tra.unsubscribe();
@@ -143,6 +187,8 @@ int main(int argc, char **argv)
     string sub_topic_tracked_persons;
     string pub_topic_trajectories;
     string pub_topic_selected_trajectory;
+    string pub_topic_selected_helper_vis;
+    string pub_topic_potential_helpers_vis;
 
     listener = new tf::TransformListener();
 
@@ -169,8 +215,12 @@ int main(int argc, char **argv)
     // Create a topic publisher
     private_node_handle_.param("person_trajectories", pub_topic_trajectories, string("/rwth_tracker/person_trajectories"));
     private_node_handle_.param("selected_person_trajectory", pub_topic_selected_trajectory, string("/rwth_tracker/selected_person_trajectory"));
+    private_node_handle_.param("selected_helper_vis", pub_topic_selected_helper_vis, string("/rwth_tracker/selected_helper_vis"));
+    private_node_handle_.param("potential_helpers_vis", pub_topic_potential_helpers_vis, string("/rwth_tracker/potential_helpers_vis"));
     pub_person_trajectories = n.advertise<PersonTrajectories>(pub_topic_trajectories, 10, con_cb, con_cb);
     pub_selected_person_trajectory = n.advertise<PersonTrajectory>(pub_topic_selected_trajectory, 10, con_cb, con_cb);
+    pub_selected_helper_vis = n.advertise<DetectedPersons>(pub_topic_selected_helper_vis, 10, con_cb, con_cb);
+    pub_potential_helpers_vis = n.advertise<DetectedPersons>(pub_topic_potential_helpers_vis, 10, con_cb, con_cb);
 
     ros::spin();
 
