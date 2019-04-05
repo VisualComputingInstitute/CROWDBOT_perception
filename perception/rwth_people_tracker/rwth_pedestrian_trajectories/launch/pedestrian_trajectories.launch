@@ -2,7 +2,8 @@
     <arg name="queue_size" default="10" />
     <arg name="tracked_persons" default="/rwth_tracker/tracked_persons" />
     <arg name="person_trajectories" default="/rwth_tracker/person_trajectories" />
-    <arg name="selected_person_trajectory" default="/rwth_tracker/selected_person_trajectory" />
+    <arg name="potential_helpers" default="/rwth_tracker/potential_helpers" />
+    <arg name="selected_helper" default="/rwth_tracker/selected_helper" />
     <arg name="camera_frame" default="/hardware/depth/kinect2/ColorImageFrame" />
     <arg name="keep" default="true" />
     <arg name="strict" default="false" />
@@ -12,7 +13,8 @@
         <param name="queue_size" value="$(arg queue_size)" type="int"/>
         <param name="tracked_persons" value="$(arg tracked_persons)" type="string"/>
         <param name="person_trajectories" value="$(arg person_trajectories)" type="string"/>
-        <param name="selected_person_trajectory" value="$(arg selected_person_trajectory)" type="string"/>
+        <param name="potential_helpers" value="(arg potential_helpers)" type="string"/>
+        <param name="selected_helper" value="(arg selected_helper)" type="string"/>
         <param name="camera_frame" value="$(arg camera_frame)" />
         <param name="keep" value="$(arg keep)" />
         <param name="strict" value="$(arg strict)" />

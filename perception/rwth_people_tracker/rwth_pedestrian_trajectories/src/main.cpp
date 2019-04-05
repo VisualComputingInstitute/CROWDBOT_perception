@@ -19,8 +19,9 @@ using namespace message_filters;
 using namespace frame_msgs;
 
 ros::Publisher pub_person_trajectories;
-ros::Publisher pub_selected_person_trajectory;
+ros::Publisher pub_selected_helper;
 ros::Publisher pub_selected_helper_vis;
+ros::Publisher pub_potential_helpers;
 ros::Publisher pub_potential_helpers_vis;
 PersonTrajectories personTrajectories;
 
@@ -52,10 +53,12 @@ void callback(const TrackedPersons::ConstPtr &tps)
     int selected_trajectory_idx = -1;
     float selected_trajectory_min_dist = 10000.0f;
     float max_dist = 3.0f; //maximum distance to be selected
+    bool last_person_selected_again = false;
 
     DetectedPersons potentialHelpersVis;
     potentialHelpersVis.header = tps->header;
-    bool last_person_selected_again = false;
+    PersonTrajectories potentialHelpers;
+    potentialHelpers.header = tps->header;
     
     //for each trackedPerson tp in all trackedPersons tps
     for(int i = 0; i < tps->tracks.size(); i++){
@@ -118,6 +121,7 @@ void callback(const TrackedPersons::ConstPtr &tps)
                     selected_trajectory_idx = j;
                     //std::cout << "set selected index to: " << selected_trajectory_idx << std::endl;
                 }
+                if(is_potential_helper) potentialHelpers.trajectories.push_back(personTrajectories.trajectories.at(personTrajectories.trajectories.at(j)));
                 break;
             }
         }
@@ -133,18 +137,20 @@ void callback(const TrackedPersons::ConstPtr &tps)
                 selected_trajectory_idx = personTrajectories.trajectories.size()-1;
                 //std::cout << "set selected index to: " << selected_trajectory_idx << std::endl;
             }
+            if(is_potential_helper) potentialHelpers.trajectories.push_back(personTrajectories.trajectories.at(personTrajectories.trajectories.size()-1));
         }
             
     }
 
     //publish all personTrajectories and the visualization of potential helpers
     pub_person_trajectories.publish(personTrajectories);
+    pub_potential_helpers.publish(potentialHelpers);
     pub_potential_helpers_vis.publish(potentialHelpersVis);
 
     // publish "selected" (right now: closest) trajectory on a seperate topic
     if(selected_trajectory_idx!=-1 && personTrajectories.trajectories.size()>0 && tps->tracks.size()>0){
         PersonTrajectory selectedPersonTrajectory = personTrajectories.trajectories.at(selected_trajectory_idx);
-        pub_selected_person_trajectory.publish(selectedPersonTrajectory);
+        pub_selected_helper.publish(selectedPersonTrajectory);
         last_selected_person_id = selectedPersonTrajectory.track_id;
         pastHelperIds.insert(last_selected_person_id);
         //std::cout << "new last ID: " << last_selected_person_id << std::endl;
@@ -171,8 +177,10 @@ void callback(const TrackedPersons::ConstPtr &tps)
 // Connection callback that unsubscribes from the tracker if no one is subscribed.
 void connectCallback(message_filters::Subscriber<TrackedPersons> &sub_tra){
     if(!pub_person_trajectories.getNumSubscribers()
-        && !pub_selected_person_trajectory.getNumSubscribers()
+        && !pub_selected_helper.getNumSubscribers()
         && !pub_selected_helper_vis.getNumSubscribers()
+        && !pub_potential_helpers.getNumSubscribers()
+        && !pub_potential_helpers_vis.getNumSubscribers()
     ) {
         ROS_DEBUG("Trajectories: No subscribers. Unsubscribing.");
         sub_tra.unsubscribe();
@@ -192,7 +200,8 @@ int main(int argc, char **argv)
     int queue_size;
     string sub_topic_tracked_persons;
     string pub_topic_trajectories;
-    string pub_topic_selected_trajectory;
+    string pub_topic_selected_helper;
+    string pub_topic_potential_helpers;
     string pub_topic_selected_helper_vis;
     string pub_topic_potential_helpers_vis;
 
@@ -223,11 +232,13 @@ int main(int argc, char **argv)
 
     // Create a topic publisher
     private_node_handle_.param("person_trajectories", pub_topic_trajectories, string("/rwth_tracker/person_trajectories"));
-    private_node_handle_.param("selected_person_trajectory", pub_topic_selected_trajectory, string("/rwth_tracker/selected_person_trajectory"));
+    private_node_handle_.param("selected_helper", pub_topic_selected_helper, string("/rwth_tracker/selected_helper"));
+    private_node_handle_.param("potential_helpers", pub_topic_potential_helpers, string("/rwth_tracker/potential_helpers"));
     private_node_handle_.param("selected_helper_vis", pub_topic_selected_helper_vis, string("/rwth_tracker/selected_helper_vis"));
     private_node_handle_.param("potential_helpers_vis", pub_topic_potential_helpers_vis, string("/rwth_tracker/potential_helpers_vis"));
     pub_person_trajectories = n.advertise<PersonTrajectories>(pub_topic_trajectories, 10, con_cb, con_cb);
-    pub_selected_person_trajectory = n.advertise<PersonTrajectory>(pub_topic_selected_trajectory, 10, con_cb, con_cb);
+    pub_selected_helper = n.advertise<PersonTrajectory>(pub_topic_selected_helper, 10, con_cb, con_cb);
+    pub_potential_helpers = n.advertise<PersonTrajectories>(pub_topic_selected_helper, 10, con_cb, con_cb);
     pub_selected_helper_vis = n.advertise<DetectedPersons>(pub_topic_selected_helper_vis, 10, con_cb, con_cb);
     pub_potential_helpers_vis = n.advertise<DetectedPersons>(pub_topic_potential_helpers_vis, 10, con_cb, con_cb);
 
