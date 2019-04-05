@@ -4,6 +4,9 @@
     <arg name="person_trajectories" default="/rwth_tracker/person_trajectories" />
     <arg name="selected_person_trajectory" default="/rwth_tracker/selected_person_trajectory" />
     <arg name="camera_frame" default="/hardware/depth/kinect2/ColorImageFrame" />
+    <arg name="keep" default="true" />
+    <arg name="strict" default="false" />
+    <arg name="remember" default="true" />
 
     <node pkg="rwth_pedestrian_trajectories" type="pedestrian_trajectories" name="pedestrian_trajectories" output="screen">
         <param name="queue_size" value="$(arg queue_size)" type="int"/>
@@ -11,6 +14,9 @@
         <param name="person_trajectories" value="$(arg person_trajectories)" type="string"/>
         <param name="selected_person_trajectory" value="$(arg selected_person_trajectory)" type="string"/>
         <param name="camera_frame" value="$(arg camera_frame)" />
+        <param name="keep" value="$(arg keep)" />
+        <param name="strict" value="$(arg strict)" />
+        <param name="remember" value="$(arg remember)" />
     </node>
 
 </launch> 

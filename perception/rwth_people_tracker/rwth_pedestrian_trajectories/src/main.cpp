@@ -27,9 +27,9 @@ PersonTrajectories personTrajectories;
 tf::TransformListener* listener;
 string camera_frame;
 
-bool keep = true; //if true, a selected ID is kept, even if others fulfill the criteria better
-bool strict = false; //if true, a selected ID needs to fulfill the criteria all the time
-bool remember = true; //TODO: if true, a selected ID had to fulfill the criteria at one point in time and can be selected later
+bool keep; //if true, a selected ID is kept, even if others fulfill the criteria better
+bool strict; //if true, a selected ID needs to fulfill the criteria all the time
+bool remember; //if true, a once selected ID will always be considered as potential helper, if it fulfills the criteria (or strict is false)
 int last_selected_person_id = -1;
 unordered_set<int> pastHelperIds;
 unordered_set<int> blacklistedHelperIds;
@@ -198,7 +198,6 @@ int main(int argc, char **argv)
 
     listener = new tf::TransformListener();
 
-
     // Initialize node parameters from launch file or command line.
     // Use a private node handle so that multiple instances of the node can be run simultaneously
     // while using different parameters.
@@ -206,6 +205,10 @@ int main(int argc, char **argv)
     private_node_handle_.param("queue_size", queue_size, int(10));
     private_node_handle_.param("tracked_persons", sub_topic_tracked_persons, string("/rwth_tracker/tracked_persons"));
     private_node_handle_.param("camera_frame", camera_frame, string("/camera/"));
+    // helper selection options
+    private_node_handle_.param("keep", keep, true);
+    private_node_handle_.param("strict", strict, false);
+    private_node_handle_.param("remember", remember, true);
 
     ROS_DEBUG("pedestrian_trajectories: Queue size for synchronisation is set to: %i", queue_size);
 
