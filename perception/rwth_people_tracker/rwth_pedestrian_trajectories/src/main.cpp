@@ -53,7 +53,7 @@ void callback_newSearch(const std_msgs::Bool::ConstPtr &newSearch)
 {
     new_search_invoked = newSearch->data;
     blacklistedHelperIds.insert(last_selected_person_id);
-    cout << "new search invoked by blacklisting current helper with ID " << last_selected_person_id << endl;
+    //cout << "new search invoked by blacklisting current helper with ID " << last_selected_person_id << endl;
 
 }
 
