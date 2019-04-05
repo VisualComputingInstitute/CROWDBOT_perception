@@ -239,7 +239,7 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
         }
     }
 
-    g_map_func->updateCamera2frameTransform(camera_frame_id,boxes->image_header.stamp,listener);
+    //g_map_func->updateCamera2frameTransform(camera_frame_id,boxes->image_header.stamp,listener);
 
 
     //
