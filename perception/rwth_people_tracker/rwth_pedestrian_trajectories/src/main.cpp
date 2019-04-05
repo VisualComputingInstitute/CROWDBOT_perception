@@ -1,6 +1,7 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include <string.h>
+#include <unordered_set>
 
 #include <message_filters/subscriber.h>
 
@@ -27,9 +28,11 @@ tf::TransformListener* listener;
 string camera_frame;
 
 bool keep = true; //if true, a selected ID is kept, even if others fulfill the criteria better
-bool strict = true; //if true, a selected ID needs to fulfill the criteria all the time
-bool remember = false; //TODO: if true, a selected ID had to fulfill the criteria at one point in time and can be selected later
+bool strict = false; //if true, a selected ID needs to fulfill the criteria all the time
+bool remember = true; //TODO: if true, a selected ID had to fulfill the criteria at one point in time and can be selected later
 int last_selected_person_id = -1;
+unordered_set<int> pastHelperIds;
+unordered_set<int> blacklistedHelperIds;
 
 vector<double> cartesianToPolar(geometry_msgs::Point point) {
     ROS_DEBUG("cartesianToPolar: Cartesian point: x: %f, y: %f, z %f", point.x, point.y, point.z);
@@ -52,7 +55,7 @@ void callback(const TrackedPersons::ConstPtr &tps)
 
     DetectedPersons potentialHelpersVis;
     potentialHelpersVis.header = tps->header;
-    bool last_selected_person_found = false;
+    bool last_person_selected_again = false;
     
     //for each trackedPerson tp in all trackedPersons tps
     for(int i = 0; i < tps->tracks.size(); i++){
@@ -68,7 +71,8 @@ void callback(const TrackedPersons::ConstPtr &tps)
         pje.detection_id = tp.detection_id;
 
         //compute distance to robot
-        bool new_min_found = false;
+        bool is_potential_helper = false;
+        bool is_best_helper = false;
         geometry_msgs::PointStamped distancePointStamped;
         geometry_msgs::PointStamped distancePointStampedCamera;
         vector<double> polCo;
@@ -81,15 +85,16 @@ void callback(const TrackedPersons::ConstPtr &tps)
             listener->waitForTransform(distancePointStamped.header.frame_id, camera_frame, ros::Time(), ros::Duration(1.0));
             listener->transformPoint(camera_frame, distancePointStamped, distancePointStampedCamera);
             polCo = cartesianToPolar(distancePointStampedCamera.point);
-            if(polCo.at(0) <= max_dist){
+            if(polCo.at(0) <= max_dist || (remember && pastHelperIds.count(t_id)>0 && !strict)){
                 // fulfills criterion, add to potential helpers
                 DetectedPerson potentialHelper;
                 potentialHelper.confidence = 0.5;
                 potentialHelper.pose.pose.position = tp.pose.pose.position;
                 potentialHelpersVis.detections.push_back(potentialHelper);
+                is_potential_helper = true;
                 if(polCo.at(0) < selected_trajectory_min_dist){
                     // fulfills criterion best, set new min
-                    new_min_found = true;
+                    is_best_helper = true;
                     selected_trajectory_min_dist = polCo.at(0);
                 }
             }
@@ -104,12 +109,12 @@ void callback(const TrackedPersons::ConstPtr &tps)
                 // ...and add this personTrajectoryEntry pje to this id
                 personTrajectories.trajectories.at(j).trajectory.push_back(pje);
                 t_id_exists = true;
-                if(last_selected_person_id==t_id && !strict && keep){
+                if(keep && last_selected_person_id==t_id && (!strict || is_potential_helper)){
                     //std::cout << "last selected person found! it is " << t_id << std::endl;
-                    last_selected_person_found = true;
+                    last_person_selected_again = true;
                     selected_trajectory_idx = j;
                     //std::cout << "set selected index to: " << selected_trajectory_idx << std::endl;
-                }else if(new_min_found && !last_selected_person_found){
+                }else if(is_best_helper && !last_person_selected_again){
                     selected_trajectory_idx = j;
                     //std::cout << "set selected index to: " << selected_trajectory_idx << std::endl;
                 }
@@ -123,7 +128,7 @@ void callback(const TrackedPersons::ConstPtr &tps)
             pj.track_id = t_id;
             pj.trajectory.push_back(pje);
             personTrajectories.trajectories.push_back(pj);
-            if(new_min_found && !keep && !last_selected_person_found){
+            if(is_best_helper && !last_person_selected_again){
                 //std::cout << "new min found and last selected person was not found (or should not be kept) " << std::endl;
                 selected_trajectory_idx = personTrajectories.trajectories.size()-1;
                 //std::cout << "set selected index to: " << selected_trajectory_idx << std::endl;
@@ -141,6 +146,7 @@ void callback(const TrackedPersons::ConstPtr &tps)
         PersonTrajectory selectedPersonTrajectory = personTrajectories.trajectories.at(selected_trajectory_idx);
         pub_selected_person_trajectory.publish(selectedPersonTrajectory);
         last_selected_person_id = selectedPersonTrajectory.track_id;
+        pastHelperIds.insert(last_selected_person_id);
         //std::cout << "new last ID: " << last_selected_person_id << std::endl;
         // publish a DetectedPersonsArray of this for visualization purposes1
         DetectedPersons selectedHelperVis;
