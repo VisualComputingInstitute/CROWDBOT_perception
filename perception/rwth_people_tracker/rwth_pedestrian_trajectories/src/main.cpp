@@ -33,10 +33,10 @@ bool keep; //if true, a selected ID is kept, even if others fulfill the criteria
 bool strict; //if true, a selected ID needs to fulfill the criteria all the time
 bool remember; //if true, a once selected ID will always be considered as potential helper, if it fulfills the criteria (or strict is false)
 int last_selected_person_id = -1;
-unordered_set<int> pastHelperIds;
+unordered_set<int> past_helper_ids;
 unordered_set<int> blacklistedHelperIds;
 
-bool new_search_invoked;
+bool new_search_invoked = false;
 
 vector<double> cartesianToPolar(geometry_msgs::Point point) {
     ROS_DEBUG("cartesianToPolar: Cartesian point: x: %f, y: %f, z %f", point.x, point.y, point.z);
@@ -100,7 +100,7 @@ void callback(const TrackedPersons::ConstPtr &tps)
             listener->waitForTransform(distancePointStamped.header.frame_id, camera_frame, ros::Time(), ros::Duration(1.0));
             listener->transformPoint(camera_frame, distancePointStamped, distancePointStampedCamera);
             polCo = cartesianToPolar(distancePointStampedCamera.point);
-            if( ( (polCo.at(0) <= max_dist) || (remember && pastHelperIds.count(t_id)>0 && !strict) ) && !blacklisted){
+            if( ( (polCo.at(0) <= max_dist) || (remember && past_helper_ids.count(t_id)>0 && !strict) ) && !blacklisted){
                 // fulfills criterion, add to potential helpers
                 DetectedPerson potentialHelper;
                 potentialHelper.confidence = 0.5;
@@ -129,7 +129,7 @@ void callback(const TrackedPersons::ConstPtr &tps)
                     last_person_selected_again = true;
                     selected_trajectory_idx = j;
                     //std::cout << "set selected index to: " << selected_trajectory_idx << std::endl;
-                }else if(is_best_helper && !last_person_selected_again && !blacklisted){
+                }else if(is_best_helper && !last_person_selected_again && !blacklisted && new_search_invoked){
                     selected_trajectory_idx = j;
                     //std::cout << "set selected index to: " << selected_trajectory_idx << std::endl;
                 }
@@ -144,7 +144,7 @@ void callback(const TrackedPersons::ConstPtr &tps)
             pj.track_id = t_id;
             pj.trajectory.push_back(pje);
             personTrajectories.trajectories.push_back(pj);
-            if(is_best_helper && !last_person_selected_again && !blacklisted){
+            if(is_best_helper && !last_person_selected_again && !blacklisted && new_search_invoked){
                 //std::cout << "new min found and last selected person was not found (or should not be kept) " << std::endl;
                 selected_trajectory_idx = personTrajectories.trajectories.size()-1;
                 //std::cout << "set selected index to: " << selected_trajectory_idx << std::endl;
@@ -164,7 +164,7 @@ void callback(const TrackedPersons::ConstPtr &tps)
         PersonTrajectory selectedPersonTrajectory = personTrajectories.trajectories.at(selected_trajectory_idx);
         pub_selected_helper.publish(selectedPersonTrajectory);
         last_selected_person_id = selectedPersonTrajectory.track_id;
-        pastHelperIds.insert(last_selected_person_id);
+        past_helper_ids.insert(last_selected_person_id);
         //std::cout << "new last ID: " << last_selected_person_id << std::endl;
         // publish a DetectedPersonsArray of this for visualization purposes1
         DetectedPersons selectedHelperVis;
@@ -174,6 +174,7 @@ void callback(const TrackedPersons::ConstPtr &tps)
         currentSelectedPersonSolo.pose.pose.position = selectedPersonTrajectory.trajectory.at(selectedPersonTrajectory.trajectory.size()-1).pose.pose.position;
         selectedHelperVis.detections.push_back(currentSelectedPersonSolo);
         pub_selected_helper_vis.publish(selectedHelperVis);
+        new_search_invoked = false;
     }else{
         ROS_DEBUG("no person trajectory selected"); //possible options: publish empty, last, nothing (currently nothing)
         //PersonTrajectory empty_pt;
