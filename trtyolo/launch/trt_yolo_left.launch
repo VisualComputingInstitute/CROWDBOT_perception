@@ -1,0 +1,16 @@
+<launch>
+   <arg name="engine_path" default="$(find trtyolo)/tensorRT_yolo/yolov3_fp16.engine"/>
+   <arg name="detect_threshold" default="0.7"/>
+   <arg name="nms_threshold" default="0.45"/>
+   <arg name="bounding_boxes" default="/trt_yolo_boxes_left"/>
+   <arg name="image" default="/hardware/video/valeo/rectificationNIKRLeft/PanoramaImage"/>
+   <arg name="tensorRT_yolo_out_image" default="/trt_yolo_image_left"/>
+   <node pkg="trtyolo" type="tensorrt_yolo" name= "trt_yolo_left" output="screen">
+       <param name="engine_path" value="$(arg engine_path)" type="string"/>
+       <param name="detect_threshold" value="$(arg detect_threshold)"/>
+       <param name="nms_threshold" value="$(arg nms_threshold)"/>
+       <param name="bounding_boxes" value="$(arg bounding_boxes)" type="string"/>
+       <param name="image" value="$(arg image)" type="string"/>
+       <param name="tensorRT_yolo_out_image" value="$(arg tensorRT_yolo_out_image)" type="string"/>
+   </node>	
+</launch>
