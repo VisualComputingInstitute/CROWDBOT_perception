@@ -5,7 +5,7 @@
    <arg name="bounding_boxes" default="/trt_yolo_boxes_rear"/>
    <arg name="image" default="/hardware/video/valeo/rectificationNIKRRear/PanoramaImage"/>
    <arg name="tensorRT_yolo_out_image" default="/trt_yolo_image_rear"/>
-   <node pkg="trtyolo" type="tensorrt_yolo" name= "tensorrtyolo" output="screen">
+   <node pkg="trtyolo" type="tensorrt_yolo" name= "trt_yolo_rear" output="screen">
        <param name="engine_path" value="$(arg engine_path)" type="string"/>
        <param name="detect_threshold" value="$(arg detect_threshold)"/>
        <param name="nms_threshold" value="$(arg nms_threshold)"/>

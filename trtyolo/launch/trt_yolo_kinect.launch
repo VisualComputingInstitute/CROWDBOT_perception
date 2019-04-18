@@ -5,7 +5,7 @@
    <arg name="bounding_boxes" default="/trt_yolo_boxes_kinect"/>
    <arg name="image" default="/hardware/depth/kinect2/hd/image_color_rect"/>
    <arg name="tensorRT_yolo_out_image" default="/trt_yolo_image_kinect"/>
-   <node pkg="trtyolo" type="tensorrt_yolo" name= "tensorrtyolo" output="screen">
+   <node pkg="trtyolo" type="tensorrt_yolo" name= "trt_yolo_kinect" output="screen">
        <param name="engine_path" value="$(arg engine_path)" type="string"/>
        <param name="detect_threshold" value="$(arg detect_threshold)"/>
        <param name="nms_threshold" value="$(arg nms_threshold)"/>
