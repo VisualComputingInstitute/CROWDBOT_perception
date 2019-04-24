@@ -305,7 +305,7 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
                 continue;
 
             // additional nan check
-            if(!isnan(detected_person.pose.pose.position.x) && !isnan(detected_person.pose.pose.position.y) && !isnan(detected_person.pose.pose.position.z)){
+            if(!std::isnan(detected_person.pose.pose.position.x) && !std::isnan(detected_person.pose.pose.position.y) && !std::isnan(detected_person.pose.pose.position.z)){
                 detected_persons.detections.push_back(detected_person);
             }else{
                 std::cout << "A detection has been discarded because of nan values!" << std::endl;
