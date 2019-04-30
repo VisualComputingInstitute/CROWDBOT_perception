@@ -1,0 +1,30 @@
+{
+  "validation": {
+        "num_workers" : 1,
+        "sampler": {
+            "type": "sequential",
+            "batch_size" : 1,
+            "dataset": {
+                "loader_fn": "pil",
+                "split": "val",
+                "transform": {
+                    "backend": "imgaug",
+                    "normalization": {
+                        "mean": [
+                            0.485,
+                            0.456,
+                            0.406
+                        ],
+                        "std": [
+                            0.229,
+                            0.224,
+                            0.225
+                        ]
+                    }
+                },
+                "name": "coco_stuff"
+            }
+        }
+    },
+  "restore_checkpoint": "/globalwork/weber/experiments/53/model_9"
+}

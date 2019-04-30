@@ -1,0 +1,39 @@
+{
+    "training": {
+        "model": {
+            "name": "MultiBranchClassification",
+            "local_dim": 256,
+            "num_branches": 8,
+            "shared": true
+        },
+        "sampler": {
+            "type": "pk_sampler",
+            "P": 32,
+            "dataset": [
+                {
+                    "name": "market-1501",
+                    "source_file": "/home/pfeiffer/Projects/cupsizes/data/market1501_train.csv",
+                    "data_dir": "/fastwork/pfeiffer/Market-1501",
+                    "transform": {
+                        "height": 256,
+                        "width": 128,
+                        "transforms": ["resize", "RandomHorizontalFlip"]
+                    },
+                    "type": "reid"
+                }
+            ]
+        },
+        "losses": {
+                "name": "softmax",
+                "endpoint" : "softmax",
+                "target": "pid"
+        },
+        "scheduler": {
+            "name": "huanghoujing",
+            "t0": 100
+        },
+        "optimizer": {
+            "name": "adam"
+        }
+    }
+}

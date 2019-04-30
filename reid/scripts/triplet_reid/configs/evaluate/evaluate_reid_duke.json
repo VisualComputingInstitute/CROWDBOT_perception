@@ -1,0 +1,38 @@
+{
+    "evaluation": {
+        "datasets": {
+            "name": "duke",
+            "gallery": {
+                "transform": {
+                        "width": 128,
+                        "height": 256,
+                        "transforms": ["Resize"],
+                        "augmentations": ["HorizontalFlip"]
+                    },
+                    "source_file": "/home/pfeiffer/Projects/cupsizes/data/duke_mtmc_reid_test.csv",
+                    "data_dir": "/work/pfeiffer/datasets/DukeMTMC-reID/",
+                "loader_fn": "pil",
+                "name": "reid_dataset1",
+                "type": "reid"
+            },
+            "query": {
+                "transform": {
+                    "width": 128,
+                    "height": 256,
+                    "transforms": ["Resize"],
+                    "augmentations": ["HorizontalFlip"]
+                },
+                "source_file": "/home/pfeiffer/Projects/cupsizes/data/duke_mtmc_reid_query.csv",
+                "data_dir": "/work/pfeiffer/datasets/DukeMTMC-reID/",
+                "loader_fn": "pil",
+                "name": "reid_dataset2",
+                "type": "reid"
+            },
+            "metric": "euclidean",
+            "gallery_batch_size": 10,
+            "query_batch_size": 10,
+            "num_workers": 0
+        },
+        "delete": true
+    }
+}

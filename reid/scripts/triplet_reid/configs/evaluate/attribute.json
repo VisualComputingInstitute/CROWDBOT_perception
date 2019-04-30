@@ -1,0 +1,127 @@
+{
+    "evaluation": {
+        "datasets":[{
+            "name": "duke",
+            "gallery": {
+                "transform": {
+                        "width": 128,
+                        "height": 256,
+                        "transforms": ["Resize"],
+                        "augmentations": ["HorizontalFlip"]
+                    },
+                    "source_file": "/home/pfeiffer/Projects/cupsizes/data/duke_mtmc_reid_test.csv",
+                    "data_dir": "/globalwork/data/DukeMTMC-reID/",
+                "loader_fn": "pil",
+                "name": "reid_dataset1",
+                "type": "reid"
+            },
+            "query": {
+                "transform": {
+                    "width": 128,
+                    "height": 256,
+                    "transforms": ["Resize"],
+                    "augmentations": ["HorizontalFlip"]
+                },
+                "source_file": "/home/pfeiffer/Projects/cupsizes/data/duke_mtmc_reid_query.csv",
+                "data_dir": "/globalwork/data/DukeMTMC-reID/",
+                "loader_fn": "pil",
+                "name": "reid_dataset2",
+                "type": "reid"
+            },
+            "metric": "euclidean",
+            "gallery_batch_size": 10,
+            "query_batch_size": 10,
+            "num_workers": 0
+        },
+        {
+            "name": "duke-attribute",
+            "test_dataset": {
+                "transform": {
+                        "width": 128,
+                        "height": 256,
+                        "transforms": ["Resize"],
+                        "augmentations": ["HorizontalFlip"]
+                    },
+                "source_file": "/home/pfeiffer/Projects/cupsizes/data/duke_mtmc_reid_test.csv",
+                "data_dir": "/globalwork/data/DukeMTMC-reID/",
+                "loader_fn": "pil",
+                "filter_fn": "filter_junk",
+                "name": "reid_dataset1",
+                "type": "reid"
+            },
+            "attribute_dataset": {
+                "type": "attribute",
+                "dataset_fn": "make_duke_attribute",
+                "kwargs": {
+                    "split": "test"
+                },
+                "source_file": "/home/pfeiffer/Projects/DukeMTMC-attribute/duke_attribute.mat"
+            },
+            "batch_size": 10,
+            "num_workers": 0,
+            "attributes" : ["gender", "top", "boots", "hat", "backpack", "bag", "handbag", "shoes", "upcolor", "downcolor"]
+        },
+        {
+            "name": "market-1501",
+            "gallery": {
+                "transform": {
+                        "width": 128,
+                        "height": 256,
+                        "transforms": ["Resize"],
+                        "augmentations": ["HorizontalFlip"]
+                    },
+                "source_file": "/home/pfeiffer/Projects/cupsizes/data/market1501_test.csv",
+                "data_dir": "/home/pfeiffer/Projects/triplet-reid-pytorch/data/Market-1501",
+                "loader_fn": "pil",
+                "name": "reid_dataset1",
+                "type": "reid"
+            },
+            "query": {
+                "transform": {
+                    "width": 128,
+                    "height": 256,
+                    "transforms": ["Resize"],
+                    "augmentations": ["HorizontalFlip"]
+                },
+                "source_file": "/home/pfeiffer/Projects/cupsizes/data/market1501_query.csv",
+                "data_dir": "/globalwork/data/market1501/",
+                "loader_fn": "pil",
+                "name": "reid_dataset2",
+                "type": "reid"
+            },
+            "metric": "euclidean",
+            "gallery_batch_size": 10,
+            "query_batch_size": 10,
+            "num_workers": 0
+        },
+        {
+            "name": "market-1501-attribute",
+            "test_dataset": {
+                "transform": {
+                        "width": 128,
+                        "height": 256,
+                        "transforms": ["Resize"],
+                        "augmentations": ["HorizontalFlip"]
+                    },
+                "source_file": "/home/pfeiffer/Projects/cupsizes/data/market1501_test.csv",
+                "data_dir": "/globalwork/data/market1501/",
+                "loader_fn": "pil",
+                "filter_fn": "filter_junk",
+                "name": "reid_dataset1",
+                "type": "reid"
+            },
+            "attribute_dataset": {
+                "type": "attribute",
+                "dataset_fn": "make_market_attribute",
+                "kwargs": {
+                    "split": "test"
+                },
+                "source_file": "/home/pfeiffer/Projects/triplet-reid-pytorch/data/Market-1501_Attribute/market_attribute.mat"
+            },
+            "batch_size": 10,
+            "num_workers": 0,
+            "attributes":  ["gender", "hair", "up", "down", "clothes", "hat", "backpack", "bag", "handbag", "age", "upcolor", "downcolor"]
+        }],
+        "delete": true
+    }
+}

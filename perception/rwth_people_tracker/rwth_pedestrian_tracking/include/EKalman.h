@@ -28,12 +28,12 @@ public:
 
     EKalman();
     void runKalmanUp(Detections& det, int frame, int t, Matrix<double>& allXnew, Vector<FrameInlier>& Idx,
-                                Vector<double>& R, Vector<double>& Vel, Volume<double>& hMean,  Vector<Matrix<double> >& stateCovMats, Volume<double>& colHistInit,
+                                Vector<double>& R, Vector<double>& Vel, Volume<double>& hMean,  Vector<Matrix<double> >& stateCovMats, Volume<double>& colHistInit, Vector<double>& initEmbVec,
                                 Vector<Volume<double> >& colHists, double yPosOfStartingPoint, Vector<double> &bbox);
 
     void runKalmanDown(Detections& det, int frame, int pointPos, int t, Matrix<double>& allXnew, Vector<FrameInlier>& Idx,
                        Vector<double>& R, Vector<double>& Vel, Volume<double>& hMean, Vector<Matrix<double> >& stateCovMats,
-                       Vector<Volume<double> >& colHists);
+                       Vector<Volume<double> >& colHists, Vector<Vector<double> >& embVecs);
 
     bool findObservation(Detections& det, int frame);
 
@@ -74,7 +74,9 @@ protected:
     Vector<double> m_vY;
     Vector< Matrix <double> > m_CovMats;
     Vector< Volume <double> > m_colHists;
+    Vector< Vector <double> > m_embVecs;
     Volume<double> m_colHist;
+    Vector<double> m_embVec;
 
     Vector<double> m_yPos;
 

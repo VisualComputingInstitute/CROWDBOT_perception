@@ -24,6 +24,8 @@ int Globals::currentFrame;
 
 // Detections
 double Globals::dSameIdThresh;
+double Globals::reIdThresh_HypoLevel;
+double Globals::reIdThresh_DALevel;
 
 // Kalman
 int Globals::frameRate;
