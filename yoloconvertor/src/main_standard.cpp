@@ -34,7 +34,7 @@ using namespace rwth_perception_people_msgs;
 using namespace darknet_ros_msgs;
 
 tf::TransformListener* listener;
-MapFunctions* g_map_func;
+//MapFunctions* g_map_func;
 
 //for debug image
 //image_transport::Publisher pub_result_image;
@@ -347,9 +347,9 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
             detected_person.height = detection_height;
 
             // check map occupancy
-            tf::Vector3 pos3D_incam(detected_person.pose.pose.position.x,detected_person.pose.pose.position.y, detected_person.pose.pose.position.z);
-            if(g_map_func->isPosOccupied(pos3D_incam))
-                continue;
+            //tf::Vector3 pos3D_incam(detected_person.pose.pose.position.x,detected_person.pose.pose.position.y, detected_person.pose.pose.position.z);
+            //if(g_map_func->isPosOccupied(pos3D_incam))
+            //    continue;
 
             // additional nan check
             if(!isnan(detected_person.pose.pose.position.x) && !isnan(detected_person.pose.pose.position.y) && !isnan(detected_person.pose.pose.position.z)){
@@ -436,14 +436,14 @@ int main(int argc, char **argv)
     string topic_depth_image = camera_ns + "/hd/image_depth_rect";
 
     //map
-    string map_topic;
+    //string map_topic;
     double opt;
     int half_length;
-    private_node_handle_.param("map", map_topic, string("/map"));
+    //private_node_handle_.param("map", map_topic, string("/map"));
     private_node_handle_.param("occupancy_threshold",opt, 75.0);  // from 0 to 100
     private_node_handle_.param("occupancy_check_box_half_length",half_length, int(1));
     //ros::Subscriber sub_map = n.subscribe(map_topic, 1, map_callback);
-    g_map_func = new MapFunctions(n,map_topic,opt,half_length);
+    //g_map_func = new MapFunctions(n,map_topic,opt,half_length);
 
     ROS_DEBUG("yoloconvertor: Queue size for synchronisation is set to: %i", queue_size);
 
