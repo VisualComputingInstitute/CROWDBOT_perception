@@ -57,6 +57,10 @@ void callback_newSearch(const std_msgs::Bool::ConstPtr &newSearch)
 
 }
 
+void callback_resetHelperBlacklist(const std_msgs::Bool::ConstPtr $resetBlacklist){
+   blacklistedHelperIds.clear();
+}
+
 void callback(const TrackedPersons::ConstPtr &tps)
 {
     personTrajectories.header = tps->header;
@@ -215,6 +219,7 @@ int main(int argc, char **argv)
     int queue_size;
     string sub_topic_tracked_persons;
     string sub_topic_new_search;
+    string sub_topic_reset_helper_blacklist;
     string pub_topic_trajectories;
     string pub_topic_selected_helper;
     string pub_topic_potential_helpers;
@@ -230,6 +235,7 @@ int main(int argc, char **argv)
     private_node_handle_.param("queue_size", queue_size, int(10));
     private_node_handle_.param("tracked_persons", sub_topic_tracked_persons, string("/rwth_tracker/tracked_persons"));
     private_node_handle_.param("get_new_helper", sub_topic_new_search, string("/rwth_tracker/get_new_helper"));
+    private_node_handle_.param("reset_helper_blacklist", sub_topic_reset_helper_blacklist, string("/rwth_tracker/reset_helper_blacklist"));
     private_node_handle_.param("camera_frame", camera_frame, string("/camera/"));
     // helper selection options
     private_node_handle_.param("keep", keep, true);
@@ -249,6 +255,9 @@ int main(int argc, char **argv)
     message_filters::Subscriber<std_msgs::Bool> subscriber_new_search(n, sub_topic_new_search.c_str(), 1); subscriber_new_search.unsubscribe();
     subscriber_new_search.registerCallback(boost::bind(&callback_newSearch, _1));
     subscriber_new_search.subscribe();
+    message_filters::Subscriber<std_msgs::Bool> subscriber_reset_helper_blacklist(n, sub_topic_reset_helper_blacklist.c_str(), 1); subscriber_reset_helper_blacklist.unsubscribe();
+    subscriber_reset_helper_blacklist.registerCallback(boost::bind(&callback_resetHelperBlacklist, _1));
+    subscriber_reset_helper_blacklist.subscribe();
 
     // Create a topic publisher
     private_node_handle_.param("person_trajectories", pub_topic_trajectories, string("/rwth_tracker/person_trajectories"));
