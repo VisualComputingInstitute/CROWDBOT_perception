@@ -7,7 +7,7 @@
     <arg name="pano_image_left" default="/hardware/video/valeo/rectificationNIKRRight/PanoramaImage" />
     <arg name="embed_detectedpersons" default="/detected_persons/yolo_right_id" />
 
-    <node pkg="reid" type="reid_ros.py" name="reid_ros" cwd="node" output="screen">
+    <node pkg="reid" type="reid_ros.py" name="reid_pano_right" cwd="node" output="screen">
         <param name="image" value="$(arg pano_image_left)" type="string"/>
         <param name="detected_persons" value="$(arg detected_persons_left)" type="string"/>
         <param name="queue_size" value="$(arg queue_size)" type="int"/>
