@@ -29,7 +29,7 @@
     <param name="config_path"           value="/home/nvidia/ros_ws/src/darknet_ros/darknet_ros/yolo_network_config/cfg" />
   </node> -->
 
-   <node machine="jetson-x-03" pkg="trtyolo" type="tensorrt_yolo" name= "trt_yolo_left" output="screen">
+   <node machine="jetson-x-04" pkg="trtyolo" type="tensorrt_yolo" name= "trt_yolo_left" output="screen">
        <param name="engine_path" value="/home/nvidia/ros_ws/src/frame_soft/trtyolo/tensorRT_yolo/yolov3_fp16.engine" type="string"/>
        <param name="detect_threshold" value="0.7"/>
        <param name="nms_threshold" value="0.45"/>
