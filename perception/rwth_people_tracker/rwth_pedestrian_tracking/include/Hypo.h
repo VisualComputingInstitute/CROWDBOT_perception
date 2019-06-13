@@ -172,6 +172,9 @@ public:
 //    void setExitImage();
 //    bool getExitImage();
 
+    Vector<double> getEmd_vec() const;
+    void setEmd_vec(const Vector<double> &value);
+
 protected:
 
     void generateInitialModel(Vector<Vector<double> >& pts, Vector<Vector<int> >& occBins , Camera cam);
@@ -239,6 +242,7 @@ protected:
 
     //Spencer track infos
     ros::Time m_creationTime;
+    Vector <double> emd_vec;
 };
 
 

@@ -1,0 +1,59 @@
+{
+    "training": {
+        "model": {
+            "name": "classificationTriplet",
+            "merging_block": {
+                "name": "single",
+                "endpoint": "triplet"
+            }
+        },
+        "sampler": {
+            "name": "pk_sampler",
+            "P": 18,
+            "dataset": [
+                {
+                    "name": "duke",
+                    "source_file": "/home/pfeiffer/Projects/cupsizes/data/duke_mtmc_reid_train.csv",
+                    "data_dir": "/globalwork/data/DukeMTMC-reID/",
+                    "transform": {
+                        "height": 256,
+                        "width": 128,
+                        "transforms": ["resize", "RandomHorizontalFlip"]
+                    },
+                    "type": "reid"
+                }
+            ]
+        },
+        "losses": {
+            "type": "UncertaintyLoss",
+            "losses": [
+                {
+                    "type": "softmax",
+                    "endpoint" : "softmax",
+                    "target": "pid",
+                    "dataset": "all",
+                    "name": "id",
+                    "log_sig_sq": 0.0
+
+                },
+                {
+                    "type": "BatchHard",
+                    "endpoint": "triplet",
+                    "dataset": "all",
+                    "name": "batch_hard",
+                    "margin": "soft",
+                    "log_sig_sq": 0.0
+                }
+            ],
+            "name": "Uncertainty"
+        },
+        "scheduler": {
+            "preset": "huanghoujing",
+            "lr": 3e-4
+        },
+        "optimizer": {
+            "name": "adam"
+        },
+        "checkpoint_frequency": 100
+    }
+}

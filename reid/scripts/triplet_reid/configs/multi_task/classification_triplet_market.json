@@ -1,0 +1,58 @@
+{
+    "training": {
+        "model": {
+            "name": "classificationTriplet",
+            "merging_block": {
+                "name": "single",
+                "endpoint": "triplet"
+            }
+        },
+        "sampler": {
+            "name": "pk_sampler",
+            "P": 18,
+            "dataset": [
+                {
+                    "name": "market-1501",
+                    "source_file": "/home/pfeiffer/Projects/cupsizes/data/market1501_train.csv",
+                    "data_dir": "/globalwork/data/market1501/",
+                    "transform": {
+                        "height": 256,
+                        "width": 128,
+                        "transforms": ["resize", "RandomHorizontalFlip"]
+                    },
+                    "type": "reid"
+                }
+            ]
+        },
+        "losses": {
+            "type": "LinearWeightedLoss",
+            "losses": [
+                {
+                    "type": "softmax",
+                    "endpoint" : "softmax",
+                    "target": "pid",
+                    "dataset": "all",
+                    "name": "id",
+                    "weight": 1.0
+                },
+                {
+                    "type": "BatchHard",
+                    "endpoint": "triplet",
+                    "dataset": "all",
+                    "name": "batch_hard",
+                    "margin": "soft",
+                    "weight": 1.0
+                }
+            ],
+            "name": "dynamic"
+        },
+        "scheduler": {
+            "preset": "huanghoujing",
+            "lr": 3e-4
+        },
+        "optimizer": {
+            "name": "adam"
+        },
+        "checkpoint_frequency": 100
+    }
+}

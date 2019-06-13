@@ -95,6 +95,7 @@ public:
     void computeColorHist(Volume<double>& colHist, Vector<double>& bbox, int nBins, QImage& imageLeft);
 #endif
     void getColorHist(int frame, int pos, Volume<double>& colHist);
+    void getEmbVec(int frame, int pos, Vector<double>& embVecs);
     //*****************************************************************
     // Compute the 3D uncertainty for a point
     //*****************************************************************
@@ -111,6 +112,7 @@ protected:
     Vector< Vector < Vector  <double> > > detC;
     Vector< Vector < Matrix  <double> > > cov3d;
     Vector<Vector<Volume<double> > > colHists;
+    Vector< Vector < Vector  <double> > > embed_vecs;
 //    Vector<Vector<double> > gp;
 //    Vector<Vector<Vector<Vector<double> > > > points3D_;
 //    Vector<Vector<Vector<Vector<int> > > > occBins_;

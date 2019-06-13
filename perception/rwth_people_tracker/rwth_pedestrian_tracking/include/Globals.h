@@ -51,6 +51,9 @@ public:
 
     static double dSameIdThresh;
 
+    static double reIdThresh_HypoLevel;
+    static double reIdThresh_DALevel;
+
     //Parameters for image-plane hypothesescom/
     static  double  dObjHeight;
     static  double  dObjHVar;

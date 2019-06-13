@@ -44,6 +44,7 @@ Detections::Detections(int x, const int flag)
     colHists.setSize(buff_size);
     cov3d.setSize(buff_size);
     detC.setSize(buff_size);
+    embed_vecs.setSize(buff_size);
 
 //    colHists.setSize(Globals::numberFrames + Globals::nOffset);
 //    cov3d.setSize(Globals::numberFrames+ Globals::nOffset);
@@ -136,6 +137,7 @@ Detections::~Detections()
     detC.clearContent();
     colHists.clearContent();
     cov3d.clearContent();
+    embed_vecs.clearContent();
 }
 
 int Detections::prepareDet(Vector<double> &detContent, const frame_msgs::DetectedPersons::ConstPtr & det,
@@ -311,6 +313,7 @@ void Detections::addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & d
     Volume<double> colhist;
     Vector<double> pos3d(3);
     Vector<double> v_bbox(4);
+    Vector<double> emb_vec;
 
 
     Vector<double>detContent;
@@ -321,18 +324,22 @@ void Detections::addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & d
         detC.swap();
         colHists.swap();
         cov3d.swap();
+        embed_vecs.swap();
         //detC.resize_from_end(Globals::history);
         //colHists.resize_from_end(Globals::history);
         //cov3d.resize_from_end(Globals::history);
         detC.resize(buff_size-1);
         colHists.resize(buff_size-1);
         cov3d.resize(buff_size-1);
+        embed_vecs.resize(buff_size-1);
         detC.swap();
         colHists.swap();
         cov3d.swap();
+        embed_vecs.swap();
         detC.resize(buff_size);
         colHists.resize(buff_size);
         cov3d.resize(buff_size);
+        embed_vecs.resize(buff_size);
     }
 
 
@@ -371,6 +378,12 @@ void Detections::addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & d
             //TODO: delte color hists completely here and save elsewhere (e.g. in detection message... also not color hist but reid-emb?)
             //computeColorHist(colhist, v_bbox, Globals::binSize, imageLeft);
 
+            // set embedding vector
+            emb_vec.clearContent();
+            for(int evi=0; evi<det->detections[i].embed_vector.size(); evi++){
+                emb_vec.pushBack(det->detections[i].embed_vector.at(evi));
+            }
+
             // covariance from detection message
             covariance(0,0) = det->detections[i].pose.covariance[0]; //0.05;
             covariance(1,1) = det->detections[i].pose.covariance[7];//0.05;
@@ -386,6 +399,7 @@ void Detections::addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & d
             detC(buffer_idx).pushBack(detContent);
             colHists(buffer_idx).pushBack(colhist);
             cov3d(buffer_idx).pushBack(covariance);
+            embed_vecs(buffer_idx).pushBack(emb_vec);
 
 
             //std::cout << "resizing det vec" << std::endl;
@@ -676,6 +690,13 @@ void Detections::getColorHist(int frame, int pos, Volume<double>& colHist)
     frame = globalFrameToBufferFrame(frame);
     colHist = colHists(frame)(pos);
 }
+
+void Detections::getEmbVec(int frame, int pos, Vector<double>& embVecs)
+{
+    frame = globalFrameToBufferFrame(frame);
+    embVecs = embed_vecs(frame)(pos);
+}
+
 
 void Detections::compute3DCov(Vector<double> pos3d, Matrix<double>& cov, Camera camL, Camera camR)
 {

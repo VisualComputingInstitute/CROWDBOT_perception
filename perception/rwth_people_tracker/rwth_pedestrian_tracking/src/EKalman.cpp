@@ -130,6 +130,7 @@ void EKalman::saveData(int i)
     m_vY.pushBack(min(Globals::dMaxPedVel, m_xpost(3)));
     m_CovMats.pushBack(m_Ppost);
     m_colHists.pushBack(m_colHist);
+    m_embVecs.pushBack(m_embVec);
 }
 
 
@@ -161,7 +162,8 @@ bool EKalman::findObservation(Detections& det, int frame)
     Vector<int> inl;
     Vector<double> weights;
     double colScore = 1.0;
-    double weight;
+    double weight = 1.0;
+    double emb_dist = 100.0;
 
     Vector<int> allInlierInOneFrame;
     Vector<double> weightOfAllInliersInOneFrame;
@@ -172,13 +174,15 @@ bool EKalman::findObservation(Detections& det, int frame)
     {
         Matrix<double> devObs;
         Vector<double> currBbox;
+        Vector<double> currDetEmbVec;
         det.getPos3D(frame, i, succPoint);
         det.getColorHist(frame, i, obsCol);
         det.get3Dcovmatrix(frame, i, devObs);
         det.getBBox(frame, i, currBbox);
+        det.getEmbVec(frame, i, currDetEmbVec);
 
         // TODO: app/reid score here? (for now no color hist computation)
-        //colScore = Math::hist_bhatta(obsCol, m_colHist);
+        // colScore = Math::hist_bhatta(obsCol, m_colHist);
 
         Matrix<double> covariance(2,2, 0.0);
 
@@ -215,6 +219,9 @@ bool EKalman::findObservation(Detections& det, int frame)
         //weight = (1.0/denom) * exp(-0.5*covariance(0,0));
         weight = exp(-0.5*covariance(0,0));
 
+        //REID SCORE
+        currDetEmbVec -= m_embVec;
+        emb_dist = currDetEmbVec.norm();
 
         // IMAGE BASED
         // !! deprecated: only 3d tracking now! bbox is not properly set (0.0), do not use!
@@ -228,13 +235,20 @@ bool EKalman::findObservation(Detections& det, int frame)
         //    weightOfAllInliersInOneFrame.pushBack(iou*colScore);
         //}
 
-        //3D POSITION BASED
+        //3D POSITION BASED + ReID
         //if(pDiff.norm() < Globals::kalmanObsMotionModelthresh /*&& colScore > Globals::kalmanObsColorModelthresh*/)
         //std::cout << "pDiff.norm(): " << pDiff.norm() << std::endl;
         //std::cout << "weight: " << weight << std::endl;
         //std::cout << "colScore: " << colScore << std::endl;
-        if(weight > Globals::kalmanObsMotionModelthresh /*&& colScore > Globals::kalmanObsColorModelthresh*/)
+        //std::cout << "----------" << std::endl;
+        //std::cout << "det at " << std::endl;
+        //succPoint.show();
+        //std::cout << "hypo at " << std::endl;
+        //m_xprio.show();
+        //std::cout << "emb_dist: " << emb_dist << std::endl;
+        if(weight > Globals::kalmanObsMotionModelthresh /*&& colScore > Globals::kalmanObsColorModelthresh*/ && emb_dist < Globals::reIdThresh_DALevel)
         {
+            //std::cout << "MATCH!" << std::endl;
             allInlierInOneFrame.pushBack(i);
             //weightOfAllInliersInOneFrame.pushBack(weight*colScore);
             weightOfAllInliersInOneFrame.pushBack(weight);
@@ -262,12 +276,15 @@ bool EKalman::findObservation(Detections& det, int frame)
 
         // Update the color histogram
         Volume<double> newColHist;
+        Vector<double> newEmbVec;
 
         det.getColorHist(frame, inl(0), newColHist);
+        det.getEmbVec(frame, inl(0), newEmbVec);
 
         m_colHist *= 0.4;
         newColHist *= 0.6;
         m_colHist += newColHist;
+        m_embVec = newEmbVec;
         m_height = 0.0;
 
         det.get3Dcovmatrix(frame, inl(0), covMatrix);
@@ -328,13 +345,14 @@ Vector<double> EKalman::makeMeasurement()
 
 void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Matrix<double>& allXnew, Vector<FrameInlier>& Idx,
                             Vector<double>& vX, Vector<double>& vY, Volume<double>& hMean, Vector<Matrix<double> >& stateCovMats,
-                            Vector<Volume<double> >& colHists)
+                            Vector<Volume<double> >& colHists, Vector<Vector<double> >& embVecs)
 {
     //std::cout << "Kalman down..." << std::endl;
     m_Up = false;
 
     det.getColorHist(frame, pointPos, m_colHist);
     det.getBBox(frame, pointPos, m_bbox);
+    det.getEmbVec(frame, pointPos, m_embVec);
 
     Matrix<double> copyInitStateUnc = m_Ppost;
     Vector<double> copyInitState = m_xpost;
@@ -426,6 +444,7 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
 
     hMean = m_colHist;
     colHists = m_colHists;
+    embVecs = m_embVecs;
     stateCovMats = m_CovMats;
     //ROS_INFO("...KD done.\n");
 }
@@ -454,7 +473,7 @@ void EKalman::turnVelocities(Vector<double> &dest,Vector<double> &src)
 }
 
 void EKalman::runKalmanUp(Detections& det, int frame, int t, Matrix<double>& allXnew, Vector<FrameInlier>& Idx,
-                          Vector<double>& vX, Vector<double>& vY, Volume<double>& hMean,  Vector<Matrix<double> >& stateCovMats, Volume<double>& colHistInit,
+                          Vector<double>& vX, Vector<double>& vY, Volume<double>& hMean,  Vector<Matrix<double> >& stateCovMats, Volume<double>& colHistInit, Vector<double>& initEmbVec,
                           Vector<Volume<double> >& colHists, double yPosOfStartingPoint, Vector<double>& bbox)
 {
     //ROS_INFO("Kalman up...\n");
@@ -463,6 +482,7 @@ void EKalman::runKalmanUp(Detections& det, int frame, int t, Matrix<double>& all
     m_Up = true;
     int tLastSupport = 0;
     m_colHist = colHistInit;
+    m_embVec = initEmbVec;
 
     m_yPos.pushBack(m_xpost(0));
     m_yPos.pushBack(yPosOfStartingPoint);
@@ -509,6 +529,7 @@ void EKalman::runKalmanUp(Detections& det, int frame, int t, Matrix<double>& all
 
     hMean = m_colHist;
     colHists = m_colHists;
+    initEmbVec = m_embVec; // not neccessary as only newest emb is kept in hypo
     stateCovMats = m_CovMats;
     //ROS_INFO("...KU done.\n");
 }

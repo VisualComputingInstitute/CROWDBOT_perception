@@ -1,0 +1,69 @@
+{
+    "training": {
+        "model": {
+            "name": "classificationTriplet",
+            "merging_block": {
+                "name": "single",
+                "endpoint": "triplet"
+            }
+        },
+        "sampler": {
+            "name": "pk_sampler",
+            "P": 18,
+            "dataset": [
+                {
+                    "name": "market-1501",
+                    "source_file": "/home/pfeiffer/Projects/cupsizes/data/market1501_train.csv",
+                    "data_dir": "/globalwork/data/market1501/",
+                    "transform": {
+                        "height": 256,
+                        "width": 128,
+                        "transforms": ["resize", "RandomHorizontalFlip"]
+                    },
+                    "type": "reid"
+                }
+            ]
+        },
+        "losses": {
+            "type": "DynamicFocalLoss",
+            "delta": 0.16,
+            "losses": [
+                {
+                    "type": "softmax",
+                    "endpoint" : "softmax",
+                    "target": "pid",
+                    "dataset": "all",
+                    "name": "id",
+                    "alpha": 0.25,
+                    "gamma": 2.0,
+                    "p0": 1e-5
+                },
+                {
+                    "type": "BatchHard",
+                    "endpoint": "triplet",
+                    "dataset": "all",
+                    "name": "batch_hard",
+                    "alpha": 0.25,
+                    "gamma": 2.0,
+                    "p0": 0.999999,
+                    "margin": "soft"
+                }
+            ],
+            "name": "dynamic"
+        },
+        "scheduler": {
+            "name": "multi_step",
+            "lr": 0.01,
+            "epochs": 90,
+            "gamma": 0.5,
+            "milestones": [60, 70, 80, 90]
+        },
+        "optimizer": {
+            "name": "sgd",
+            "momentum": 0.9,
+            "weight_decay": 0.0005,
+            "lr": 0.01
+        },
+        "checkpoint_frequency": 100
+    }
+}

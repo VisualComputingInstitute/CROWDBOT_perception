@@ -505,7 +505,9 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
     int hypoIdNew;
     Vector<int> HypoIdx;
     double bestFraction = Globals::dSameIdThresh;
+    double reIDThresh = Globals::reIdThresh_HypoLevel;
     int bestNumMatches = 0;
+    double bestEmbDist = 0;
     int numObsCurr;
     int numObsOld;
     int numOverlap;
@@ -603,9 +605,10 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
         }
         else
         {
-            //if the parent is unknown - determine overlap with existing hypothesis
+            //if the parent is unknown - determine overlap with existing hypothesis OR check reID embedding vector
             hypoIdNew = -1;
             bestNumMatches = 0;
+            bestEmbDist = 999.0;
             int lengthOldStack = hypoStack.getSize();
             HyposMDL(i).getIdx(currIdx);
             numObsCurr = AncillaryMethods::getSizeIdx(currIdx);
@@ -619,6 +622,9 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
                 numObsOld = AncillaryMethods::getSizeIdx(oldIdx);
                 numOverlap = AncillaryMethods::getSizeIdx(overlap);
 
+                Vector<double> embDistVec = hypoStack(j).getEmd_vec() - HyposMDL(i).getEmd_vec();
+                double embDist = embDistVec.norm();
+
                 if(overlap.getSize() > 0)
                 {
                     equalFraction = double(numOverlap) / min(double(numObsCurr), double(numObsOld));
@@ -628,10 +634,12 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
                     equalFraction = 0.0;
                 }
 
-                if(equalFraction > bestFraction && numOverlap > bestNumMatches)
+                // if embVectors are available (size of Dist vector >0), use reID emb; otherwise use the physical overlap
+                if( (equalFraction > bestFraction && numOverlap > bestNumMatches && embDistVec.getSize()<=0 ) || (embDist < reIDThresh && embDist < bestEmbDist && embDistVec.getSize()>0) )
                 {
                     hypoIdNew = hypoStack(j).getHypoID();
                     bestNumMatches = numOverlap;
+                    bestEmbDist = embDist;
                 }
             }
 
@@ -966,6 +974,7 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
 
     Vector<Matrix<double> > stateCovMatsOld;
     Vector<Volume<double> > colHistsOld;
+    Vector<double> embVecOld;
     for (int i = 0; i < numberHypos; i++)
     {
         auxHypo = &(vHypos(i));
@@ -1059,12 +1068,13 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
 
         auxHypo->getColHists(colHistsOld);
         auxHypo->getStateCovMats(stateCovMatsOld);
+        embVecOld = auxHypo->getEmd_vec();
 
         EKalman kalman;
         kalman.init(xInit, stateCovMatsOld(stateCovMatsOld.getSize()-1), Globals::dt);
         kalman.runKalmanUp(det, t-1, t, mAllXnewUp, vvIdxUp, vVXUp, vVYUp, volHMean,
-                           stateCovMatsNew, colHistsOld(colHistsOld.getSize()-1), colHistsNew,
-                           mXProj(3, mXProj.y_size()-1), bbox);
+                           stateCovMatsNew, colHistsOld(colHistsOld.getSize()-1), embVecOld,
+                           colHistsNew, mXProj(3, mXProj.y_size()-1), bbox);
 
         // calcualte new Size for allX, V, R, W ...
 
@@ -1183,6 +1193,9 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
         newHypo.setParentID(n_HypoId);
         newHypo.setStateCovMats(stateCovMatsOld);
         newHypo.setColHists(colHistsOld);
+        if (embVecOld.getSize()>0){
+            newHypo.setEmd_vec(embVecOld);
+        }
         ros::Time creationTimeOld;
         auxHypo->getCreationTime(creationTimeOld);
         newHypo.setCreationTime(creationTimeOld);
@@ -1227,6 +1240,8 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
 
     Vector<Matrix<double> > stateCovMats;
     Vector<Volume<double> > colHists;
+    Vector<Vector<double> > embVecs;
+    Vector<double> currEmbVec;
 
     //double v = 0.5;//Globals::dMaxPedVel/3.0;
     //double r = M_PI; // Assume as Prior that the persons are front orientated.
@@ -1248,6 +1263,7 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
 
 //        det.getBBox(endFrame, j, bbox);
         det.getPos3D(endFrame, j, pos3d);
+        det.getEmbVec(endFrame, j, currEmbVec);
         xInit.setSize(4);
         xInit(0) = pos3d(0);
         xInit(1) = pos3d(1);
@@ -1256,7 +1272,7 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
 
         EKalman kalman;
         kalman.init(xInit, PInit, Globals::dt);
-        kalman.runKalmanDown(det, endFrame, j, tmin, mAllXnewDown, vvIdxDown, vvXDown, vvYDown, volHMean, stateCovMats, colHists);
+        kalman.runKalmanDown(det, endFrame, j, tmin, mAllXnewDown, vvIdxDown, vvXDown, vvYDown, volHMean, stateCovMats, colHists, embVecs);
         //*********************************
         // swap data to make it consistent
         //*********************************
@@ -1283,12 +1299,13 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
             xInit(3) = vvYDown(0);
             Volume<double> colHistsInit = colHists(0);
             Vector<double> bboxInit(4,0.0);
+            Vector<double> embVecInit = embVecs(embVecs.getSize()-1);
 
             EKalman kalmanBi;
             kalmanBi.init(xInit, stateCovMats(0), Globals::dt);
             //start where above KalmanDown has stopped (at mAllXnewDown(2,0)-1)
             kalmanBi.runKalmanUp(det, /*tmin-1*/mAllXnewDown(2,0), endFrame, mAllXnewDown, vvIdxDown, vvXDown, vvYDown, volHMean,
-                                  stateCovMats, colHistsInit, colHists, xInit(1), bboxInit);
+                                  stateCovMats, colHistsInit, embVecInit, colHists, xInit(1), bboxInit);
             //*********************************
             // swap data to make it consistent
             //*********************************
@@ -1314,6 +1331,9 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
             Hypo hypo;
             hypo.setStateCovMats(stateCovMats);
             hypo.setColHists(colHists);
+            if(currEmbVec.getSize()>0){
+                hypo.setEmd_vec(currEmbVec);
+            }
 
             compute_hypo_entries(mAllXnewDown, vvXDown, vvYDown, vvIdxDown, det, hypo, normfct, endFrame);
             hypo.setParentID(-1);

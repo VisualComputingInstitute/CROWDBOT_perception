@@ -1,0 +1,64 @@
+{
+    "training": {
+        "model": {
+            "name": "attribute",
+            "attributes": {
+                "gender": 2,
+                "hair": 2,
+                "up": 2,
+                "down": 2,
+                "clothes": 2,
+                "hat": 2,
+                "backpack": 2,
+                "bag": 2,
+                "handbag": 2,
+                "age": 4,
+                "upcolor": 8,
+                "downcolor": 9
+            },
+            "dropout": false
+        },
+        "dataloader": {
+            "sampler": {
+                "type": "pk_sampler",
+                "P": 18,
+                "dataset": [
+                    {
+                        "name": "market1501_attribute_reid",
+                        "attribute": {
+                            "split": "train"
+                        },
+                        "reid": {
+                            "split": "train",
+                            "transform": {
+                                "resize": {
+                                    "height": 256,
+                                    "width": 128
+                                },
+                                "fliplr": {"p": 0.5},
+                                "normalization": {
+                                    "mean": [0.485, 0.456, 0.406],
+                                    "std" : [0.229, 0.224, 0.225]
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "losses": {
+            "type": "attribute",
+            "name": "attribute",
+            "endpoint" : ["gender", "hair", "up", "down", "clothes", "hat", "backpack", "bag", "handbag", "age", "upcolor", "downcolor"],
+            "weight": 1.0,
+            "dataset": "all"
+        },
+        "scheduler": {
+            "preset": "huanghoujing"
+        },
+        "optimizer": {
+            "name": "adam"
+        },
+        "epochs": 300
+    }
+}
