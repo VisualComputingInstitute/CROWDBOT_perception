@@ -38,6 +38,20 @@ unordered_set<int> blacklistedHelperIds;
 
 bool new_search_invoked = false;
 
+double reid_thresh;
+
+double l2_norm(vector<float> const& u, vector<float> const& v) {
+    if(u.size() != v.size()){
+        cout << "error when computing norm of vectors in helper selection: u and v are not of the same size" << endl;
+        return -1;
+    }
+    double accum = 0.;
+    for (int i = 0; i < u.size(); ++i) {
+        accum += (u[i]-v[i]) * (u[i]-v[i]);
+    }
+    return sqrt(accum);
+}
+
 vector<double> cartesianToPolar(geometry_msgs::Point point) {
     ROS_DEBUG("cartesianToPolar: Cartesian point: x: %f, y: %f, z %f", point.x, point.y, point.z);
     vector<double> output;
@@ -69,6 +83,7 @@ void callback(const TrackedPersons::ConstPtr &tps)
     float selected_trajectory_min_dist = 10000.0f;
     float max_dist = 3.0f; //maximum distance to be selected
     bool last_person_selected_again = false;
+    double min_emb_dist = 999.0;
 
     DetectedPersons potentialHelpersVis;
     potentialHelpersVis.header = tps->header;
@@ -87,6 +102,9 @@ void callback(const TrackedPersons::ConstPtr &tps)
         pje.age = tp.age;
         pje.is_occluded = tp.is_occluded;
         pje.detection_id = tp.detection_id;
+
+        //reid info
+        int min_reid_trajectory_idx = -1;
 
         //compute distance to robot
         bool is_potential_helper = false;
@@ -127,6 +145,8 @@ void callback(const TrackedPersons::ConstPtr &tps)
             if(personTrajectories.trajectories.at(j).track_id == t_id){
                 // ...and add this personTrajectoryEntry pje to this id
                 personTrajectories.trajectories.at(j).trajectory.push_back(pje);
+                // update reid embedding vector
+                personTrajectories.trajectories.at(j).embed_vector = tp.embed_vector;
                 t_id_exists = true;
                 if( ( keep && last_selected_person_id==t_id && (!strict || is_potential_helper) ) && !blacklisted){
                     //std::cout << "last selected person found! it is " << t_id << std::endl;
@@ -139,6 +159,15 @@ void callback(const TrackedPersons::ConstPtr &tps)
                 }
                 if(is_potential_helper) potentialHelpers.trajectories.push_back(personTrajectories.trajectories.at(j));
                 break;
+            }else if(personTrajectories.trajectories.at(j).track_id == last_selected_person_id){
+                //compute reid embedding distance to last selected person and set new min
+                std::vector<float> currHelperEmbVec = personTrajectories.trajectories.at(j).embed_vector;
+                std::vector<float> currTrackEmbVec = tp.embed_vector;
+                double emb_dist = l2_norm(currHelperEmbVec, currTrackEmbVec);
+                if(emb_dist < min_emb_dist && emb_dist < reid_thresh){
+                    min_emb_dist = emb_dist;
+                    min_reid_trajectory_idx = j;
+                } 
             }
         }
         //new id?
@@ -146,9 +175,10 @@ void callback(const TrackedPersons::ConstPtr &tps)
             //new personTrajectory pj with one personTrajectoryEntry pje in personTrajectories
             PersonTrajectory pj;
             pj.track_id = t_id;
+            pj.embed_vector = tp.embed_vector;
             pj.trajectory.push_back(pje);
             personTrajectories.trajectories.push_back(pj);
-            if(is_best_helper && !last_person_selected_again && !blacklisted && new_search_invoked){
+            if((is_best_helper && !last_person_selected_again && !blacklisted && new_search_invoked) || (min_reid_trajectory_idx!=-1 && !last_person_selected_again && !blacklisted)){
                 //std::cout << "new min found and last selected person was not found (or should not be kept) " << std::endl;
                 selected_trajectory_idx = personTrajectories.trajectories.size()-1;
                 //std::cout << "set selected index to: " << selected_trajectory_idx << std::endl;
@@ -241,6 +271,8 @@ int main(int argc, char **argv)
     private_node_handle_.param("keep", keep, true);
     private_node_handle_.param("strict", strict, false);
     private_node_handle_.param("remember", remember, true);
+    //threshold to reidentify helper
+    private_node_handle_.param("reid_thresh", reid_thresh, double(60));
 
     ROS_DEBUG("pedestrian_trajectories: Queue size for synchronisation is set to: %i", queue_size);
 
