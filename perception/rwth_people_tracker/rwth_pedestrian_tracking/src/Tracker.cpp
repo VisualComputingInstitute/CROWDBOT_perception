@@ -58,7 +58,7 @@ Tracker::Tracker()
                                   };
 
     possibleColors = Matrix<unsigned char>(3, 40, color_array);
-    lastHypoID = -1;
+    lastHypoID = 0; //track IDs start at lastHypoID+1
 //    aStream = new ofstream("export_bboxes.txt");
 }
 
