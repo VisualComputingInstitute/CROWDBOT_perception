@@ -42,6 +42,18 @@
         <param name="tensorRT_yolo_out_image" value="/trt_yolo_image_kinect" type="string"/>
     </node>
 
+    <node machine="jetson-x-03" pkg="yoloconvertor" type="yoloconvertor_standard" name="yoloconvertor_kinect">
+        <param name="world_scale" value="1.0"/>
+        <param name="ground_plane" value="/ground_plane" type="string"/>
+        <param name="queue_size" value="10" type="int"/>
+        <param name="detected_persons" value="/detected_persons/yolo_kinect" type="string"/>
+        <param name="detection_id_offset" value="$0"/>
+        <param name="detection_id_increment" value="1"/>
+        <param name="bounding_boxes" value="/trt_yolo_boxes_kinect"/>
+        <param name="camera_namespace" value="/hardware/depth/kinect2" type="string"/>
+        <param name="depth_scale" value="1.0"/>
+    </node>
+
     <node machine="jetson-x-03" pkg="trtyolo" type="tensorrt_yolo" name= "trt_yolo_right" output="screen">
         <param name="engine_path" value="/home/nvidia/ros_ws/src/frame_soft/trtyolo/tensorRT_yolo/yolov3_fp16.engine" type="string"/>
         <param name="detect_threshold" value="0.5"/>

@@ -21,8 +21,8 @@
     <arg name="queue_size" default="10"/>
     <arg name="detection_id_offset" default="0"/>
     <arg name="detection_id_increment" default="1"/>
-    <arg name="overlap_thresh_pano" default="1.5"/>
-    <arg name="overlap_thresh_pano_kinect" default="0.5"/>
+    <arg name="overlap_thresh_pano" default="0.7"/>
+    <arg name="overlap_thresh_pano_kinect" default="0.3"/>
     <arg name="depth_scale" default="1.0"/>
     <!-- general yolo-v3 arg -->
     <arg name="launch_prefix" default=""/>
@@ -85,7 +85,7 @@
         <arg name="bounding_boxes" value="darknet_ros/bounding_boxes_kinect"/>
     </include> -->
 
-    <node pkg="yoloconvertor" type="yoloconvertor_standard" name="yoloconvertor_kinect">
+    <!-- <node pkg="yoloconvertor" type="yoloconvertor_standard" name="yoloconvertor_kinect">
         <param name="world_scale" value="$(arg world_scale)"/>
         <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
         <param name="queue_size" value="$(arg queue_size)" type="int"/>
@@ -95,7 +95,7 @@
         <param name="bounding_boxes" value="$(arg bounding_boxes_yolo_kinect)"/>
         <param name="camera_namespace" value="$(arg camera_namespace)" type="string"/>
         <param name="depth_scale" value="$(arg depth_scale)"/>
-    </node>
+    </node> -->
     <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_pano_left">
         <param name="world_scale" value="$(arg world_scale)"/>
         <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
