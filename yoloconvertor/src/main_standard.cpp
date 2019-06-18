@@ -25,7 +25,7 @@
 
 #include "Matrix.h"
 #include "Vector.h"
-#include "MapFunctions.hpp"
+//#include "MapFunctions.hpp"
 
 using namespace std;
 using namespace sensor_msgs;
