@@ -55,7 +55,7 @@ Hypo& Hypo::operator=(const Hypo &hypo)
 //    occludedInFrame = hypo.occludedInFrame;
 //    exitIm = hypo.exitIm;
     m_creationTime = hypo.m_creationTime;
-    emd_vec = hypo.emd_vec;
+    emb_vec = hypo.emb_vec;
     return *this;
 }
 
@@ -114,7 +114,7 @@ Hypo::Hypo(const Hypo& hypo)
 //    was_not_approved = hypo.was_not_approved;
 //    exitIm = hypo.exitIm;
     m_creationTime = hypo.m_creationTime;
-    emd_vec = hypo.emd_vec;
+    emb_vec = hypo.emb_vec;
 }
 
 Hypo::~Hypo()
@@ -659,14 +659,14 @@ void Hypo::setCreationTime(ros::Time& creationTime)
     m_creationTime = creationTime;
 }
 
-Vector<double> Hypo::getEmd_vec() const
+Vector<double> Hypo::getEmb_vec() const
 {
-    return emd_vec;
+    return emb_vec;
 }
 
-void Hypo::setEmd_vec(const Vector<double> &value)
+void Hypo::setEmb_vec(const Vector<double> &value)
 {
-    emd_vec = value;
+    emb_vec = value;
 }
 
 //*******************************

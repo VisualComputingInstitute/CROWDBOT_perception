@@ -622,7 +622,7 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
                 numObsOld = AncillaryMethods::getSizeIdx(oldIdx);
                 numOverlap = AncillaryMethods::getSizeIdx(overlap);
 
-                Vector<double> embDistVec = hypoStack(j).getEmd_vec() - HyposMDL(i).getEmd_vec();
+                Vector<double> embDistVec = hypoStack(j).getEmb_vec() - HyposMDL(i).getEmb_vec();
                 double embDist = embDistVec.norm();
 
                 if(overlap.getSize() > 0)
@@ -699,6 +699,7 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
         }
     }
 
+    // we dont check termination (exit zones, eg, at image border) anymore, to continue (or reidentify) targets, even if they have left the image
     //check_termination(cam, HyposAll);
 
     //******************************************************************
@@ -709,7 +710,9 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
     temp.clearContent();
     for(unsigned int i = 0; i < nr; i++)
     {
-        if((!HyposAll(i).isTerminated()) && ((t - HyposAll(i).getLastSelected()) < Globals::coneTimeHorizon))
+        // termination is not used anymore (see above)
+        //if((!HyposAll(i).isTerminated()) && ((t - HyposAll(i).getLastSelected()) < Globals::coneTimeHorizon))
+        if((t - HyposAll(i).getLastSelected()) < Globals::coneTimeHorizon)
         {
             temp.pushBack(HyposAll(i));
         }
@@ -1068,7 +1071,7 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
 
         auxHypo->getColHists(colHistsOld);
         auxHypo->getStateCovMats(stateCovMatsOld);
-        embVecOld = auxHypo->getEmd_vec();
+        embVecOld = auxHypo->getEmb_vec();
 
         EKalman kalman;
         kalman.init(xInit, stateCovMatsOld(stateCovMatsOld.getSize()-1), Globals::dt);
@@ -1194,7 +1197,7 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
         newHypo.setStateCovMats(stateCovMatsOld);
         newHypo.setColHists(colHistsOld);
         if (embVecOld.getSize()>0){
-            newHypo.setEmd_vec(embVecOld);
+            newHypo.setEmb_vec(embVecOld);
         }
         ros::Time creationTimeOld;
         auxHypo->getCreationTime(creationTimeOld);
@@ -1332,7 +1335,7 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
             hypo.setStateCovMats(stateCovMats);
             hypo.setColHists(colHists);
             if(currEmbVec.getSize()>0){
-                hypo.setEmd_vec(currEmbVec);
+                hypo.setEmb_vec(currEmbVec);
             }
 
             compute_hypo_entries(mAllXnewDown, vvXDown, vvYDown, vvIdxDown, det, hypo, normfct, endFrame);

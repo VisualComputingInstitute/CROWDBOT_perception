@@ -172,8 +172,8 @@ public:
 //    void setExitImage();
 //    bool getExitImage();
 
-    Vector<double> getEmd_vec() const;
-    void setEmd_vec(const Vector<double> &value);
+    Vector<double> getEmb_vec() const;
+    void setEmb_vec(const Vector<double> &value);
 
 protected:
 
@@ -242,7 +242,7 @@ protected:
 
     //Spencer track infos
     ros::Time m_creationTime;
-    Vector <double> emd_vec;
+    Vector <double> emb_vec;
 };
 
 

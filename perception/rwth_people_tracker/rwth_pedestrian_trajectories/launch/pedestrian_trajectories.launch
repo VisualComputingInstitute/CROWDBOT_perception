@@ -8,6 +8,7 @@
     <arg name="keep" default="true" />
     <arg name="strict" default="false" />
     <arg name="remember" default="true" />
+    <arg name="helper_reid_thresh" default="50" />
 
     <node pkg="rwth_pedestrian_trajectories" type="pedestrian_trajectories" name="pedestrian_trajectories" output="screen">
         <param name="queue_size" value="$(arg queue_size)" type="int"/>
@@ -19,6 +20,7 @@
         <param name="keep" value="$(arg keep)" />
         <param name="strict" value="$(arg strict)" />
         <param name="remember" value="$(arg remember)" />
+        <param name="helper_reid_thresh" value="$(arg helper_reid_thresh)" />
     </node>
 
 </launch> 

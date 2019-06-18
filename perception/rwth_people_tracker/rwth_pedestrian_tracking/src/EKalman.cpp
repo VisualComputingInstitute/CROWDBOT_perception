@@ -223,6 +223,17 @@ bool EKalman::findObservation(Detections& det, int frame)
         currDetEmbVec -= m_embVec;
         emb_dist = currDetEmbVec.norm();
 
+        /*std::ofstream outfile;
+        outfile.open("/home/breuers/emb_dists.txt", std::ios_base::app);
+        outfile << emb_dist << "\n";
+        outfile.close();
+        outfile.open("/home/breuers/motion_weight.txt", std::ios_base::app);
+        outfile << weight << "\n";
+        outfile.close();
+        outfile.open("/home/breuers/euc_dists.txt", std::ios_base::app);
+        outfile << pDiff.norm() << "\n";
+        outfile.close();*/
+
         // IMAGE BASED
         // !! deprecated: only 3d tracking now! bbox is not properly set (0.0), do not use!
         //Vector<double> rectInter;
