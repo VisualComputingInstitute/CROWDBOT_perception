@@ -27,7 +27,7 @@
 #include "Matrix.h"
 #include "Vector.h"
 #include "PanoramaCameraModel.h"
-#include "MapFunctions.hpp"
+//#include "MapFunctions.hpp"
 
 using namespace std;
 using namespace sensor_msgs;
@@ -37,7 +37,7 @@ using namespace darknet_ros_msgs;
 using namespace cv_bridge;
 
 tf::TransformListener* listener;
-MapFunctions* g_map_func;
+//MapFunctions* g_map_func;
 
 const double eps(1e-5);
 
@@ -239,7 +239,7 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
     }
 
 
-    g_map_func->updateCamera2frameTransform(camera_frame_id,boxes->image_header.stamp,listener);
+    //g_map_func->updateCamera2frameTransform(camera_frame_id,boxes->image_header.stamp,listener);
 
     //
     // Now create 3D coordinates for SPENCER DetectedPersons msg
@@ -301,8 +301,8 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
 
 
             tf::Vector3 pos3D_incam(detected_person.pose.pose.position.x,detected_person.pose.pose.position.y, detected_person.pose.pose.position.z);
-            if(g_map_func->isPosOccupied(pos3D_incam))
-                continue;
+            //if(g_map_func->isPosOccupied(pos3D_incam))
+                //continue;
 
             // additional nan check
             if(!std::isnan(detected_person.pose.pose.position.x) && !std::isnan(detected_person.pose.pose.position.y) && !std::isnan(detected_person.pose.pose.position.z)){
@@ -356,7 +356,7 @@ int main(int argc, char **argv)
     //string pano_image;
     string pub_topic_detected_persons;
     string boundingboxes;
-    string map_topic;
+    //string map_topic;
 
     //debug
     string pub_topic_result_image;
@@ -380,13 +380,13 @@ int main(int argc, char **argv)
     current_detection_id = detection_id_offset;
 
     //map
-    double opt;
+    /*double opt;
     int half_length;
     private_node_handle_.param("map", map_topic, string("/map"));
     private_node_handle_.param("occupancy_threshold",opt, 75.0);  // from 0 to 100
-    private_node_handle_.param("occupancy_check_box_half_length",half_length, int(1));
+    private_node_handle_.param("occupancy_check_box_half_length",half_length, int(1));*/
     //ros::Subscriber sub_map = n.subscribe(map_topic, 1, map_callback);
-    g_map_func = new MapFunctions(n,map_topic,opt,half_length);
+    //g_map_func = new MapFunctions(n,map_topic,opt,half_length);
 
 
     // Create a subscriber.

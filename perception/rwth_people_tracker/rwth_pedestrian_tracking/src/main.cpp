@@ -495,13 +495,14 @@ void callback(const DetectedPersons::ConstPtr &detections)
         trackedPerson.height = hyposMDL(i).getHeight();
 
         // update ReID embedding vector of person, only if it is currently matched (no averaging, just take latest detection embedding)
-        if(trackedPerson.is_matched){
-            Vector<double> curr_emb_vec = hyposMDL(i).getEmd_vec();
+        // also update if not currently matched (last known detection embedding is used)
+        //if(trackedPerson.is_matched){
+            Vector<double> curr_emb_vec = hyposMDL(i).getEmb_vec();
             trackedPerson.embed_vector.clear();
             for(int evi=0; evi<curr_emb_vec.getSize(); evi++){
                 trackedPerson.embed_vector.push_back(curr_emb_vec(evi));
             }
-        }
+        //}
 
         // prepare position and velocity of tracked person
         Vector<double> vCurrVX;

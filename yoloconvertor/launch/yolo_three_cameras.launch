@@ -39,7 +39,11 @@
 
     <!-- trajectories -->
     <arg name="person_trajectories" default="/rwth_tracker/person_trajectories" />
-    <arg name="selected_person_trajectory" default="/rwth_tracker/selected_person_trajectory" />
+    <arg name="potential_helpers" default="/rwth_tracker/potential_helpers" />
+    <arg name="selected_helper" default="/rwth_tracker/selected_helper" />
+    <arg name="keep" default="true" />
+    <arg name="strict" default="false" />
+    <arg name="remember" default="true" />
 
     <!-- left yoloconvertor and yolo arg-->
     <arg name="pano_image_left" default="/hardware/video/valeo/rectificationNIKRLeft/PanoramaImage" />
@@ -156,9 +160,13 @@
     <include file="$(find rwth_pedestrian_trajectories)/launch/pedestrian_trajectories.launch">
         <arg name="tracked_persons" value="$(arg tracked_persons)" />
         <arg name="person_trajectories" value="$(arg person_trajectories)" />
-        <arg name="selected_person_trajectory" value="$(arg selected_person_trajectory)" />
-        <arg name="queue_size" value="10" />
+        <arg name="potential_helpers" value="$(arg potential_helpers)" />
+        <arg name="selected_helper" value="$(arg selected_helper)" />
+        <arg name="queue_size" value="$(arg queue_size)" />
         <arg name="camera_frame" value="$(arg camera_frame)" />
+        <arg name="keep" value="$(arg keep)" />
+        <arg name="strict" value="$(arg strict)" />
+        <arg name="remember" value="$(arg remember)" />
     </include>
 
 

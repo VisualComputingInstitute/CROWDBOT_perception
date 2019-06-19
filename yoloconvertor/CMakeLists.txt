@@ -18,9 +18,10 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 
 
 set(CMAKE_BUILD_TYPE Release)
+add_compile_options(-std=c++11)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-    set(CMAKE_CXX_FLAGS "-O3")        ## Optimize
+    add_compile_options(-O3)        ## Optimize
 endif()
 
 

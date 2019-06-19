@@ -1,0 +1,18 @@
+<launch>
+    <!-- this launch file is for launch reid node in ROS -->
+
+    <arg name="detected_persons_left" default="/detected_persons/yolo_left"/>
+    <arg name="queue_size" default="10" />
+    <arg name="model_path" default="./model_v1.pth"/>
+    <arg name="pano_image_left" default="/hardware/video/valeo/rectificationNIKRLeft/PanoramaImage" />
+    <arg name="embed_detectedpersons" default="/detected_persons/yolo_left_id" />
+
+    <node pkg="reid" type="reid_ros.py" name="reid_pano_left" cwd="node" output="screen">
+        <param name="image" value="$(arg pano_image_left)" type="string"/>
+        <param name="detected_persons" value="$(arg detected_persons_left)" type="string"/>
+        <param name="queue_size" value="$(arg queue_size)" type="int"/>
+        <param name="model_path" value="$(arg model_path)"/>
+        <param name="embed_detectedpersons" value="$(arg embed_detectedpersons)" type="string"/>
+    </node>
+
+</launch>  
