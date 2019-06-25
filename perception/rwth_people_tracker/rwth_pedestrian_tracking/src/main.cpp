@@ -427,7 +427,7 @@ void callback(const DetectedPersons::ConstPtr &detections)
     frame_msgs::TrackedPersons trackedPersons;
     trackedPersons.header.stamp = detections->header.stamp;
     trackedPersons.header.seq = ++track_seq;
-    trackedPersons.header.frame_id = "/robot/OdometryFrame"; //FIXME: world frame, maybe should not be hardcoded
+    trackedPersons.header.frame_id = detections->header.frame_id; //FIXME: world frame, maybe should not be hardcoded
 
     Vector<Vector<double> > trajPts;
     Vector<double> dir;

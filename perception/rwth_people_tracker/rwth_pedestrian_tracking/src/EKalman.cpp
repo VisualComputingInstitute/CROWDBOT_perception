@@ -262,7 +262,10 @@ bool EKalman::findObservation(Detections& det, int frame)
             //std::cout << "MATCH!" << std::endl;
             allInlierInOneFrame.pushBack(i);
             //weightOfAllInliersInOneFrame.pushBack(weight*colScore);
-            weightOfAllInliersInOneFrame.pushBack(weight);
+            weightOfAllInliersInOneFrame.pushBack(weight*(1-(emb_dist/Globals::reIdThresh_DALevel)));
+            /*std::cout << "motion weight: " << weight << std::endl;
+            std::cout << "norm emb_dist: " << (1-(emb_dist/Globals::reIdThresh_DALevel)) << std::endl;
+            std::cout << "total weight score: " << (weight*(1-(emb_dist/Globals::reIdThresh_DALevel))) << std::endl;*/
         }
     }
 
@@ -295,7 +298,10 @@ bool EKalman::findObservation(Detections& det, int frame)
         m_colHist *= 0.4;
         newColHist *= 0.6;
         m_colHist += newColHist;
-        m_embVec = newEmbVec;
+        //try averaging the embedVec
+        m_embVec *= 0.4;
+        newEmbVec *= 0.6;
+        m_embVec += newEmbVec;
         m_height = 0.0;
 
         det.get3Dcovmatrix(frame, inl(0), covMatrix);
@@ -540,7 +546,7 @@ void EKalman::runKalmanUp(Detections& det, int frame, int t, Matrix<double>& all
 
     hMean = m_colHist;
     colHists = m_colHists;
-    initEmbVec = m_embVec; // not neccessary as only newest emb is kept in hypo
+    initEmbVec = m_embVec;
     stateCovMats = m_CovMats;
     //ROS_INFO("...KU done.\n");
 }
