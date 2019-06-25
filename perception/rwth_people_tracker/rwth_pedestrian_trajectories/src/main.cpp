@@ -40,6 +40,7 @@ unordered_set<int> blacklistedHelperIds;
 int trajectory_max_length = 50;
 
 bool new_search_invoked = false;
+bool stop_selection = false;
 
 double helper_reid_thresh;
 
@@ -71,12 +72,17 @@ void callback_newSearch(const std_msgs::Bool::ConstPtr &newSearch)
 {
     new_search_invoked = newSearch->data;
     blacklistedHelperIds.insert(last_selected_person_id);
+    stop_selection = false;
     //cout << "new search invoked by blacklisting current helper with ID " << last_selected_person_id << endl;
 
 }
 
-void callback_resetHelperBlacklist(const std_msgs::Bool::ConstPtr $resetBlacklist){
+void callback_resetHelperBlacklist(const std_msgs::Bool::ConstPtr &resetBlacklist){
    blacklistedHelperIds.clear();
+}
+
+void callback_stopHelperSelection(const std_msgs::Bool::ConstPtr &stop_helper_selection){
+   stop_selection = stop_helper_selection->data;
 }
 
 void callback(const TrackedPersons::ConstPtr &tps)
@@ -209,7 +215,7 @@ void callback(const TrackedPersons::ConstPtr &tps)
     pub_potential_helpers_vis.publish(potentialHelpersVis);
 
     // publish "selected" (right now: closest) trajectory on a seperate topic
-    if(selected_trajectory_idx!=-1 && personTrajectories.trajectories.size()>0 && tps->tracks.size()>0){
+    if(selected_trajectory_idx!=-1 && personTrajectories.trajectories.size()>0 && tps->tracks.size()>0 && !stop_selection){
         PersonTrajectory selectedPersonTrajectory = personTrajectories.trajectories.at(selected_trajectory_idx);
         pub_selected_helper.publish(selectedPersonTrajectory);
         last_selected_person_id = selectedPersonTrajectory.track_id;
@@ -266,6 +272,7 @@ int main(int argc, char **argv)
     string sub_topic_tracked_persons;
     string sub_topic_new_search;
     string sub_topic_reset_helper_blacklist;
+    string sub_topic_stop_helper_selection;
     string pub_topic_trajectories;
     string pub_topic_selected_helper;
     string pub_topic_potential_helpers;
@@ -282,6 +289,7 @@ int main(int argc, char **argv)
     private_node_handle_.param("tracked_persons", sub_topic_tracked_persons, string("/rwth_tracker/tracked_persons"));
     private_node_handle_.param("get_new_helper", sub_topic_new_search, string("/rwth_tracker/get_new_helper"));
     private_node_handle_.param("reset_helper_blacklist", sub_topic_reset_helper_blacklist, string("/rwth_tracker/reset_helper_blacklist"));
+    private_node_handle_.param("stop_helper_selection", sub_topic_stop_helper_selection, string("/rwth_tracker/stop_helper_selection"));
     private_node_handle_.param("camera_frame", camera_frame, string("/camera/"));
     // helper selection options
     private_node_handle_.param("keep", keep, true);
@@ -306,6 +314,9 @@ int main(int argc, char **argv)
     message_filters::Subscriber<std_msgs::Bool> subscriber_reset_helper_blacklist(n, sub_topic_reset_helper_blacklist.c_str(), 1); subscriber_reset_helper_blacklist.unsubscribe();
     subscriber_reset_helper_blacklist.registerCallback(boost::bind(&callback_resetHelperBlacklist, _1));
     subscriber_reset_helper_blacklist.subscribe();
+    message_filters::Subscriber<std_msgs::Bool> subscriber_stop_helper_selection(n, sub_topic_stop_helper_selection.c_str(), 1); subscriber_stop_helper_selection.unsubscribe();
+    subscriber_stop_helper_selection.registerCallback(boost::bind(&callback_stopHelperSelection, _1));
+    subscriber_stop_helper_selection.subscribe();
 
     // Create a topic publisher
     private_node_handle_.param("person_trajectories", pub_topic_trajectories, string("/rwth_tracker/person_trajectories"));
