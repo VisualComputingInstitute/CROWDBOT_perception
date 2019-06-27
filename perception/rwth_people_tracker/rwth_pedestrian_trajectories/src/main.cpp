@@ -70,8 +70,10 @@ vector<double> cartesianToPolar(geometry_msgs::Point point) {
 
 void callback_newSearch(const std_msgs::Bool::ConstPtr &newSearch)
 {
-    new_search_invoked = newSearch->data;
-    blacklistedHelperIds.insert(last_selected_person_id);
+    new_search_invoked = true;
+    if(newSearch->data){
+        blacklistedHelperIds.insert(last_selected_person_id);
+    }
     stop_selection = false;
     //cout << "new search invoked by blacklisting current helper with ID " << last_selected_person_id << endl;
 
@@ -83,6 +85,7 @@ void callback_resetHelperBlacklist(const std_msgs::Bool::ConstPtr &resetBlacklis
 
 void callback_stopHelperSelection(const std_msgs::Bool::ConstPtr &stop_helper_selection){
    stop_selection = stop_helper_selection->data;
+   blacklistedHelperIds.insert(last_selected_person_id);
 }
 
 void callback(const TrackedPersons::ConstPtr &tps)
