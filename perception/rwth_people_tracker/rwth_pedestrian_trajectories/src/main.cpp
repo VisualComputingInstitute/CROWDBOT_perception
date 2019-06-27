@@ -85,7 +85,7 @@ void callback_resetHelperBlacklist(const std_msgs::Bool::ConstPtr &resetBlacklis
 
 void callback_stopHelperSelection(const std_msgs::Bool::ConstPtr &stop_helper_selection){
    stop_selection = stop_helper_selection->data;
-   blacklistedHelperIds.insert(last_selected_person_id);
+   last_selected_person_id = -1;
 }
 
 void callback(const TrackedPersons::ConstPtr &tps)
