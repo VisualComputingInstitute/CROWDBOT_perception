@@ -15,6 +15,11 @@
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
 
+#include <fstream>
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+
 using namespace std;
 using namespace message_filters;
 using namespace frame_msgs;
@@ -29,6 +34,11 @@ PersonTrajectories personTrajectories;
 
 tf::TransformListener* listener;
 string camera_frame;
+
+//const char *homedir = getpwuid(getuid())->pw_dir;
+string homedir = getenv("HOME");
+
+std::ofstream outfile;
 
 bool keep; //if true, a selected ID is kept, even if others fulfill the criteria better
 bool strict; //if true, a selected ID needs to fulfill the criteria all the time
@@ -71,26 +81,37 @@ vector<double> cartesianToPolar(geometry_msgs::Point point) {
 
 void callback_newSearch(const std_msgs::Bool::ConstPtr &newSearch)
 {
+    outfile.open(homedir+"/log/helper_callback_debug.txt", std::ios_base::app);
+    outfile << ros::Time::now() << ": enter new_search callback with data=" << (newSearch->data? "True" : "False") <<"\n";
     new_search_invoked = true;
     if(newSearch->data && last_selected_person_id!=-1){
         blacklistedHelperIds.insert(last_selected_person_id);
     }
     stop_selection = false;
     //cout << "new search invoked by blacklisting current helper with ID " << last_selected_person_id << endl;
-
+    outfile << ros::Time::now() << ": exit new_search callback" <<  "\n";
+    outfile.close();
 }
 
 void callback_resetHelperBlacklist(const std_msgs::Bool::ConstPtr &resetBlacklist){
+    outfile.open(homedir+"/log/helper_callback_debug.txt", std::ios_base::app);
+    outfile << ros::Time::now() << ": enter resetBlacklist callback with data=" << (resetBlacklist->data? "True" : "False") <<  "\n";
    blacklistedHelperIds.clear();
+   outfile << ros::Time::now() << ": exit resetBlacklist callback" <<  "\n";
+   outfile.close();
 }
 
 void callback_stopHelperSelection(const std_msgs::Bool::ConstPtr &stop_helper_selection){
+    outfile.open(homedir+"/log/helper_callback_debug.txt", std::ios_base::app);
+    outfile << ros::Time::now() << ": enter stopHelperSelection callback with data=" << (stop_helper_selection->data? "True" : "False") <<  "\n";
    stop_selection = true;
    if(stop_helper_selection->data && last_selected_person_id!=-1){
        blacklistedHelperIds.insert(last_selected_person_id);
    }
    new_search_invoked = false;
    last_selected_person_id = -1;
+   outfile << ros::Time::now() << ": exit stopHelperSelection callback" <<  "\n";
+   outfile.close();
 }
 
 void callback(const TrackedPersons::ConstPtr &tps)
@@ -352,6 +373,8 @@ int main(int argc, char **argv)
     pub_potential_helpers_vis = n.advertise<DetectedPersons>(pub_topic_potential_helpers_vis, 10, con_cb, con_cb);
     pub_helper_search_status = n.advertise<std_msgs::Bool>(pub_topic_helper_search_status, 10, con_cb, con_cb);
 
+    outfile.open(homedir+"/log/helper_callback_debug.txt", std::ofstream::out | std::ofstream::trunc);
+    outfile.close();
 
     ros::spin();
 
