@@ -120,7 +120,7 @@ void callback_stopHelperSelection(const std_msgs::Bool::ConstPtr &stop_helper_se
    outfile.close();
    std_msgs::Bool deselect_ack = std_msgs::Bool();
    deselect_ack.data = true;
-   pub_helper_search_status.publish(deselect_ack);
+   pub_deselect_ack.publish(deselect_ack);
 }
 
 void callback(const TrackedPersons::ConstPtr &tps)
@@ -381,8 +381,8 @@ int main(int argc, char **argv)
     pub_selected_helper_vis = n.advertise<DetectedPersons>(pub_topic_selected_helper_vis, 10, con_cb, con_cb);
     pub_potential_helpers_vis = n.advertise<DetectedPersons>(pub_topic_potential_helpers_vis, 10, con_cb, con_cb);
     pub_helper_search_status = n.advertise<std_msgs::Bool>(pub_topic_helper_search_status, 10, con_cb, con_cb);
-    pub_deselect_ack = n.advertise<std_msgs::Bool>(sub_topic_new_search + "_ack", 10, con_cb, con_cb);
-    pub_new_search_ack = n.advertise<std_msgs::Bool>(sub_topic_stop_helper_selection + "_ack", 10, con_cb, con_cb);
+    pub_deselect_ack = n.advertise<std_msgs::Bool>(sub_topic_stop_helper_selection + "_ACK", 10, con_cb, con_cb);
+    pub_new_search_ack = n.advertise<std_msgs::Bool>(sub_topic_new_search + "_ACK", 10, con_cb, con_cb);
 
     outfile.open(homedir+"/log/helper_callback_debug.txt", std::ofstream::out | std::ofstream::trunc);
     outfile.close();
