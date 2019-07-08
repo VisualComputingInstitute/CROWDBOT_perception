@@ -24,6 +24,7 @@ ros::Publisher pub_selected_helper;
 ros::Publisher pub_selected_helper_vis;
 ros::Publisher pub_potential_helpers;
 ros::Publisher pub_potential_helpers_vis;
+ros::Publisher pub_helper_search_status;
 PersonTrajectories personTrajectories;
 
 tf::TransformListener* listener;
@@ -221,6 +222,16 @@ void callback(const TrackedPersons::ConstPtr &tps)
     pub_potential_helpers.publish(potentialHelpers);
     pub_potential_helpers_vis.publish(potentialHelpersVis);
 
+    // search status topic
+    std_msgs::Bool status = std_msgs::Bool();
+    if(new_search_invoked){
+        status.data = true;
+        pub_helper_search_status.publish(status);
+    }else{
+        status.data = false;
+        pub_helper_search_status.publish(status);
+    }
+
     // publish "selected" (right now: closest) trajectory on a seperate topic
     if(selected_trajectory_idx!=-1 && personTrajectories.trajectories.size()>0 && tps->tracks.size()>0 && !stop_selection){
         PersonTrajectory selectedPersonTrajectory = personTrajectories.trajectories.at(selected_trajectory_idx);
@@ -259,6 +270,7 @@ void connectCallback(message_filters::Subscriber<TrackedPersons> &sub_tra){
         && !pub_selected_helper_vis.getNumSubscribers()
         && !pub_potential_helpers.getNumSubscribers()
         && !pub_potential_helpers_vis.getNumSubscribers()
+        && !pub_helper_search_status.getNumSubscribers()
     ) {
         ROS_DEBUG("Trajectories: No subscribers. Unsubscribing.");
         sub_tra.unsubscribe();
@@ -285,6 +297,7 @@ int main(int argc, char **argv)
     string pub_topic_potential_helpers;
     string pub_topic_selected_helper_vis;
     string pub_topic_potential_helpers_vis;
+    string pub_topic_helper_search_status;
 
     listener = new tf::TransformListener();
 
@@ -331,11 +344,14 @@ int main(int argc, char **argv)
     private_node_handle_.param("potential_helpers", pub_topic_potential_helpers, string("/rwth_tracker/potential_helpers"));
     private_node_handle_.param("selected_helper_vis", pub_topic_selected_helper_vis, string("/rwth_tracker/selected_helper_vis"));
     private_node_handle_.param("potential_helpers_vis", pub_topic_potential_helpers_vis, string("/rwth_tracker/potential_helpers_vis"));
+    private_node_handle_.param("helper_search_status", pub_topic_helper_search_status, string("/rwth_tracker/helper_search_status"));
     pub_person_trajectories = n.advertise<PersonTrajectories>(pub_topic_trajectories, 10, con_cb, con_cb);
     pub_selected_helper = n.advertise<PersonTrajectory>(pub_topic_selected_helper, 10, con_cb, con_cb);
     pub_potential_helpers = n.advertise<PersonTrajectories>(pub_topic_potential_helpers, 10, con_cb, con_cb);
     pub_selected_helper_vis = n.advertise<DetectedPersons>(pub_topic_selected_helper_vis, 10, con_cb, con_cb);
     pub_potential_helpers_vis = n.advertise<DetectedPersons>(pub_topic_potential_helpers_vis, 10, con_cb, con_cb);
+    pub_helper_search_status = n.advertise<std_msgs::Bool>(pub_topic_helper_search_status, 10, con_cb, con_cb);
+
 
     ros::spin();
 
