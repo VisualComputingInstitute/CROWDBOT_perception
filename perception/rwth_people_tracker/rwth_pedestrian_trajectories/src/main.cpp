@@ -25,6 +25,8 @@ ros::Publisher pub_selected_helper_vis;
 ros::Publisher pub_potential_helpers;
 ros::Publisher pub_potential_helpers_vis;
 ros::Publisher pub_helper_search_status;
+ros::Publisher pub_deselect_ack;
+ros::Publisher pub_new_search_ack;
 PersonTrajectories personTrajectories;
 
 tf::TransformListener* listener;
@@ -77,6 +79,9 @@ void callback_newSearch(const std_msgs::Bool::ConstPtr &newSearch)
     }
     stop_selection = false;
     //cout << "new search invoked by blacklisting current helper with ID " << last_selected_person_id << endl;
+    std_msgs::Bool new_search_ack = std_msgs::Bool();
+    new_search_ack.data = true;
+    pub_new_search_ack.publish(new_search_ack);
 
 }
 
@@ -91,6 +96,9 @@ void callback_stopHelperSelection(const std_msgs::Bool::ConstPtr &stop_helper_se
    }
    new_search_invoked = false;
    last_selected_person_id = -1;
+   std_msgs::Bool deselect_ack = std_msgs::Bool();
+   deselect_ack.data = true;
+   pub_helper_search_status.publish(deselect_ack);
 }
 
 void callback(const TrackedPersons::ConstPtr &tps)
@@ -351,6 +359,8 @@ int main(int argc, char **argv)
     pub_selected_helper_vis = n.advertise<DetectedPersons>(pub_topic_selected_helper_vis, 10, con_cb, con_cb);
     pub_potential_helpers_vis = n.advertise<DetectedPersons>(pub_topic_potential_helpers_vis, 10, con_cb, con_cb);
     pub_helper_search_status = n.advertise<std_msgs::Bool>(pub_topic_helper_search_status, 10, con_cb, con_cb);
+    pub_deselect_ack = n.advertise<std_msgs::Bool>(sub_topic_new_search + "_ack", 10, con_cb, con_cb);
+    pub_new_search_ack = n.advertise<std_msgs::Bool>(sub_topic_stop_helper_selection + "_ack", 10, con_cb, con_cb);
 
 
     ros::spin();
