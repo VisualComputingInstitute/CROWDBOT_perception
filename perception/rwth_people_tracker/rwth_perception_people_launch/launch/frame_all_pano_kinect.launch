@@ -1,5 +1,7 @@
 <launch>
     <!-- Global parameters -->
+    <!-- Paths -->
+    <arg name="trtyolo_path" default="/home/nvidia/ros_ws/src/frame_soft/trtyolo" />
     <!-- Nodes -->
     <arg name="mira_ros_adapter" default="true" />
     <arg name="mira_ros_adapter_remote" default="false" />
@@ -184,6 +186,7 @@
     <!-- remote start of yolo pano detectors on jetsons -->
     <include file="$(find rwth_perception_people_launch)/launch/frame_yolo_pano_kinect.launch" if="$(arg yolo_pano_remote)">
         <arg name="reid" value="$(arg reid)" />
+        <arg name="trtyolo_path" value="$(arg trtyolo_path)" />
     </include>
 
     <!-- kinect2_bridge -->
