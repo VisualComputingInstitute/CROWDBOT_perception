@@ -1,6 +1,7 @@
 <launch>
 
     <arg name="reid" default="true"/>
+    <arg name="trtyolo_path" default="/home/nvidia/ros_ws/src/frame_soft/trtyolo" />
 
     <!-- <machine name="jetson10" address="192.168.4.10" user="nvidia" env-loader="/home/nvidia/ros_ws/devel/env.sh" default="true" />
     <machine name="jetson11" address="192.168.4.11" user="nvidia" env-loader="/home/nvidia/frame_ws/devel/env.sh" default="true" />
@@ -34,7 +35,7 @@
   </node> -->
 
     <node machine="jetson-x-03" pkg="trtyolo" type="tensorrt_yolo" name= "trt_yolo_kinect" output="screen">
-        <param name="engine_path" value="/home/nvidia/ros_ws/src/frame_soft/trtyolo/tensorRT_yolo/yolov3_fp16.engine" type="string"/>
+        <param name="engine_path" value="$(arg trtyolo_path)/tensorRT_yolo/yolov3_fp16.engine" type="string"/>
         <param name="detect_threshold" value="0.7"/>
         <param name="nms_threshold" value="0.45"/>
         <param name="bounding_boxes" value="/trt_yolo_boxes_kinect" type="string"/>
@@ -55,7 +56,7 @@
     </node>
 
     <node machine="jetson-x-03" pkg="trtyolo" type="tensorrt_yolo" name= "trt_yolo_right" output="screen">
-        <param name="engine_path" value="/home/nvidia/ros_ws/src/frame_soft/trtyolo/tensorRT_yolo/yolov3_fp16.engine" type="string"/>
+        <param name="engine_path" value="$(arg trtyolo_path)/tensorRT_yolo/yolov3_fp16.engine" type="string"/>
         <param name="detect_threshold" value="0.5"/>
         <param name="nms_threshold" value="0.45"/>
         <param name="bounding_boxes" value="/trt_yolo_boxes_right" type="string"/>
@@ -64,7 +65,7 @@
     </node>
 
     <node machine="jetson-x-04" pkg="trtyolo" type="tensorrt_yolo" name= "trt_yolo_left" output="screen">
-        <param name="engine_path" value="/home/nvidia/ros_ws/src/frame_soft/trtyolo/tensorRT_yolo/yolov3_fp16.engine" type="string"/>
+        <param name="engine_path" value="$(arg trtyolo_path)/tensorRT_yolo/yolov3_fp16.engine" type="string"/>
         <param name="detect_threshold" value="0.5"/>
         <param name="nms_threshold" value="0.45"/>
         <param name="bounding_boxes" value="/trt_yolo_boxes_left" type="string"/>
@@ -73,7 +74,7 @@
     </node>
 
     <node machine="jetson-x-04" pkg="trtyolo" type="tensorrt_yolo" name= "trt_yolo_rear" output="screen">
-        <param name="engine_path" value="/home/nvidia/ros_ws/src/frame_soft/trtyolo/tensorRT_yolo/yolov3_fp16.engine" type="string"/>
+        <param name="engine_path" value="$(arg trtyolo_path)/tensorRT_yolo/yolov3_fp16.engine" type="string"/>
         <param name="detect_threshold" value="0.5"/>
         <param name="nms_threshold" value="0.45"/>
         <param name="bounding_boxes" value="/trt_yolo_boxes_rear" type="string"/>

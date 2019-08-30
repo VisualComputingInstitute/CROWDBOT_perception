@@ -1,7 +1,10 @@
 <launch>
     <!-- Global parameters -->
+    <!-- Paths -->
+    <arg name="trtyolo_path" default="/home/nvidia/ros_ws/src/frame_soft/trtyolo" />
     <!-- Nodes -->
     <arg name="mira_ros_adapter" default="true" />
+    <arg name="mira_ros_adapter_remote" default="false" />
     <arg name="kinect2_bridge" default="false" />
     <!-- VO -->
     <arg name="motion_parameters" default="/motion_matrix" />
@@ -12,7 +15,8 @@
     <arg name="rate" default="10.0"/>
     <arg name="base_footprint" default="/robot/BaseFrame" />
     <arg name="camera_frame" default="/hardware/depth/kinect2/ColorImageFrame" />
-    <arg name="world_frame" default="/robot/OdometryFrame" />
+    <!-- <arg name="world_frame" default="/robot/OdometryFrame" /> -->
+    <arg name="world_frame" default="/maps/BaseNodeFrame" />
     <!-- detectors -->
     <arg name="yolo" default="false"/>
     <arg name="camera_namespace" default="/hardware/depth/kinect2"/>
@@ -51,7 +55,7 @@
     <arg name="selected_helper" default="/rwth_tracker/selected_helper" />
     <arg name="keep" default="true" />
     <arg name="strict" default="false" />
-    <arg name="remember" default="true" />
+    <arg name="remember" default="false" />
 
     <!-- /Global parameters -->
 
@@ -182,9 +186,13 @@
     <!-- remote start of yolo pano detectors on jetsons -->
     <include file="$(find rwth_perception_people_launch)/launch/frame_yolo_pano_kinect.launch" if="$(arg yolo_pano_remote)">
         <arg name="reid" value="$(arg reid)" />
+        <arg name="trtyolo_path" value="$(arg trtyolo_path)" />
     </include>
 
     <!-- kinect2_bridge -->
     <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch" if="$(arg kinect2_bridge)" />
+
+    <!-- mira_ros_adapter_remote -->
+    <include file="$(find mira_ros_adapter)/launch/mira_ros_adapter_remote.launch" if="$(arg mira_ros_adapter)" />
 
 </launch> 

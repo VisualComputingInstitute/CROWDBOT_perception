@@ -70,3 +70,19 @@ add_executable(pedestrian_trajectories src/main.cpp)
    ${QT_QTGUI_LIBRARY}
    X11
  )
+
+#############
+## INSTALL ##
+#############
+
+install(TARGETS pedestrian_trajectories
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+  PATTERN ".svn" EXCLUDE
+)
+
