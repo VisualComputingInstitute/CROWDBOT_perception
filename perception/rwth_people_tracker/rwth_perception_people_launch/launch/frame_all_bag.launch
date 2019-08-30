@@ -206,7 +206,7 @@
    <!-- Fusion -->
    <group if="$(arg pano)">
        <!-- run yolofusion pano-->
-       <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion_pano" output="screen">
+       <node pkg="yoloconvertor" type="yoloconvertor_fusion_async" name="yoloconvertor_fusion_pano" output="screen">
            <param name="queue_size" value="$(arg queue_size)" type="int"/>
            <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
            <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
@@ -223,7 +223,7 @@
 
        <group if="$(arg kinect)">
            <!-- run yolofusion pano+kinect-->
-           <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion" output="screen">
+           <node pkg="yoloconvertor" type="yoloconvertor_fusion_async" name="yoloconvertor_fusion" output="screen">
                <param name="queue_size" value="$(arg queue_size)" type="int"/>
                <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
                <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
@@ -244,7 +244,7 @@
    <group unless="$(arg pano)">
         <group if="$(arg kinect)">
            <!-- run yolofusion (pseudo) kinect-->
-           <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion" output="screen">
+           <node pkg="yoloconvertor" type="yoloconvertor_fusion_async" name="yoloconvertor_fusion" output="screen">
                <param name="queue_size" value="$(arg queue_size)" type="int"/>
                <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
                <param name="detection_id_increment" value="$(arg detection_id_increment)"/>

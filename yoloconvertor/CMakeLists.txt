@@ -96,6 +96,7 @@ include_directories( include
 add_executable(yoloconvertor_standard src/main_standard.cpp)
 add_executable(yoloconvertor_panorama src/main_panorama.cpp)
 add_executable(yoloconvertor_fusion src/main_fusion.cpp)
+add_executable(yoloconvertor_fusion_async src/main_fusion_async.cpp)
 add_executable(backprojection_panorama src/main_backproject_panorama.cpp)
 add_executable(backprojection_pinhole src/main_backproject_pinhole.cpp)
 
@@ -106,6 +107,7 @@ add_executable(backprojection_pinhole src/main_backproject_pinhole.cpp)
 add_dependencies(yoloconvertor_standard ${catkin_EXPORTED_TARGETS})
 add_dependencies(yoloconvertor_panorama ${catkin_EXPORTED_TARGETS})
 add_dependencies(yoloconvertor_fusion ${catkin_EXPORTED_TARGETS})
+add_dependencies(yoloconvertor_fusion_async ${catkin_EXPORTED_TARGETS})
 add_dependencies(backprojection_panorama ${catkin_EXPORTED_TARGETS})
 add_dependencies(backprojection_pinhole ${catkin_EXPORTED_TARGETS})
 
@@ -134,6 +136,15 @@ add_dependencies(backprojection_pinhole ${catkin_EXPORTED_TARGETS})
    ${QT_QTGUI_LIBRARY}
    X11
  )
+
+ target_link_libraries(yoloconvertor_fusion_async
+   ${catkin_LIBRARIES}
+   ${QT_LIBRARIES}
+   ${QT_QTCORE_LIBRARY}
+   ${QT_QTGUI_LIBRARY}
+   X11
+ )
+
 
  target_link_libraries(backprojection_panorama
    ${catkin_LIBRARIES}
@@ -176,7 +187,7 @@ add_dependencies(backprojection_pinhole ${catkin_EXPORTED_TARGETS})
 # )
 
 ## Mark executables and/or libraries for installation
-install(TARGETS yoloconvertor_standard yoloconvertor_panorama yoloconvertor_fusion backprojection_panorama backprojection_pinhole
+install(TARGETS yoloconvertor_standard yoloconvertor_panorama yoloconvertor_fusion yoloconvertor_fusion_async backprojection_panorama backprojection_pinhole
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
