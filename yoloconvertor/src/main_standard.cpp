@@ -326,16 +326,46 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
             }
             detected_person.pose.pose.orientation.w = 1.0;
 
+            // check map occupancy
+            //tf::Vector3 pos3D_incam(detected_person.pose.pose.position.x,detected_person.pose.pose.position.y, detected_person.pose.pose.position.z);
+            //if(g_map_func->isPosOccupied(pos3D_incam))
+            //    continue;
+
+            // additional nan check
+            if(std::isnan(detected_person.pose.pose.position.x) || std::isnan(detected_person.pose.pose.position.y) || std::isnan(detected_person.pose.pose.position.z)){
+                ROS_DEBUG("A detection has been discarded because of nan values in standard conversion!");
+                continue;
+            }
+            // additional in front of cam check
+            if(detected_person.pose.pose.position.z<0){
+                ROS_DEBUG("A detection has been discarded because it was not in front of the camera (z<0)!");
+                continue;
+             }
+
+            // scale uncertainty (covariance) of detection with increasing distance to camera, also "rotate" accordingly (off-diagonal)
             const double LARGE_VARIANCE = 999999999;
-            detected_person.pose.covariance[0*6 + 0] = pose_variance;
-            detected_person.pose.covariance[1*6 + 1] = pose_variance; // up axis (since this is in sensor frame!)
-            detected_person.pose.covariance[2*6 + 2] = pose_variance;
+            detected_person.pose.covariance[0*6 + 0] = pose_variance*detected_person.pose.pose.position.z;// /8; // x ("l/r") in sensor frame
+            detected_person.pose.covariance[1*6 + 1] = pose_variance*detected_person.pose.pose.position.z; // y (up axis), in sensor frame!)
+            detected_person.pose.covariance[2*6 + 2] = pose_variance*detected_person.pose.pose.position.z;// /2; // z ("depth") in sensor frame
+            /*detected_person.pose.covariance[0*6 + 2] = ((detected_person.pose.covariance[0*6 + 0]+detected_person.pose.covariance[2*6 + 2])/2)
+                                                        * ((detected_person.pose.pose.position.x)
+                                                        / (sqrt(detected_person.pose.pose.position.x*detected_person.pose.pose.position.x
+                                                        + detected_person.pose.pose.position.z*detected_person.pose.pose.position.z)));
+            detected_person.pose.covariance[2*6 + 0] = detected_person.pose.covariance[0*6 + 2];
+            /*detected_person.pose.covariance[0*6 + 0] = pose_variance; // x ("l/r") in sensor frame
+            detected_person.pose.covariance[1*6 + 1] = pose_variance; // y (up axis), in sensor frame!)
+            detected_person.pose.covariance[2*6 + 2] = pose_variance; // z ("depth") in sensor frame
+            detected_person.pose.covariance[0*6 + 2] = 0.0;
+            detected_person.pose.covariance[2*6 + 0] = detected_person.pose.covariance[0*6 + 2];*/
             detected_person.pose.covariance[3*6 + 3] = LARGE_VARIANCE;
             detected_person.pose.covariance[4*6 + 4] = LARGE_VARIANCE;
             detected_person.pose.covariance[5*6 + 5] = LARGE_VARIANCE;
 
             detected_person.detection_id = current_detection_id;
             current_detection_id += detection_id_increment;
+
+            //std::cout << "--detID--" << detected_person.detection_id << std::endl;
+            //std::cout << "alpha" << acos(detected_person.pose.covariance[0*6 + 2])/(pose_variance) << std::endl;
 
             detected_person.bbox_x = x;
             detected_person.bbox_y = y;
@@ -346,17 +376,7 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
             double detection_height = calcHeightfromRay(K ,GPN, GPd, curBox);
             detected_person.height = detection_height;
 
-            // check map occupancy
-            //tf::Vector3 pos3D_incam(detected_person.pose.pose.position.x,detected_person.pose.pose.position.y, detected_person.pose.pose.position.z);
-            //if(g_map_func->isPosOccupied(pos3D_incam))
-            //    continue;
-
-            // additional nan check
-            if(!std::isnan(detected_person.pose.pose.position.x) && !std::isnan(detected_person.pose.pose.position.y) && !std::isnan(detected_person.pose.pose.position.z)){
-                detected_persons.detections.push_back(detected_person);
-            }else{
-                ROS_DEBUG("A detection has been discarded because of nan values in standard conversion!");
-            }
+            detected_persons.detections.push_back(detected_person);
         }
 
         // Publish

@@ -533,6 +533,8 @@ void callback(const DetectedPersons::ConstPtr &detections)
         pose.covariance.fill(0.0);
         pose.covariance[0 * 6 + 0] = C(curr_idx)(0,0); // variance of x position
         pose.covariance[1 * 6 + 1] = C(curr_idx)(1,1); // variance of y position
+        pose.covariance[0 * 6 + 1] = C(curr_idx)(0,1); // covariance of x-y position
+        pose.covariance[1 * 6 + 0] = C(curr_idx)(1,0); // covariance of y-x position
         pose.covariance[2 * 6 + 2] = INFINITE_VARIANCE; // variance of z position
         pose.covariance[3 * 6 + 3] = INFINITE_VARIANCE; // variance of x rotation
         pose.covariance[4 * 6 + 4] = INFINITE_VARIANCE; // variance of y rotation

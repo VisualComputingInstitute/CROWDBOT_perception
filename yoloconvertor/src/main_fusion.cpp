@@ -76,6 +76,47 @@ void transfer_detected_persons_to_world_cord(const DetectedPersonsConstPtr &sub_
         detected_person.pose.pose.position.y = pos3D(1);
         detected_person.pose.pose.position.z = pos3D(2);
 
+        Matrix<double> rotation;
+        Matrix<double> covariance;
+        covariance.set_size(3,3,0.0);
+        rotation.set_size(3,3,0.0);
+        covariance(0,0) = detected_person.pose.covariance[0]; //0.05;
+        covariance(1,1) = detected_person.pose.covariance[7];//0.05;
+        covariance(2,2) = detected_person.pose.covariance[14];//0.05;
+        covariance(0,1) = detected_person.pose.covariance[6];//0;
+        covariance(0,2) = detected_person.pose.covariance[12];//0;
+        covariance(1,0) = detected_person.pose.covariance[1];//0;
+        covariance(1,2) = detected_person.pose.covariance[13];//0;
+        covariance(2,0) = detected_person.pose.covariance[2];//0;
+        covariance(2,1) = detected_person.pose.covariance[8];//0;
+        tf::Quaternion rot_q = transform.getRotation();
+        tf::Matrix3x3 rot(rot_q);
+        rotation(0,0) = rot.getColumn(0).getX();
+        rotation(0,1) = rot.getColumn(0).getY();
+        rotation(0,2) = rot.getColumn(0).getZ();
+        rotation(1,0) = rot.getColumn(1).getX();
+        rotation(1,1) = rot.getColumn(1).getY();
+        rotation(1,2) = rot.getColumn(1).getZ();
+        rotation(2,0) = rot.getColumn(2).getX();
+        rotation(2,1) = rot.getColumn(2).getY();
+        rotation(2,2) = rot.getColumn(2).getZ();
+        //std::cout << "cov before:" << std::endl;
+        //covariance.Show();
+        covariance = rotation*covariance;
+        rotation.Transpose();
+        covariance = covariance*rotation;
+        //std::cout << "cov after:" << std::endl;
+        //covariance.Show();
+        detected_person.pose.covariance[0] = covariance(0,0); //0.05;
+        detected_person.pose.covariance[7] = covariance(1,1);//0.05;
+        detected_person.pose.covariance[14] = covariance(2,2);//0.05;
+        detected_person.pose.covariance[6] = covariance(0,1);//0;
+        detected_person.pose.covariance[12] = covariance(0,2);//0;
+        detected_person.pose.covariance[1] = covariance(1,0);//0;
+        detected_person.pose.covariance[13] = covariance(1,2);//0;
+        detected_person.pose.covariance[2] = covariance(2,0);//0;
+        detected_person.pose.covariance[8] = covariance(2,1);//0;
+
         // additional nan check
         if(!std::isnan(detected_person.pose.pose.position.x) && !std::isnan(detected_person.pose.pose.position.y) && !std::isnan(detected_person.pose.pose.position.z)){
             pub_dp.detections.push_back(detected_person);

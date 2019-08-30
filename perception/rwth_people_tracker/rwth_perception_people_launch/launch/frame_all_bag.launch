@@ -50,6 +50,7 @@
     <arg name="detected_persons_yolo_rear" default="/detected_persons/yolo_rear"/>
     <arg name="yolo_pano_remote" default="false"/>
     <arg name="reid" default="true"/>
+    <arg name="pose_variance" default="0.1"/>
     <!-- tracker -->
     <arg name="tracked_persons" default="/rwth_tracker/tracked_persons" />
     <!-- trajectories -->
@@ -118,7 +119,7 @@
     <!-- YOLO convertor -->
     <!-- kinect -->
     <group if="$(arg kinect)">
-        <node pkg="yoloconvertor" type="yoloconvertor_standard" name="yoloconvertor_kinect">
+        <node pkg="yoloconvertor" type="yoloconvertor_standard" name="yoloconvertor_kinect" output="screen">
             <param name="world_scale" value="$(arg world_scale)"/>
             <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
             <param name="queue_size" value="$(arg queue_size_small)" type="int"/>
@@ -128,6 +129,7 @@
             <param name="bounding_boxes" value="$(arg bounding_boxes_yolo_kinect)"/>
             <param name="camera_namespace" value="$(arg camera_namespace)" type="string"/>
             <param name="depth_scale" value="$(arg depth_scale)"/>
+            <param name="pose_variance" value="$(arg pose_variance)"/>
         </node>
     </group>
     <group if="$(arg pano)">
@@ -140,6 +142,7 @@
             <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
             <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
             <param name="bounding_boxes" value="$(arg bounding_boxes_yolo_left)"/>
+            <param name="pose_variance" value="$(arg pose_variance)"/>
         </node>
         <!-- right -->
         <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_pano_right" output="screen">
@@ -150,6 +153,7 @@
             <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
             <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
             <param name="bounding_boxes" value="$(arg bounding_boxes_yolo_right)"/>
+            <param name="pose_variance" value="$(arg pose_variance)"/>
         </node>
         <!-- rear -->
         <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_pano_rear" output="screen">
@@ -160,6 +164,7 @@
             <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
             <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
             <param name="bounding_boxes" value="$(arg bounding_boxes_yolo_rear)"/>
+            <param name="pose_variance" value="$(arg pose_variance)"/>
         </node>
     </group>
 
@@ -201,7 +206,7 @@
    <!-- Fusion -->
    <group if="$(arg pano)">
        <!-- run yolofusion pano-->
-       <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion_pano">
+       <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion_pano" output="screen">
            <param name="queue_size" value="$(arg queue_size)" type="int"/>
            <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
            <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
@@ -218,7 +223,7 @@
 
        <group if="$(arg kinect)">
            <!-- run yolofusion pano+kinect-->
-           <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion">
+           <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion" output="screen">
                <param name="queue_size" value="$(arg queue_size)" type="int"/>
                <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
                <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
@@ -239,7 +244,7 @@
    <group unless="$(arg pano)">
         <group if="$(arg kinect)">
            <!-- run yolofusion (pseudo) kinect-->
-           <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion">
+           <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion" output="screen">
                <param name="queue_size" value="$(arg queue_size)" type="int"/>
                <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
                <param name="detection_id_increment" value="$(arg detection_id_increment)"/>

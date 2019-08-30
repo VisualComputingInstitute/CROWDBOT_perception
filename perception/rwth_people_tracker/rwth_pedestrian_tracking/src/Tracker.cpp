@@ -1226,6 +1226,7 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
     Vector<double> xInit;
     Matrix<double> PInit;
     Vector<double> pos3d;
+    Matrix<double> cov3d;
 
     PInit.set_size(4,4, 0.0);
 
@@ -1267,11 +1268,16 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
 //        det.getBBox(endFrame, j, bbox);
         det.getPos3D(endFrame, j, pos3d);
         det.getEmbVec(endFrame, j, currEmbVec);
+        det.get3Dcovmatrix(endFrame, j, cov3d);
         xInit.setSize(4);
         xInit(0) = pos3d(0);
         xInit(1) = pos3d(1);
         xInit(2) = vx_init;
         xInit(3) = vy_init;
+        PInit(0,0) = cov3d(0,0); // initP by detectionP
+        PInit(1,1) = cov3d(1,1);
+        PInit(0,1) = cov3d(0,1);
+        PInit(1,0) = cov3d(1,0);
 
         EKalman kalman;
         kalman.init(xInit, PInit, Globals::dt);

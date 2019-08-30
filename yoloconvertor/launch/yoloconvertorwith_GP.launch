@@ -8,6 +8,7 @@
     <arg name="world_scale" default="1.0"/>
     <arg name="bounding_boxes" default="darknet_ros/bounding_boxes"/>
     <arg name="depth_scale" default="1.0"/>
+    <arg name="pose_variance" default="0.01"/>
 
     <node pkg="yoloconvertor" type="yoloconvertor_standard" name="yoloconvertor_standard" output="screen">
         <param name="world_scale" value="$(arg world_scale)"/>
@@ -19,6 +20,7 @@
         <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
         <param name="bounding_boxes" value="$(arg bounding_boxes)"/>
         <param name="depth_scale" value="$(arg depth_scale)"/>
+        <param name="pose_variance" value="$(arg pose_variance)"/>
     </node>
 
 </launch> 

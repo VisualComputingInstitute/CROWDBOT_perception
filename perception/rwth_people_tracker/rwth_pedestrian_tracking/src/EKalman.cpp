@@ -163,7 +163,7 @@ bool EKalman::findObservation(Detections& det, int frame)
     Vector<double> weights;
     double colScore = 1.0;
     double weight = 1.0;
-    double emb_dist = 100.0;
+    double emb_dist = 999.0;
 
     Vector<int> allInlierInOneFrame;
     Vector<double> weightOfAllInliersInOneFrame;
@@ -191,6 +191,13 @@ bool EKalman::findObservation(Detections& det, int frame)
         //covariance(1,1) = sqrt(devObs(2,2));
         covariance(0,0) = devObs(0,0);
         covariance(1,1) = devObs(1,1);
+        covariance(0,1) = devObs(0,1);
+        covariance(1,0) = devObs(1,0);
+        /*Matrix<double> sys_cov;
+        sys_cov.set_size(2,2,0.0);
+        Matrix<double> mH = makeH();
+        sys_cov = mH*makeQ(m_xpost, m_dt)*Transpose(mH);
+        covariance += sys_cov;*/
 
         //double covariance_det = covariance(0,0)*covariance(1,1)-covariance(1,0)*covariance(0,1);
 
@@ -254,18 +261,25 @@ bool EKalman::findObservation(Detections& det, int frame)
         //std::cout << "----------" << std::endl;
         //std::cout << "det at " << std::endl;
         //succPoint.show();
-        //std::cout << "hypo at " << std::endl;
-        //m_xprio.show();
-        //std::cout << "emb_dist: " << emb_dist << std::endl;
+        /*std::cout << "hypo at " << std::endl;
+        m_xprio.show();
+        std::cout << "===" << std::endl;
+        std::cout << "detnum: " << i << std::endl;
+        std::cout << "---" << std::endl;
+        std::cout << "distance: " << pDiff.norm() << std::endl;
+        std::cout << "motion weight: " << weight << std::endl;
+        std::cout << "---" << std::endl;
+        std::cout << "emb_dist: " << emb_dist << std::endl;
+        std::cout << "norm emb_dist: " << (1-(emb_dist/Globals::reIdThresh_DALevel)) << std::endl;
+        std::cout << "---" << std::endl;
+        std::cout << "total weight score: " << (weight*(1-(emb_dist/Globals::reIdThresh_DALevel))) << std::endl;
+        std::cout << "===" << std::endl;*/
         if(weight > Globals::kalmanObsMotionModelthresh /*&& colScore > Globals::kalmanObsColorModelthresh*/ && emb_dist < Globals::reIdThresh_DALevel)
         {
             //std::cout << "MATCH!" << std::endl;
             allInlierInOneFrame.pushBack(i);
             //weightOfAllInliersInOneFrame.pushBack(weight*colScore);
             weightOfAllInliersInOneFrame.pushBack(weight*(1-(emb_dist/Globals::reIdThresh_DALevel)));
-            /*std::cout << "motion weight: " << weight << std::endl;
-            std::cout << "norm emb_dist: " << (1-(emb_dist/Globals::reIdThresh_DALevel)) << std::endl;
-            std::cout << "total weight score: " << (weight*(1-(emb_dist/Globals::reIdThresh_DALevel))) << std::endl;*/
         }
     }
 
@@ -328,6 +342,8 @@ bool EKalman::findObservation(Detections& det, int frame)
         m_R.set_size(2,2, 0.0);
         m_R(0,0) = covMatrix(0,0);
         m_R(1,1) = covMatrix(1,1);
+        m_R(0,1) = covMatrix(0,1);
+        m_R(1,0) = covMatrix(1,0);
     }
 
     return m_measurement_found;
@@ -384,6 +400,8 @@ void EKalman::runKalmanDown(Detections& det, int frame, int pointPos, int t, Mat
     m_R.fill(0.0);
     m_R(0,0) = covMatrix(0,0);
     m_R(1,1) = covMatrix(1,1);
+    m_R(0,1) = covMatrix(0,1);
+    m_R(1,0) = covMatrix(1,0);
     //m_R.Show();
 
     //m_R(2,2) = 0.2*0.2;
