@@ -425,7 +425,7 @@ void callback(const DetectedPersons::ConstPtr &detections)
 
     // also prepare tracks
     frame_msgs::TrackedPersons trackedPersons;
-    trackedPersons.header.stamp = detections->header.stamp;
+    trackedPersons.header.stamp = ros::Time::now();//detections->header.stamp;
     trackedPersons.header.seq = ++track_seq;
     trackedPersons.header.frame_id = detections->header.frame_id; //FIXME: world frame, maybe should not be hardcoded
 
@@ -649,10 +649,10 @@ int main(int argc, char **argv)
 
     // Create a topic publisher
     private_node_handle_.param("pedestrian_array", pub_topic, string("/pedestrian_tracking/pedestrian_array"));
-    pub_message = n.advertise<PedestrianTrackingArray>(pub_topic.c_str(), 10, con_cb, con_cb);
+    pub_message = n.advertise<PedestrianTrackingArray>(pub_topic.c_str(), 1, con_cb, con_cb);
 
     private_node_handle_.param("tracked_persons", pub_topic_tracked_persons, string("/frame/perception/tracked_persons"));
-    pub_tracked_persons = n.advertise<frame_msgs::TrackedPersons>(pub_topic_tracked_persons, 10, con_cb, con_cb);
+    pub_tracked_persons = n.advertise<frame_msgs::TrackedPersons>(pub_topic_tracked_persons, 1, con_cb, con_cb);
 
     ros::spin();
     return 0;

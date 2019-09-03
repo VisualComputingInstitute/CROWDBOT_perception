@@ -37,7 +37,7 @@ int main(int argc, char **argv)
 
     // Create a topic publisher
     double publishRate;
-    private_node_handle_.param("rate", publishRate, 30.0);
+    private_node_handle_.param("rate", publishRate, 10.0);
     private_node_handle_.param("ground_plane", pub_topic_gp, string("/ground_plane"));
     ros::Publisher _pub_ground_plane = n.advertise<GroundPlane>(pub_topic_gp.c_str(), 10);
 

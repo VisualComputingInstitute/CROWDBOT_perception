@@ -60,7 +60,7 @@ Matrix<double> EKalman::makeQ(Vector<double> /*x*/, double dt)
     Q(1,3) = (dt*dt)/2;
     Q(3,1) = (dt*dt)/2;
 
-    double q_l = 0.035;//0.267;
+    double q_l = 1.0;//0.035;//0.267;
     Q *= q_l;
 
     return Q;

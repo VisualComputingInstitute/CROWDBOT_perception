@@ -247,6 +247,7 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
     if(pub_detected_persons.getNumSubscribers()) {
         frame_msgs::DetectedPersons detected_persons;
         detected_persons.header = boxes->image_header;
+        detected_persons.header.stamp = ros::Time::now();
 
 
         for(unsigned int i=0;i<(boxes->bounding_boxes.size());i++)
@@ -411,8 +412,8 @@ int main(int argc, char **argv)
     // Name the topic, message queue, callback function with class name, and object containing callback function.
     // Set queue size to 1 because generating a queue here will only pile up images and delay the output by the amount of queued images
     ros::Subscriber sub_message; //Subscribers have to be defined out of the if scope to have affect.
-    Subscriber<GroundPlane> subscriber_ground_plane(n, ground_plane.c_str(), 1); subscriber_ground_plane.unsubscribe();
-    Subscriber<BoundingBoxes> subscriber_bounding_boxes(n,boundingboxes.c_str(),1); subscriber_bounding_boxes.unsubscribe();
+    Subscriber<GroundPlane> subscriber_ground_plane(n, ground_plane.c_str(), 3); subscriber_ground_plane.unsubscribe();
+    Subscriber<BoundingBoxes> subscriber_bounding_boxes(n,boundingboxes.c_str(), 3); subscriber_bounding_boxes.unsubscribe();
 
 
 
@@ -430,8 +431,8 @@ int main(int argc, char **argv)
 
     //The real queue size for synchronisation is set here.
     //sync_policies::ApproximateTime<BoundingBoxes, GroundPlane, Image> MySyncPolicy(queue_size);
-    sync_policies::ApproximateTime<BoundingBoxes, GroundPlane> MySyncPolicy(queue_size);
-    MySyncPolicy.setAgePenalty(1000); //set high age penalty to publish older data faster even if it might not be correctly synchronized.
+    sync_policies::ApproximateTime<BoundingBoxes, GroundPlane> MySyncPolicy(5);
+    //MySyncPolicy.setAgePenalty(1000); //set high age penalty to publish older data faster even if it might not be correctly synchronized.
 
 
     const sync_policies::ApproximateTime<BoundingBoxes, GroundPlane> MyConstSyncPolicy = MySyncPolicy;
@@ -447,7 +448,7 @@ int main(int argc, char **argv)
 
     // Create publishers
     private_node_handle_.param("detected_persons", pub_topic_detected_persons, string("/detected_persons"));
-    pub_detected_persons = n.advertise<frame_msgs::DetectedPersons>(pub_topic_detected_persons, 10, con_cb, con_cb);
+    pub_detected_persons = n.advertise<frame_msgs::DetectedPersons>(pub_topic_detected_persons, 1, con_cb, con_cb);
 
 
     //double min_expected_frequency, max_expected_frequency;

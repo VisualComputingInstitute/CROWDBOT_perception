@@ -30,6 +30,7 @@ double worldScale; // for computing 3D positions from BBoxes
 int detection_id_increment, detection_id_offset, current_detection_id; // added for multi-sensor use in SPENCER
 double pose_variance; // used in output frame_msgs::DetectedPerson.pose.covariance
 double overlap_thresh; // used in detecting overlapping, default value is 0.5
+int fusion_rate;
 
 string world_frame;
 
@@ -302,7 +303,7 @@ int main(int argc, char **argv)
     // Use a private node handle so that multiple instances of the node can be run simultaneously
     // while using different parameters.
     ros::NodeHandle private_node_handle_("~");
-    private_node_handle_.param("queue_size", queue_size, int(10));
+    private_node_handle_.param("queue_size", queue_size, int(1));
     private_node_handle_.param("detected_persons_left", detected_persons_left, string("oops!need param for left"));
     private_node_handle_.param("detected_persons_right", detected_persons_right, string("oops!need param for right"));
     private_node_handle_.param("detected_persons_rear", detected_persons_rear, string("oops!need param for rear"));
@@ -310,9 +311,10 @@ int main(int argc, char **argv)
     // For SPENCER DetectedPersons message
     private_node_handle_.param("world_scale", worldScale, 1.0); // default for ASUS sensors
     private_node_handle_.param("detection_id_increment", detection_id_increment, 1);
-    private_node_handle_.param("detection_id_offset",    detection_id_offset, 0);
-    private_node_handle_.param("pose_variance",    pose_variance, 0.05);
-    private_node_handle_.param("overlap_thresh",    overlap_thresh, 0.50);  //this overlap_thresh is for overlapping detection
+    private_node_handle_.param("detection_id_offset", detection_id_offset, 0);
+    private_node_handle_.param("pose_variance", pose_variance, 0.05);
+    private_node_handle_.param("overlap_thresh", overlap_thresh, 0.50);  //this overlap_thresh is for overlapping detection
+    private_node_handle_.param("fusion_rate", fusion_rate, 7);  //the publish rate for the fused detections
 
     private_node_handle_.param("world_frame", world_frame, string("/robot/OdometryFrame"));
 
@@ -346,11 +348,11 @@ int main(int argc, char **argv)
 
     // Create publishers
     private_node_handle_.param("total_detected_persons", pub_topic_detected_persons, string("/total_detected_persons"));
-    pub_detected_persons = n.advertise<frame_msgs::DetectedPersons>(pub_topic_detected_persons, 10, con_cb, con_cb);
+    pub_detected_persons = n.advertise<frame_msgs::DetectedPersons>(pub_topic_detected_persons, 1, con_cb, con_cb);
 
 
 
-    ros::Rate r(6); // 10 hz
+    ros::Rate r(fusion_rate); // 10 hz
     while (ros::ok())
     {
         if(pub_detected_persons.getNumSubscribers()) {
@@ -380,7 +382,7 @@ int main(int argc, char **argv)
             stamp_vec.push_back(dp_right.header.stamp);
             stamp_vec.push_back(dp_rear.header.stamp);
             if(stamp_vec.size()==0){*/
-                detected_persons.header.stamp = ros::Time::now();
+            detected_persons.header.stamp = ros::Time::now();
             /*}else{
                 detected_persons.header.stamp = *std::max_element(stamp_vec.begin(),stamp_vec.end(),compare_stamp);
             }*/
@@ -390,9 +392,9 @@ int main(int argc, char **argv)
             // Publish
             pub_detected_persons.publish(detected_persons);
         }
-        dp_left.detections.clear();
+        /*dp_left.detections.clear();
         dp_right.detections.clear();
-        dp_rear.detections.clear();
+        dp_rear.detections.clear();*/
 
         ros::spinOnce();
         r.sleep();

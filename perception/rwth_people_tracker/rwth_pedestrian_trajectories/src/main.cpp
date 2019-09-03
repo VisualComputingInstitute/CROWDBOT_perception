@@ -129,7 +129,7 @@ void callback(const TrackedPersons::ConstPtr &tps)
     TrackedPerson tp;
     int selected_trajectory_idx = -1;
     float selected_trajectory_min_dist = 10000.0f;
-    float max_dist = 3.0f; //maximum distance to be selected
+    float max_dist = 5.0f; //maximum distance to be selected
     bool last_person_selected_again = false;
     double min_emb_dist = 999.0;
     std::vector<float> curr_track_emb_vec;
