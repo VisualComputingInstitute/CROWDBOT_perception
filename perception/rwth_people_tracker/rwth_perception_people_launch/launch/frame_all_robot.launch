@@ -4,7 +4,7 @@
     <arg name="trtyolo_path" default="/home/nvidia/ros_ws/src/frame_soft/trtyolo" />
     <!-- Nodes -->
     <arg name="mira_ros_adapter" default="true" />
-    <arg name="mira_ros_adapter_remote" default="false" />
+    <arg name="mira_ros_adapter_remote" default="true" />
     <arg name="kinect2_bridge" default="false" />
     <!-- VO -->
     <arg name="motion_parameters" default="/motion_matrix" />
@@ -12,13 +12,14 @@
     <arg name="odom_frame_id" default="/robot/OdometryFrame" />
     <!-- GP -->
     <arg name="ground_plane" default="/ground_plane" />
-    <arg name="rate" default="10.0"/>
+    <arg name="rate" default="7.0"/>
     <arg name="base_footprint" default="/robot/BaseFrame" />
     <arg name="camera_frame" default="/hardware/depth/kinect2/ColorImageFrame" />
     <!-- <arg name="world_frame" default="/robot/OdometryFrame" /> -->
     <arg name="world_frame" default="/maps/BaseNodeFrame" />
     <!-- detectors -->
-    <arg name="yolo" default="false"/>
+    <arg name="kinect" default="true" />
+    <arg name="pano" default="true" />
     <arg name="camera_namespace" default="/hardware/depth/kinect2"/>
     <arg name="fused_detections" default="/yolofusion/detected_persons"/>
     <arg name="fused_detections_pano" default="/yolofusion/detected_persons_pano"/>
@@ -28,6 +29,11 @@
     <arg name="overlap_thresh_pano" default="0.7"/>
     <arg name="overlap_thresh_pano_kinect" default="0.3"/>
     <arg name="depth_scale" default="1.0"/>
+    <arg name="image_kinect" default="/hardware/depth/kinect2/hd/image_color_rect" />
+    <arg name="pano_image_left" default="/hardware/video/valeo/rectificationNIKRLeft/PanoramaImage" />
+    <arg name="pano_image_right" default="/hardware/video/valeo/rectificationNIKRRight/PanoramaImage" />
+    <arg name="pano_image_rear" default="/hardware/video/valeo/rectificationNIKRRear/PanoramaImage" />
+
     <!-- general yolo-v3 arg -->
     <arg name="launch_prefix" default=""/>
     <arg name="yolo_weights_path" default="$(find darknet_ros)/yolo_network_config/weights"/>
@@ -47,6 +53,8 @@
     <arg name="detected_persons_yolo_rear" default="/detected_persons/yolo_rear"/>
     <arg name="yolo_pano_remote" default="true"/>
     <arg name="reid" default="true"/>
+    <arg name="pose_variance" default="0.1"/>
+    <arg name="fusion_rate" default="7"/>
     <!-- tracker -->
     <arg name="tracked_persons" default="/rwth_tracker/tracked_persons" />
     <!-- trajectories -->
@@ -56,7 +64,7 @@
     <arg name="keep" default="true" />
     <arg name="strict" default="false" />
     <arg name="remember" default="false" />
-
+    <arg name="helper_reid_thresh" default="50" /> <!-- set to 0 to disable -->
     <!-- /Global parameters -->
 
     <!-- MIRA-ROS-Adapter -->
@@ -100,6 +108,7 @@
         <param name="camera_namespace" value="$(arg camera_namespace)" type="string"/>
         <param name="depth_scale" value="$(arg depth_scale)"/>
     </node> -->
+    <group if="$(arg pano)">
     <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_pano_left">
         <param name="world_scale" value="$(arg world_scale)"/>
         <param name="ground_plane" value="$(arg ground_plane)" type="string"/>
@@ -127,9 +136,10 @@
         <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
         <param name="bounding_boxes" value="$(arg bounding_boxes_yolo_rear)"/>
     </node>
+    </group>
 
    <!-- run yolofusion pano-->
-   <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion_pano">
+   <!-- <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion_pano">
        <param name="queue_size" value="$(arg queue_size)" type="int"/>
        <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
        <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
@@ -142,10 +152,10 @@
        <param name="detected_persons_right" value="$(arg detected_persons_yolo_right)_id" if="$(arg reid)" type="string"/>
        <param name="detected_persons_rear" value="$(arg detected_persons_yolo_rear)_id" if="$(arg reid)" type="string"/>
        <param name="world_frame" value="$(arg world_frame)" type="string" />
-   </node>
+   </node> -->
 
    <!-- run yolofusion pano+kinect-->
-   <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion">
+   <!-- <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion">
        <param name="queue_size" value="$(arg queue_size)" type="int"/>
        <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
        <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
@@ -156,7 +166,71 @@
        <param name="detected_persons_rear" value="$(arg detected_persons_yolo_kinect)" unless="$(arg reid)" type="string"/>
        <param name="detected_persons_rear" value="$(arg detected_persons_yolo_kinect)_id" if="$(arg reid)" type="string"/>
        <param name="world_frame" value="$(arg world_frame)" type="string" />
-   </node>
+   </node> -->
+
+   <!-- Fusion -->
+   <group if="$(arg pano)">
+       <!-- run yolofusion pano-->
+       <node pkg="yoloconvertor" type="yoloconvertor_fusion_async" name="yoloconvertor_fusion_pano" output="screen">
+           <param name="queue_size" value="$(arg queue_size)" type="int"/>
+           <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
+           <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
+           <param name="overlap_thresh" value="$(arg overlap_thresh_pano)"/>
+           <param name="total_detected_persons" value="$(arg fused_detections_pano)" type="string"/>
+           <param name="detected_persons_left" value="$(arg detected_persons_yolo_left)" unless="$(arg reid)" type="string"/>
+           <param name="detected_persons_right" value="$(arg detected_persons_yolo_right)" unless="$(arg reid)" type="string"/>
+           <param name="detected_persons_rear" value="$(arg detected_persons_yolo_rear)" unless="$(arg reid)" type="string"/>
+           <param name="detected_persons_left" value="$(arg detected_persons_yolo_left)_id" if="$(arg reid)" type="string"/>
+           <param name="detected_persons_right" value="$(arg detected_persons_yolo_right)_id" if="$(arg reid)" type="string"/>
+           <param name="detected_persons_rear" value="$(arg detected_persons_yolo_rear)_id" if="$(arg reid)" type="string"/>
+           <param name="world_frame" value="$(arg world_frame)" type="string" />
+           <param name="fusion_rate" value="$(arg fusion_rate)" type="int" />
+       </node>
+
+       <group if="$(arg kinect)">
+           <!-- run yolofusion pano+kinect-->
+           <node pkg="yoloconvertor" type="yoloconvertor_fusion_async" name="yoloconvertor_fusion" output="screen">
+               <param name="queue_size" value="$(arg queue_size)" type="int"/>
+               <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
+               <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
+               <param name="overlap_thresh" value="$(arg overlap_thresh_pano_kinect)"/>
+               <param name="total_detected_persons" value="$(arg fused_detections)" type="string"/>
+               <param name="detected_persons_left" value="$(arg fused_detections_pano)" type="string" />
+               <param name="detected_persons_right" value="$(arg fused_detections_pano)" type="string"/>
+               <param name="detected_persons_rear" value="$(arg detected_persons_yolo_kinect)" unless="$(arg reid)" type="string"/>
+               <param name="detected_persons_rear" value="$(arg detected_persons_yolo_kinect)_id" if="$(arg reid)" type="string"/>
+               <param name="world_frame" value="$(arg world_frame)" type="string" />
+               <param name="fusion_rate" value="$(arg fusion_rate)" type="int" />
+           </node>
+       </group>
+       <group unless="$(arg kinect)">
+           <!-- no kinect, just relay pano fusion-->
+           <node name="relay_pano_fusion" pkg="topic_tools" type="relay" args="$(arg fused_detections_pano) $(arg fused_detections)" respawn="true" />
+       </group>
+   </group>
+   <group unless="$(arg pano)">
+        <group if="$(arg kinect)">
+           <!-- run yolofusion (pseudo) kinect-->
+           <node pkg="yoloconvertor" type="yoloconvertor_fusion_async" name="yoloconvertor_fusion" output="screen">
+               <param name="queue_size" value="$(arg queue_size)" type="int"/>
+               <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
+               <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
+               <param name="overlap_thresh" value="$(arg overlap_thresh_pano_kinect)"/>
+               <param name="total_detected_persons" value="$(arg fused_detections)" type="string"/>
+               <param name="detected_persons_left" value="$(arg detected_persons_yolo_kinect)" unless="$(arg reid)" type="string"/>
+               <param name="detected_persons_left" value="$(arg detected_persons_yolo_kinect)_id" if="$(arg reid)" type="string"/>
+               <param name="detected_persons_right" value="$(arg detected_persons_yolo_kinect)" unless="$(arg reid)" type="string"/>
+               <param name="detected_persons_right" value="$(arg detected_persons_yolo_kinect)_id" if="$(arg reid)" type="string"/>
+               <param name="detected_persons_rear" value="$(arg detected_persons_yolo_kinect)" unless="$(arg reid)" type="string"/>
+               <param name="detected_persons_rear" value="$(arg detected_persons_yolo_kinect)_id" if="$(arg reid)" type="string"/>
+               <param name="world_frame" value="$(arg world_frame)" type="string" />
+               <param name="fusion_rate" value="$(arg fusion_rate)" type="int" />
+           </node>
+       </group>
+       <group unless="$(arg kinect)">
+           <!-- no kinect, no pano, no need to fuse-->
+       </group>
+   </group>
 
     <!-- Pedestrian Tracking -->
     <include file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking.launch">
@@ -184,8 +258,10 @@
     </include>
 
     <!-- remote start of yolo pano detectors on jetsons -->
-    <include file="$(find rwth_perception_people_launch)/launch/frame_yolo_pano_kinect.launch" if="$(arg yolo_pano_remote)">
+    <include file="$(find rwth_perception_people_launch)/launch/frame_yolo.launch" if="$(arg yolo_pano_remote)">
         <arg name="reid" value="$(arg reid)" />
+        <arg name="kinect" value="$(arg kinect)" />
+        <arg name="pano" value="$(arg pano)" />
         <arg name="trtyolo_path" value="$(arg trtyolo_path)" />
     </include>
 
