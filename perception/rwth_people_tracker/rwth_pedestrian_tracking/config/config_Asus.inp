@@ -17,7 +17,7 @@ pedSizeHCom = 1.7 #! (CURRENTLY UNUSED) hardcoded width of a person for overlap 
 #====================================
 # History
 #====================================
-history = 60 #! when looking backwards for new hypos, KF runs this far into past and back, as long as accepted_frames_without_det holds (see below), also used for hypo speed calculation
+history = 90 #! when looking backwards for new hypos, KF runs this far into past and back, as long as accepted_frames_without_det holds (see below), also used for hypo speed calculation
 
 #========================
 # Pedestrians parameter
@@ -75,8 +75,8 @@ dTau = 2 #! regulates the impact-factor for detections of the past to the weight
 #==========================
 # Time horizon for event cone search
 #==========================
-coneTimeHorizon = 600 #! number of frames a hypothesis needs to be useless (not selected) before getting dropped
-maxHoleLen = 300 #! allowed number of (consecutive) frames without detection support, when running Kalman up (+extending tracks)
+coneTimeHorizon = 300 #! number of frames a hypothesis needs to be useless (not selected) before getting dropped
+maxHoleLen = 150 #! allowed number of (consecutive) frames without detection support, when running Kalman up (+extending tracks)
 dHolePenalty = 0.5 #! simple factor to penalize holes (frames without detection support)
 
 #==============================

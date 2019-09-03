@@ -583,6 +583,21 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
     //******************************************************************
     //  Fix IDs
     //******************************************************************
+    //delete too old IDs from hypo stack (set to {three} times the hypo termination, TODO:add param in config)
+    // do that before ID check, as getLastSelected is set afterwards
+    /*Vector<Hypo> newHypoStack;
+    newHypoStack.clearContent();
+    for (int j = 0; j < hypoStack.getSize(); j++)
+    {
+        if((t - hypoStack(j).getLastSelected()) < Globals::coneTimeHorizon/6)
+        {
+            newHypoStack.pushBack(hypoStack(j));
+        }
+        else{
+            std::cout << "deleted hypoID " << hypoStack(j).getHypoID() << " from stack, as it is too old (no reID of this hypo anymore)." << std::endl;
+        }
+    }
+    hypoStack = newHypoStack;*/
 
     for(int i = 0; i < HyposMDL.getSize(); i++)
     {
@@ -716,27 +731,12 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
         if((t - HyposAll(i).getLastSelected()) < Globals::coneTimeHorizon)
         {
             temp.pushBack(HyposAll(i));
-        }else{
-            std::cout << "not propagated hypoID " << HyposAll(i).getHypoID() << " to next frame, as it is too old (no reID of this hypo anymore)." << std::endl;
-        }
+            //std::cout << "prop hypoID " << HyposAll(i).getHypoID() << "(last selected: " << HyposAll(i).getLastSelected() << "-- now: " << t << ")" << std::endl;
+        }/*else{
+            std::cout << "not propagated hypoID " << HyposAll(i).getHypoID() << " to next frame, as it is too old (last selected: " << HyposAll(i).getLastSelected() << "-- now: " << t << ")" << std::endl;
+        }*/
     }
     HyposAll = temp;
-
-    //delete too old IDs from hypo stack (set to {three} times the hypo termination, TODO:add param in config)
-    // do that before ID check, as getLastSelected is set afterwards
-    Vector<Hypo> newHypoStack;
-    newHypoStack.clearContent();
-    for (int j = 0; j < hypoStack.getSize(); j++)
-    {
-        if((t - hypoStack(j).getLastSelected()) < Globals::coneTimeHorizon/6)
-        {
-            newHypoStack.pushBack(hypoStack(j));
-        }
-        else{
-            std::cout << "deleted hypoID " << hypoStack(j).getHypoID() << " from stack, as it is too old (no reID of this hypo anymore)." << std::endl;
-        }
-    }
-    hypoStack = newHypoStack;
 
 }
 
@@ -1220,6 +1220,9 @@ void Tracker::extend_trajectories(Vector< Hypo >& vHypos,  Detections& det, int 
         ros::Time creationTimeOld;
         auxHypo->getCreationTime(creationTimeOld);
         newHypo.setCreationTime(creationTimeOld);
+
+        int lastSelectedOld = auxHypo->getLastSelected();
+        newHypo.setLastSelected(lastSelectedOld);
 
         if (newHypo.getCategory() != -1)
         {
