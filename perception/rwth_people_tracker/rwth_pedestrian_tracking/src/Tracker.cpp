@@ -584,6 +584,22 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
     //  Fix IDs
     //******************************************************************
 
+    //delete too old IDs from hypo stack (set to {three} times the hypo termination, TODO:add param in config)
+    // do that before ID check, as getLastSelected is set afterwards
+    Vector<Hypo> newHypoStack;
+    newHypoStack.clearContent();
+    for (int j = 0; j < hypoStack.getSize(); j++)
+    {
+        if((t - hypoStack(j).getLastSelected()) < Globals::coneTimeHorizon*3)
+        {
+            newHypoStack.pushBack(hypoStack(j));
+        }
+        else{
+            std::cout << "deleted hypoID " << hypoStack(j).getHypoID() << " from stack, as it is too old (no reID of this hypo anymore)." << std::endl;
+        }
+    }
+    hypoStack = newHypoStack;
+
     for(int i = 0; i < HyposMDL.getSize(); i++)
     {
         // skip terminated hypotheses
@@ -668,21 +684,6 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
             }
         }
     }
-
-    //delete too old IDs from hypo stack (set to {three} times the hypo termination, TODO:add param in config)
-    Vector<Hypo> newHypoStack;
-    newHypoStack.clearContent();
-    for (int j = 0; j < hypoStack.getSize(); j++)
-    {
-        if((t - hypoStack(j).getLastSelected()) < Globals::coneTimeHorizon*3)
-        {
-            newHypoStack.pushBack(hypoStack(j));
-        }
-        else{
-            std::cout << "deleted hypoID " << hypoStack(j).getHypoID() << " from stack, as it is too old (no reID of this hypo anymore)." << std::endl;
-        }
-    }
-    hypoStack = newHypoStack;
 
     //******************************************************************
     // in case, "FixID" made new duplicate IDs, remove them
