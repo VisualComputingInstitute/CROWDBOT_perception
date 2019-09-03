@@ -17,7 +17,7 @@ pedSizeHCom = 1.7 #! (CURRENTLY UNUSED) hardcoded width of a person for overlap 
 #====================================
 # History
 #====================================
-history = 10 #! when looking backwards for new hypos, KF runs this far into past and back, as long as accepted_frames_without_det holds (see below), also used for hypo speed calculation
+history = 60 #! when looking backwards for new hypos, KF runs this far into past and back, as long as accepted_frames_without_det holds (see below), also used for hypo speed calculation
 
 #========================
 # Pedestrians parameter
@@ -46,7 +46,7 @@ render_tracking_numbers = false  #! (CURRENTLY UNUSED) renders track IDs on outp
 #========================
 k1 = 0.1  #! "counterweight": min. support for a hypothesis
 k2 = 0.7  #! balance factor between only counting on "detection support + hole penalty" (k=0) vs. "detection scores" (k=1)
-k3 = 25.0  #! overlap penalty (simple factor for overlap3D)
+k3 = 40.0  #! overlap penalty (simple factor for overlap3D)
 k4 = 2.0  #! temporal decay for recently unsupported tracks (if >0: this value gets added as exp(-(frame_diff/k4)) on k1, i.e., tracks with older detection support, need less support); if set to 0 all hypothesis need the same min. support k1
 
 #=======================
@@ -60,7 +60,7 @@ dMaxPedVel = 10 #! maximum speed of a person (of exceeded, it is set to this); u
 #====================================
 threshLengthTraj = 2 #! minimum trajectory length, if value is exceeded hypotheses score is set to -1.0 (but still kept)
 dSameIdThresh = 0.49 #! if this fraction of inliers is the same, two hypotheses get the same ID (only when no reID is used)
-reIdThresh_HypoLevel = 35 #! if this threshold for reID embedding distance is not exceeded, two hypotheses get the same ID (lower=stricter=more new IDs, higher=looser=more reID; only when reID is used)
+reIdThresh_HypoLevel = 40 #! if this threshold for reID embedding distance is not exceeded, two hypotheses get the same ID (lower=stricter=more new IDs, higher=looser=more reID; only when reID is used)
 
 #=========================
 # Thresholds for accepted and displayed hypotheses
@@ -75,8 +75,8 @@ dTau = 2 #! regulates the impact-factor for detections of the past to the weight
 #==========================
 # Time horizon for event cone search
 #==========================
-coneTimeHorizon = 210 #! number of frames a hypothesis needs to be useless (not selected) before getting dropped
-maxHoleLen = 60 #! allowed number of (consecutive) frames without detection support, when running Kalman up (+extending tracks)
+coneTimeHorizon = 600 #! number of frames a hypothesis needs to be useless (not selected) before getting dropped
+maxHoleLen = 300 #! allowed number of (consecutive) frames without detection support, when running Kalman up (+extending tracks)
 dHolePenalty = 0.5 #! simple factor to penalize holes (frames without detection support)
 
 #==============================
@@ -97,7 +97,7 @@ initPVY = 0.5 #!
 
 kalmanObsMotionModelthresh = 0.1 #! threshold deciding if a detection is counted as inlier based on motion model (covariance of Kalman Filter, higher=stricter)
 kalmanObsColorModelthresh = 0.5 #! (CURRENTLY UNUSED) threshold deciding if a detection is counted as inlier based on appearance model (color histogram similarity, higher=stricter)
-reIdThresh_DALevel = 55 #! threshold deciding if a detection is counted as inlier based on reID information (embedding vector distance, lower=stricter)
+reIdThresh_DALevel = 60 #! threshold deciding if a detection is counted as inlier based on reID information (embedding vector distance, lower=stricter)
 
 accepted_frames_without_det = 1 #! consecutive (!) frames without detections, when looking backwards for new hypos (running Kalman down)
 

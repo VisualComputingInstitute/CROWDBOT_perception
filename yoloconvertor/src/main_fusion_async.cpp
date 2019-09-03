@@ -361,9 +361,9 @@ int main(int argc, char **argv)
             frame_msgs::DetectedPersons left_detected_persons;
             frame_msgs::DetectedPersons right_detected_persons;
             frame_msgs::DetectedPersons rear_detected_persons;
-            if(dp_left.detections.size()>0) transfer_detected_persons_to_world_cord(dp_left, left_detected_persons, dp_left.header.frame_id);
-            if(dp_right.detections.size()>0) transfer_detected_persons_to_world_cord(dp_right, right_detected_persons, dp_right.header.frame_id);
-            if(dp_rear.detections.size()>0) transfer_detected_persons_to_world_cord(dp_rear, rear_detected_persons, dp_rear.header.frame_id);
+            if(dp_left.detections.size()>0 && ( (ros::Time::now() - dp_left.header.stamp) < ros::Duration(2.0))) transfer_detected_persons_to_world_cord(dp_left, left_detected_persons, dp_left.header.frame_id);
+            if(dp_right.detections.size()>0 && ( (ros::Time::now() - dp_right.header.stamp) < ros::Duration(2.0))) transfer_detected_persons_to_world_cord(dp_right, right_detected_persons, dp_right.header.frame_id);
+            if(dp_rear.detections.size()>0 && ( (ros::Time::now() - dp_rear.header.stamp) < ros::Duration(2.0))) transfer_detected_persons_to_world_cord(dp_rear, rear_detected_persons, dp_rear.header.frame_id);
 
 
             // three modification
