@@ -252,6 +252,8 @@ void Callback(const sensor_msgs::ImageConstPtr& img)
      bbs.image_header = img->header;
      bbs.header = img->header;
      bbs.header.frame_id = "detection";
+     bbs.header.stamp = ros::Time::now();
+     bbs.image_header.stamp = ros::Time::now();
      for(const auto& item: boxes)
      {
          if(item.classId == 0 && item.score > g_detect_threshold) // classid=0 is pedstrain, threshold hardcode
@@ -269,7 +271,7 @@ void Callback(const sensor_msgs::ImageConstPtr& img)
 
      // generate darkent detection image
 
-     for(auto it = bbs.bounding_boxes.begin();it!=bbs.bounding_boxes.end();++it)
+     /*for(auto it = bbs.bounding_boxes.begin();it!=bbs.bounding_boxes.end();++it)
      {
          float height = it->ymax - it->ymin;
          float width = it->xmax - it->xmin;
@@ -277,10 +279,10 @@ void Callback(const sensor_msgs::ImageConstPtr& img)
          float y = (float)(it->ymin>0?it->ymin:0);
          render_bbox_2D(x,y,width,height,cvmat,0);
          render_text(it->Class,cvmat,x,y,0);
-     }
+     }*/
      // publish image
-     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(img->header, "bgr8", cvmat).toImageMsg();
-     pub_result_image.publish(msg);
+     //sensor_msgs::ImagePtr msg = cv_bridge::CvImage(img->header, "bgr8", cvmat).toImageMsg();
+     //pub_result_image.publish(msg);
      // publish boundingbox
      pub_boundingboxes.publish(bbs);
 
@@ -316,7 +318,7 @@ int main(int argc, char **argv)
     // Image transport handle
     image_transport::ImageTransport it(private_node_handle_);
     ros::Subscriber sub_message; //Subscribers have to be defined out of the if scope to have affect.
-    image_transport::Subscriber subscriber_img = it.subscribe(image_topic.c_str(),queue_size,Callback);
+    image_transport::Subscriber subscriber_img = it.subscribe(image_topic.c_str(),1,Callback);
 
 //    ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
 //                                                       boost::ref(sub_message),
@@ -341,7 +343,7 @@ int main(int argc, char **argv)
 
     // Create publishers
     private_node_handle_.param("bounding_boxes", boundingboxes, string("/bounding_boxes"));
-    pub_boundingboxes = n.advertise<darknet_ros_msgs::BoundingBoxes>(boundingboxes, 10);/* con_cb, con_cb)*/;
+    pub_boundingboxes = n.advertise<darknet_ros_msgs::BoundingBoxes>(boundingboxes, 1);/* con_cb, con_cb)*/;
     //debug image publisher
     string pub_topic_result_image;
     private_node_handle_.param("tensorRT_yolo_out_image", pub_topic_result_image, string("/tensorRT_yolo_image"));
