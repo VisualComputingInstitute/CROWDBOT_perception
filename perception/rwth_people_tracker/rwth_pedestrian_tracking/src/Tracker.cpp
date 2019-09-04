@@ -748,7 +748,6 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
         }*/
     }
     hypoStack = newHypoStack;
-    std::cout << "---" << std::endl;
 
 
 }
