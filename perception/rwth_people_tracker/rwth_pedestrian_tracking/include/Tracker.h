@@ -72,6 +72,7 @@ class Tracker
     Vector<Hypo> HyposMDL;
 //    Vector<Hypo> HypoEnded;
     Vector<Hypo> hypoStack;
+    std::map<int,std::set<int>> id_map;
 };
 
 #endif	/* _TRACKER_H */

@@ -749,6 +749,67 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
     }
     hypoStack = newHypoStack;
 
+    // test for robust ID_map
+    bool already_in_set = false;
+    id_map.clear();
+    for (int j = 0; j < HyposAll.getSize(); j++)
+    {
+        //already in a set? continue!
+        already_in_set = false;
+        std::map<int, std::set<int>>::iterator it = id_map.begin();
+        while(it != id_map.end())
+        {
+            //std::cout<<it->first<<" :: "<<it->second<<std::endl;
+            if(it->second.find(HyposAll(j).getHypoID())!=it->second.end()){
+                already_in_set = true;
+                break;
+            }
+            it++;
+        }
+        if(already_in_set){
+            continue;
+        } else{
+            id_map[HyposAll(j).getHypoID()].insert(HyposAll(j).getHypoID());
+        }
+        for (int k = j+1; k < HyposAll.getSize(); k++)
+        {
+            //already in a set? continue!
+            already_in_set = false;
+            std::map<int, std::set<int>>::iterator it = id_map.begin();
+            while(it != id_map.end())
+            {
+                if(it->second.find(HyposAll(k).getHypoID())!=it->second.end()){
+                    already_in_set = true;
+                    break;
+                }
+                it++;
+            }
+            if(already_in_set){
+                continue;
+            } else{
+                id_map[HyposAll(j).getHypoID()].insert(HyposAll(j).getHypoID());
+            }
+            Vector<double> embDistVec = HyposAll(j).getEmb_vec() - HyposAll(k).getEmb_vec();
+            double embDist = embDistVec.norm();
+            if(embDist<=50 && embDistVec.getSize()>0){
+                id_map[HyposAll(j).getHypoID()].insert(HyposAll(k).getHypoID());
+            }
+            //std::cout << "kept hypoID " << hypoStack(j).getHypoID() << " in stack for reID" << std::endl;
+            //std::cout << "last selected: " << (t - hypoStack(j).getLastSelected()) << " frames ago" << std::endl;
+        }
+    }
+    std::map<int, std::set<int>>::iterator it = id_map.begin();
+    while(it != id_map.end())
+    {
+        std::cout<<it->first<<" :: {";
+        std::set<int>::iterator it2 = it->second.begin();
+        while(it2 != it->second.end()){
+            std::cout<< *it2 << ", ";
+        }
+        std::cout<< "} "<<std::endl;
+        it++;
+    }
+
 
 }
 
