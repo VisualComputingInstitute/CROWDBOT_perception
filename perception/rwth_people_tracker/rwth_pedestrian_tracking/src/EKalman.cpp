@@ -313,8 +313,8 @@ bool EKalman::findObservation(Detections& det, int frame)
         newColHist *= 0.6;
         m_colHist += newColHist;
         //try averaging the embedVec
-        m_embVec *= 0.4;
-        newEmbVec *= 0.6;
+        m_embVec *= 0.3;
+        newEmbVec *= 0.7;
         m_embVec += newEmbVec;
         m_height = 0.0;
 

@@ -1373,8 +1373,8 @@ void Tracker::make_new_hypos(int endFrame, int tmin, Detections& det, Vector< Hy
             Hypo hypo;
             hypo.setStateCovMats(stateCovMats);
             hypo.setColHists(colHists);
-            if(currEmbVec.getSize()>0){
-                hypo.setEmb_vec(currEmbVec);
+            if(embVecInit.getSize()>0){
+                hypo.setEmb_vec(embVecInit);
             }
 
             compute_hypo_entries(mAllXnewDown, vvXDown, vvYDown, vvIdxDown, det, hypo, normfct, endFrame);
