@@ -60,7 +60,7 @@ Matrix<double> EKalman::makeQ(Vector<double> /*x*/, double dt)
     Q(1,3) = (dt*dt)/2;
     Q(3,1) = (dt*dt)/2;
 
-    double q_l = 1.0;//0.035;//0.267;
+    double q_l = 0.5;//0.035;//0.267;
     Q *= q_l;
 
     return Q;
@@ -313,8 +313,8 @@ bool EKalman::findObservation(Detections& det, int frame)
         newColHist *= 0.6;
         m_colHist += newColHist;
         //try averaging the embedVec
-        m_embVec *= 0.3;
-        newEmbVec *= 0.7;
+        m_embVec *= 0.8;
+        newEmbVec *= 0.2;
         m_embVec += newEmbVec;
         m_height = 0.0;
 
