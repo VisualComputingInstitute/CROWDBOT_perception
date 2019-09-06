@@ -117,6 +117,7 @@
         <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
         <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
         <param name="bounding_boxes" value="$(arg bounding_boxes_yolo_left)"/>
+        <param name="pose_variance" value="$(arg pose_variance)"/>
     </node>
     <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_pano_right">
         <param name="world_scale" value="$(arg world_scale)"/>
@@ -126,6 +127,7 @@
         <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
         <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
         <param name="bounding_boxes" value="$(arg bounding_boxes_yolo_right)"/>
+        <param name="pose_variance" value="$(arg pose_variance)"/>
     </node>
     <node pkg="yoloconvertor" type="yoloconvertor_panorama" name="yoloconvertor_pano_rear">
         <param name="world_scale" value="$(arg world_scale)"/>
@@ -135,6 +137,7 @@
         <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
         <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
         <param name="bounding_boxes" value="$(arg bounding_boxes_yolo_rear)"/>
+        <param name="pose_variance" value="$(arg pose_variance)"/>
     </node>
     </group>
 
@@ -263,6 +266,7 @@
         <arg name="kinect" value="$(arg kinect)" />
         <arg name="pano" value="$(arg pano)" />
         <arg name="trtyolo_path" value="$(arg trtyolo_path)" />
+        <arg name="pose_variance" value="$(arg pose_variance)"/>
     </include>
 
     <!-- kinect2_bridge -->
