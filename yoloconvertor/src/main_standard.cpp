@@ -40,7 +40,7 @@ tf::TransformListener* listener;
 //image_transport::Publisher pub_result_image;
 //#include <QImage>
 //#include <QPainter>
-cv_bridge::CvImagePtr cv_depth_ptr;	// cv_bridge for depth image
+//cv_bridge::CvImagePtr cv_depth_ptr;	// cv_bridge for depth image
 cv::Mat img_depth_;
 
 
@@ -256,10 +256,10 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
         /*if (depth->encoding == "16UC1" || depth->encoding == "32FC1") {
             cv_depth_ptr->image *= 0.001;
         }*/
-        cv_depth_ptr->image *= depth_scale;
+        //cv_depth_ptr->image *= depth_scale;
         img_depth_ = cv_depth_ptr->image;
-        cv::Mat tmp_depth_mat;
-        img_depth_.cv::Mat::convertTo(tmp_depth_mat,CV_8U);
+        //cv::Mat tmp_depth_mat;
+        //img_depth_.cv::Mat::convertTo(tmp_depth_mat,CV_8U);
         //cv::Mat depth_mat_rgb;
         //cv::cvtColor(tmp_depth_mat,depth_mat_rgb,CV_GRAY2RGB);
         //cout<< "depth now image coding "<< depth_mat_rgb.type()<<endl;  //cv8uc3
@@ -275,6 +275,7 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
 
             Vector<double> pos3D;
             calc3DPosFromBBox(K, GPN, GPd, x, y, width, height, worldScale, pos3D);
+
 
             // get readings in rectanular region from (registered!) depth image
 
@@ -312,6 +313,7 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
             nth_element( vector_depth.begin(), vector_depth.begin()+len/2,vector_depth.end() );
             double med_depth_50 = vector_depth[len/2];
 
+
             // DetectedPerson for SPENCER
             frame_msgs::DetectedPerson detected_person;
             detected_person.modality = frame_msgs::DetectedPerson::MODALITY_GENERIC_MONOCULAR_VISION;
@@ -332,6 +334,7 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
             //if(g_map_func->isPosOccupied(pos3D_incam))
             //    continue;
 
+
             // additional nan check
             if(std::isnan(detected_person.pose.pose.position.x) || std::isnan(detected_person.pose.pose.position.y) || std::isnan(detected_person.pose.pose.position.z)){
                 ROS_DEBUG("A detection has been discarded because of nan values in standard conversion!");
@@ -345,9 +348,9 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
 
             // scale uncertainty (covariance) of detection with increasing distance to camera, also "rotate" accordingly (off-diagonal)
             const double LARGE_VARIANCE = 999999999;
-            detected_person.pose.covariance[0*6 + 0] = pose_variance*detected_person.pose.pose.position.z;// /8; // x ("l/r") in sensor frame
-            detected_person.pose.covariance[1*6 + 1] = pose_variance*detected_person.pose.pose.position.z; // y (up axis), in sensor frame!)
-            detected_person.pose.covariance[2*6 + 2] = pose_variance*detected_person.pose.pose.position.z;// /2; // z ("depth") in sensor frame
+            detected_person.pose.covariance[0*6 + 0] = pose_variance*(1+std::log(1+detected_person.pose.pose.position.z));// /8; // x ("l/r") in sensor frame
+            detected_person.pose.covariance[1*6 + 1] = pose_variance*(1+std::log(1+detected_person.pose.pose.position.z)); // y (up axis), in sensor frame!)
+            detected_person.pose.covariance[2*6 + 2] = pose_variance*(1+std::log(1+detected_person.pose.pose.position.z));// /2; // z ("depth") in sensor frame
             /*detected_person.pose.covariance[0*6 + 2] = ((detected_person.pose.covariance[0*6 + 0]+detected_person.pose.covariance[2*6 + 2])/2)
                                                         * ((detected_person.pose.pose.position.x)
                                                         / (sqrt(detected_person.pose.pose.position.x*detected_person.pose.pose.position.x
@@ -373,11 +376,13 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
             detected_person.bbox_w = width; 
             detected_person.bbox_h = height;
 
+
             // compute this bounding box's height
             double detection_height = calcHeightfromRay(K ,GPN, GPd, curBox);
             detected_person.height = detection_height;
 
             detected_persons.detections.push_back(detected_person);
+
         }
 
         // Publish
@@ -475,15 +480,15 @@ int main(int argc, char **argv)
     // Name the topic, message queue, callback function with class name, and object containing callback function.
     // Set queue size to 1 because generating a queue here will only pile up images and delay the output by the amount of queued images
     ros::Subscriber sub_message; //Subscribers have to be defined out of the if scope to have affect.
-    Subscriber<GroundPlane> subscriber_ground_plane(n, ground_plane.c_str(), 1); subscriber_ground_plane.unsubscribe();
+    Subscriber<GroundPlane> subscriber_ground_plane(n, ground_plane.c_str(), 10); subscriber_ground_plane.unsubscribe();
     
 //    image_transport::SubscriberFilter subscriber_color;
 //    subscriber_color.subscribe(it, image_color.c_str(), 1); subscriber_color.unsubscribe();
-    Subscriber<CameraInfo> subscriber_camera_info(n, camera_info.c_str(), 1); subscriber_camera_info.unsubscribe();
-    Subscriber<BoundingBoxes> subscriber_bounding_boxes(n,boundingboxes.c_str(),1); subscriber_bounding_boxes.unsubscribe();
+    Subscriber<CameraInfo> subscriber_camera_info(n, camera_info.c_str(), 10); subscriber_camera_info.unsubscribe();
+    Subscriber<BoundingBoxes> subscriber_bounding_boxes(n,boundingboxes.c_str(),5); subscriber_bounding_boxes.unsubscribe();
     image_transport::SubscriberFilter subscriber_depth;
     subscriber_depth.subscribe(it, topic_depth_image.c_str(),1); subscriber_depth.unsubscribe();
-    message_filters::Subscriber<CameraInfo> subscriber_depth_info(n, topic_depth_info.c_str(), 1); subscriber_depth_info.unsubscribe();
+    message_filters::Subscriber<CameraInfo> subscriber_depth_info(n, topic_depth_info.c_str(), 10); subscriber_depth_info.unsubscribe();
 
     ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
                                                        boost::ref(sub_message),

@@ -308,9 +308,9 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
             alpha = max(0.0,alpha);
             std::cout << "alpha after: " << alpha << std::endl;
             std::cout << "cos(alpha): " << cos(alpha) << std::endl;*/
-            detected_person.pose.covariance[0*6 + 0] = pose_variance*detected_person.pose.pose.position.z;// /8; // x ("l/r") in sensor frame
-            detected_person.pose.covariance[1*6 + 1] = pose_variance*detected_person.pose.pose.position.z; // y (up axis), in sensor frame!)
-            detected_person.pose.covariance[2*6 + 2] = pose_variance*detected_person.pose.pose.position.z;// /2; // z ("depth") in sensor frame
+            detected_person.pose.covariance[0*6 + 0] = pose_variance*(1+std::log(1+detected_person.pose.pose.position.z));// /8; // x ("l/r") in sensor frame
+            detected_person.pose.covariance[1*6 + 1] = pose_variance*(1+std::log(1+detected_person.pose.pose.position.z)); // y (up axis), in sensor frame!)
+            detected_person.pose.covariance[2*6 + 2] = pose_variance*(1+std::log(1+detected_person.pose.pose.position.z));// /2; // z ("depth") in sensor frame
             /*detected_person.pose.covariance[0*6 + 2] = ((detected_person.pose.covariance[0*6 + 0]+detected_person.pose.covariance[2*6 + 2])/2)
                                                         * ((detected_person.pose.pose.position.x)
                                                         / (sqrt(detected_person.pose.pose.position.x*detected_person.pose.pose.position.x
