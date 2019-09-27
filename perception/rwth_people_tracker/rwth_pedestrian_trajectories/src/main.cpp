@@ -125,7 +125,7 @@ void callback_stopHelperSelection(const std_msgs::Bool::ConstPtr &stop_helper_se
    std_msgs::Bool deselect_ack = std_msgs::Bool();
    deselect_ack.data = true;
    pub_deselect_ack.publish(deselect_ack);
-   is_helper_selected_mem = false;
+   is_helper_selected_mem = true;
 }
 
 void callback(const TrackedPersons::ConstPtr &tps)
