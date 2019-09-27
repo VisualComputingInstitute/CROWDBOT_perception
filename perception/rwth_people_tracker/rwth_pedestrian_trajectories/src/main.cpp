@@ -32,6 +32,7 @@ ros::Publisher pub_potential_helpers_vis;
 ros::Publisher pub_helper_search_status;
 ros::Publisher pub_deselect_ack;
 ros::Publisher pub_new_search_ack;
+ros::Publisher pub_helper_selected;
 PersonTrajectories personTrajectories;
 
 tf::TransformListener* listener;
@@ -49,6 +50,8 @@ int last_selected_person_id = -1;
 std::vector<float> last_selected_person_emb_vec;
 unordered_set<int> past_helper_ids;
 unordered_set<int> blacklistedHelperIds;
+
+bool is_helper_selected_mem = false;
 
 int trajectory_max_length = 50;
 
@@ -248,6 +251,7 @@ void callback(const TrackedPersons::ConstPtr &tps)
     }
 
     //publish all personTrajectories and the visualization of potential helpers
+    personTrajectories.header.stamp = ros::Time::now();
     pub_person_trajectories.publish(personTrajectories);
     pub_potential_helpers.publish(potentialHelpers);
     pub_potential_helpers_vis.publish(potentialHelpersVis);
@@ -279,11 +283,23 @@ void callback(const TrackedPersons::ConstPtr &tps)
         selectedHelperVis.detections.push_back(currentSelectedPersonSolo);
         pub_selected_helper_vis.publish(selectedHelperVis);
         new_search_invoked = false;
+        if (!is_helper_selected_mem){
+            std_msgs::Bool is_helper_selected = std_msgs::Bool();
+            is_helper_selected.data = true;
+            pub_helper_selected.publish(is_helper_selected);
+            is_helper_selected_mem = true;
+        }
     }else{
         ROS_DEBUG("no person trajectory selected"); //possible options: publish empty, last, nothing (currently nothing)
         //PersonTrajectory empty_pt;
         //empty_pt.track_id = 0;
         //pub_selected_person_trajectory.publish(empty_pt);
+        if (is_helper_selected_mem){
+            std_msgs::Bool is_helper_selected = std_msgs::Bool();
+            is_helper_selected.data = false;
+            pub_helper_selected.publish(is_helper_selected);
+            is_helper_selected_mem = false;
+        }
 
         //always publish empty vis to avoid ghost vis
         DetectedPersons currentSelectedPersonVis;
@@ -328,6 +344,7 @@ int main(int argc, char **argv)
     string pub_topic_selected_helper_vis;
     string pub_topic_potential_helpers_vis;
     string pub_topic_helper_search_status;
+    string pub_topic_helper_selected;
 
     listener = new tf::TransformListener();
 
@@ -375,14 +392,16 @@ int main(int argc, char **argv)
     private_node_handle_.param("selected_helper_vis", pub_topic_selected_helper_vis, string("/rwth_tracker/selected_helper_vis"));
     private_node_handle_.param("potential_helpers_vis", pub_topic_potential_helpers_vis, string("/rwth_tracker/potential_helpers_vis"));
     private_node_handle_.param("helper_search_status", pub_topic_helper_search_status, string("/rwth_tracker/helper_search_status"));
-    pub_person_trajectories = n.advertise<PersonTrajectories>(pub_topic_trajectories, 10, con_cb, con_cb);
-    pub_selected_helper = n.advertise<PersonTrajectory>(pub_topic_selected_helper, 10, con_cb, con_cb);
-    pub_potential_helpers = n.advertise<PersonTrajectories>(pub_topic_potential_helpers, 10, con_cb, con_cb);
-    pub_selected_helper_vis = n.advertise<DetectedPersons>(pub_topic_selected_helper_vis, 10, con_cb, con_cb);
-    pub_potential_helpers_vis = n.advertise<DetectedPersons>(pub_topic_potential_helpers_vis, 10, con_cb, con_cb);
-    pub_helper_search_status = n.advertise<std_msgs::Bool>(pub_topic_helper_search_status, 10, con_cb, con_cb);
-    pub_deselect_ack = n.advertise<std_msgs::Bool>(sub_topic_stop_helper_selection + "_ACK", 10, con_cb, con_cb);
-    pub_new_search_ack = n.advertise<std_msgs::Bool>(sub_topic_new_search + "_ACK", 10, con_cb, con_cb);
+    private_node_handle_.param("helper_selected", pub_topic_helper_selected, string("/rwth_tracker/helper_selected"));
+    pub_person_trajectories = n.advertise<PersonTrajectories>(pub_topic_trajectories, 1, con_cb, con_cb);
+    pub_selected_helper = n.advertise<PersonTrajectory>(pub_topic_selected_helper, 1, con_cb, con_cb);
+    pub_potential_helpers = n.advertise<PersonTrajectories>(pub_topic_potential_helpers, 1, con_cb, con_cb);
+    pub_selected_helper_vis = n.advertise<DetectedPersons>(pub_topic_selected_helper_vis, 1, con_cb, con_cb);
+    pub_potential_helpers_vis = n.advertise<DetectedPersons>(pub_topic_potential_helpers_vis, 1, con_cb, con_cb);
+    pub_helper_search_status = n.advertise<std_msgs::Bool>(pub_topic_helper_search_status, 1, con_cb, con_cb);
+    pub_deselect_ack = n.advertise<std_msgs::Bool>(sub_topic_stop_helper_selection + "_ACK", 1, con_cb, con_cb);
+    pub_new_search_ack = n.advertise<std_msgs::Bool>(sub_topic_new_search + "_ACK", 1, con_cb, con_cb);
+    pub_helper_selected = n.advertise<std_msgs::Bool>(pub_topic_helper_selected, 1, con_cb, con_cb);
 
     outfile.open(homedir+"/log/helper_callback_debug.txt", std::ofstream::out | std::ofstream::trunc);
     outfile.close();
