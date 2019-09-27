@@ -99,6 +99,7 @@ void callback_newSearch(const std_msgs::Bool::ConstPtr &newSearch)
     std_msgs::Bool new_search_ack = std_msgs::Bool();
     new_search_ack.data = true;
     pub_new_search_ack.publish(new_search_ack);
+    is_helper_selected_mem = false;
 
 }
 
@@ -124,6 +125,7 @@ void callback_stopHelperSelection(const std_msgs::Bool::ConstPtr &stop_helper_se
    std_msgs::Bool deselect_ack = std_msgs::Bool();
    deselect_ack.data = true;
    pub_deselect_ack.publish(deselect_ack);
+   is_helper_selected_mem = false;
 }
 
 void callback(const TrackedPersons::ConstPtr &tps)
