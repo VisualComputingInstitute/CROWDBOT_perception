@@ -354,9 +354,12 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
 
             // scale uncertainty (covariance) of detection with increasing distance to camera, also "rotate" accordingly (off-diagonal)
             const double LARGE_VARIANCE = 999999999;
-            detected_person.pose.covariance[0*6 + 0] = pose_variance*(1+std::log(1+detected_person.pose.pose.position.z));// /8; // x ("l/r") in sensor frame
+            detected_person.pose.covariance[0*6 + 0] = pose_variance*min(detected_person.pose.pose.position.z,15.0)/2;// /8; // x ("l/r") in sensor frame
+            detected_person.pose.covariance[1*6 + 1] = pose_variance*min(detected_person.pose.pose.position.z,15.0)/2; // y (up axis), in sensor frame!)
+            detected_person.pose.covariance[2*6 + 2] = pose_variance*min(detected_person.pose.pose.position.z,15.0)/2;// /2; // z ("depth") in sensor frame
+            /*detected_person.pose.covariance[0*6 + 0] = pose_variance*(1+std::log(1+detected_person.pose.pose.position.z));// /8; // x ("l/r") in sensor frame
             detected_person.pose.covariance[1*6 + 1] = pose_variance*(1+std::log(1+detected_person.pose.pose.position.z)); // y (up axis), in sensor frame!)
-            detected_person.pose.covariance[2*6 + 2] = pose_variance*(1+std::log(1+detected_person.pose.pose.position.z));// /2; // z ("depth") in sensor frame
+            detected_person.pose.covariance[2*6 + 2] = pose_variance*(1+std::log(1+detected_person.pose.pose.position.z));// /2; // z ("depth") in sensor frame*/
             /*detected_person.pose.covariance[0*6 + 2] = ((detected_person.pose.covariance[0*6 + 0]+detected_person.pose.covariance[2*6 + 2])/2)
                                                         * ((detected_person.pose.pose.position.x)
                                                         / (sqrt(detected_person.pose.pose.position.x*detected_person.pose.pose.position.x
@@ -449,7 +452,7 @@ int main(int argc, char **argv)
     // Use a private node handle so that multiple instances of the node can be run simultaneously
     // while using different parameters.
     ros::NodeHandle private_node_handle_("~");
-    private_node_handle_.param("queue_size", queue_size, int(10));
+    private_node_handle_.param("queue_size", queue_size, int(1));
     private_node_handle_.param("camera_namespace", camera_ns, string("/head_xtion"));
     private_node_handle_.param("ground_plane", ground_plane, string(""));
     private_node_handle_.param("bounding_boxes", boundingboxes, string("darknet_ros/bounding_boxes"));
@@ -486,15 +489,15 @@ int main(int argc, char **argv)
     // Name the topic, message queue, callback function with class name, and object containing callback function.
     // Set queue size to 1 because generating a queue here will only pile up images and delay the output by the amount of queued images
     ros::Subscriber sub_message; //Subscribers have to be defined out of the if scope to have affect.
-    Subscriber<GroundPlane> subscriber_ground_plane(n, ground_plane.c_str(), 10); subscriber_ground_plane.unsubscribe();
+    Subscriber<GroundPlane> subscriber_ground_plane(n, ground_plane.c_str(), 1); subscriber_ground_plane.unsubscribe();
     
 //    image_transport::SubscriberFilter subscriber_color;
 //    subscriber_color.subscribe(it, image_color.c_str(), 1); subscriber_color.unsubscribe();
-    Subscriber<CameraInfo> subscriber_camera_info(n, camera_info.c_str(), 10); subscriber_camera_info.unsubscribe();
-    Subscriber<BoundingBoxes> subscriber_bounding_boxes(n,boundingboxes.c_str(),5); subscriber_bounding_boxes.unsubscribe();
+    Subscriber<CameraInfo> subscriber_camera_info(n, camera_info.c_str(), 1); subscriber_camera_info.unsubscribe();
+    Subscriber<BoundingBoxes> subscriber_bounding_boxes(n,boundingboxes.c_str(),1); subscriber_bounding_boxes.unsubscribe();
     image_transport::SubscriberFilter subscriber_depth;
     subscriber_depth.subscribe(it, topic_depth_image.c_str(),1); subscriber_depth.unsubscribe();
-    message_filters::Subscriber<CameraInfo> subscriber_depth_info(n, topic_depth_info.c_str(), 10); subscriber_depth_info.unsubscribe();
+    message_filters::Subscriber<CameraInfo> subscriber_depth_info(n, topic_depth_info.c_str(), 1); subscriber_depth_info.unsubscribe();
 
     ros::SubscriberStatusCallback con_cb = boost::bind(&connectCallback,
                                                        boost::ref(sub_message),
@@ -510,7 +513,7 @@ int main(int argc, char **argv)
 
 
     //The real queue size for synchronisation is set here.
-    sync_policies::ApproximateTime<BoundingBoxes, CameraInfo, GroundPlane, Image, CameraInfo> MySyncPolicy(queue_size);
+    sync_policies::ApproximateTime<BoundingBoxes, CameraInfo, GroundPlane, Image, CameraInfo> MySyncPolicy(1);
 
     const sync_policies::ApproximateTime<BoundingBoxes, CameraInfo, GroundPlane, Image, CameraInfo> MyConstSyncPolicy = MySyncPolicy;
     Synchronizer< sync_policies::ApproximateTime<BoundingBoxes, CameraInfo, GroundPlane, Image, CameraInfo> > sync(MyConstSyncPolicy,

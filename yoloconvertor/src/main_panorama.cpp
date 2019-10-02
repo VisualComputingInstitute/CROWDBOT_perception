@@ -308,9 +308,12 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes,const GroundPlaneC
             alpha = max(0.0,alpha);
             std::cout << "alpha after: " << alpha << std::endl;
             std::cout << "cos(alpha): " << cos(alpha) << std::endl;*/
-            detected_person.pose.covariance[0*6 + 0] = pose_variance*(1+std::log(1+detected_person.pose.pose.position.z));// /8; // x ("l/r") in sensor frame
+            detected_person.pose.covariance[0*6 + 0] = pose_variance*min(detected_person.pose.pose.position.z,15.0)/2;// /8; // x ("l/r") in sensor frame
+            detected_person.pose.covariance[1*6 + 1] = pose_variance*min(detected_person.pose.pose.position.z,15.0)/2; // y (up axis), in sensor frame!)
+            detected_person.pose.covariance[2*6 + 2] = pose_variance*min(detected_person.pose.pose.position.z,15.0)/2;// /2; // z ("depth") in sensor frame
+            /*detected_person.pose.covariance[0*6 + 0] = pose_variance*(1+std::log(1+detected_person.pose.pose.position.z));// /8; // x ("l/r") in sensor frame
             detected_person.pose.covariance[1*6 + 1] = pose_variance*(1+std::log(1+detected_person.pose.pose.position.z)); // y (up axis), in sensor frame!)
-            detected_person.pose.covariance[2*6 + 2] = pose_variance*(1+std::log(1+detected_person.pose.pose.position.z));// /2; // z ("depth") in sensor frame
+            detected_person.pose.covariance[2*6 + 2] = pose_variance*(1+std::log(1+detected_person.pose.pose.position.z));// /2; // z ("depth") in sensor frame*/
             /*detected_person.pose.covariance[0*6 + 2] = ((detected_person.pose.covariance[0*6 + 0]+detected_person.pose.covariance[2*6 + 2])/2)
                                                         * ((detected_person.pose.pose.position.x)
                                                         / (sqrt(detected_person.pose.pose.position.x*detected_person.pose.pose.position.x
@@ -387,7 +390,7 @@ int main(int argc, char **argv)
     // Use a private node handle so that multiple instances of the node can be run simultaneously
     // while using different parameters.
     ros::NodeHandle private_node_handle_("~");
-    private_node_handle_.param("queue_size", queue_size, int(10));
+    private_node_handle_.param("queue_size", queue_size, int(1));
     private_node_handle_.param("ground_plane", ground_plane, string(""));
     private_node_handle_.param("bounding_boxes", boundingboxes, string("darknet_ros/bounding_boxes"));
 
@@ -412,8 +415,8 @@ int main(int argc, char **argv)
     // Name the topic, message queue, callback function with class name, and object containing callback function.
     // Set queue size to 1 because generating a queue here will only pile up images and delay the output by the amount of queued images
     ros::Subscriber sub_message; //Subscribers have to be defined out of the if scope to have affect.
-    Subscriber<GroundPlane> subscriber_ground_plane(n, ground_plane.c_str(), 3); subscriber_ground_plane.unsubscribe();
-    Subscriber<BoundingBoxes> subscriber_bounding_boxes(n,boundingboxes.c_str(), 3); subscriber_bounding_boxes.unsubscribe();
+    Subscriber<GroundPlane> subscriber_ground_plane(n, ground_plane.c_str(), 1); subscriber_ground_plane.unsubscribe();
+    Subscriber<BoundingBoxes> subscriber_bounding_boxes(n,boundingboxes.c_str(), 1); subscriber_bounding_boxes.unsubscribe();
 
 
 
@@ -431,7 +434,7 @@ int main(int argc, char **argv)
 
     //The real queue size for synchronisation is set here.
     //sync_policies::ApproximateTime<BoundingBoxes, GroundPlane, Image> MySyncPolicy(queue_size);
-    sync_policies::ApproximateTime<BoundingBoxes, GroundPlane> MySyncPolicy(5);
+    sync_policies::ApproximateTime<BoundingBoxes, GroundPlane> MySyncPolicy(1);
     //MySyncPolicy.setAgePenalty(1000); //set high age penalty to publish older data faster even if it might not be correctly synchronized.
 
 
