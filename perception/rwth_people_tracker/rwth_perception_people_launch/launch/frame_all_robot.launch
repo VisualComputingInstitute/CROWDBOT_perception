@@ -12,7 +12,7 @@
     <arg name="odom_frame_id" default="/robot/OdometryFrame" />
     <!-- GP -->
     <arg name="ground_plane" default="/ground_plane" />
-    <arg name="rate" default="7.0"/>
+    <arg name="rate" default="10.0"/>
     <arg name="base_footprint" default="/robot/BaseFrame" />
     <arg name="camera_frame" default="/hardware/depth/kinect2/ColorImageFrame" />
     <!-- <arg name="world_frame" default="/robot/OdometryFrame" /> -->
@@ -23,11 +23,11 @@
     <arg name="camera_namespace" default="/hardware/depth/kinect2"/>
     <arg name="fused_detections" default="/yolofusion/detected_persons"/>
     <arg name="fused_detections_pano" default="/yolofusion/detected_persons_pano"/>
-    <arg name="queue_size" default="10"/>
+    <arg name="queue_size" default="1"/>
     <arg name="detection_id_offset" default="0"/>
     <arg name="detection_id_increment" default="1"/>
-    <arg name="overlap_thresh_pano" default="0.7"/>
-    <arg name="overlap_thresh_pano_kinect" default="0.3"/>
+    <arg name="overlap_thresh_pano" default="2.0"/>
+    <arg name="overlap_thresh_pano_kinect" default="1.5"/>
     <arg name="depth_scale" default="1.0"/>
     <arg name="image_kinect" default="/hardware/depth/kinect2/hd/image_color_rect" />
     <arg name="pano_image_left" default="/hardware/video/valeo/rectificationNIKRLeft/PanoramaImage" />
@@ -88,7 +88,7 @@
    <!-- YOLO convertor -->
    <!-- <include file="$(find yoloconvertor)/launch/yoloconvertorwith_GP.launch">
         <arg name="ground_plane" value="$(arg ground_plane)" />
-        <arg name="queue_size" value="10" />
+        <arg name="queue_size" value="1" />
         <arg name="camera_namespace" value="$(arg camera_namespace)" />
         <arg name="detected_persons" value="$(arg detected_persons_yolo)"/>
         <arg name="detection_id_offset" value="5"/>
@@ -244,7 +244,7 @@
         <arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
         <arg name="pedestrian_image" value="/rwth_tracker/image" />
         <arg name="tracked_persons" value="$(arg tracked_persons)" />
-        <arg name="queue_size" value="10" />
+        <arg name="queue_size" value="1" />
     </include>
 
     <!-- Person Trajectories -->
@@ -253,7 +253,7 @@
         <arg name="person_trajectories" value="$(arg person_trajectories)" />
         <arg name="potential_helpers" value="$(arg potential_helpers)" />
         <arg name="selected_helper" value="$(arg selected_helper)" />
-        <arg name="queue_size" value="10" />
+        <arg name="queue_size" value="1" />
         <arg name="camera_frame" value="$(arg camera_frame)" />
         <arg name="keep" value="$(arg keep)" />
         <arg name="strict" value="$(arg strict)" />
@@ -273,6 +273,6 @@
     <include file="$(find kinect2_bridge)/launch/kinect2_bridge.launch" if="$(arg kinect2_bridge)" />
 
     <!-- mira_ros_adapter_remote -->
-    <include file="$(find mira_ros_adapter)/launch/mira_ros_adapter_remote.launch" if="$(arg mira_ros_adapter)" />
+    <include file="$(find mira_ros_adapter)/launch/mira_ros_adapter_remote.launch" if="$(arg mira_ros_adapter_remote)" />
 
 </launch> 

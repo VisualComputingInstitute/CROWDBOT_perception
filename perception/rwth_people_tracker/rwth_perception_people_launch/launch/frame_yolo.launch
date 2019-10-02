@@ -38,7 +38,7 @@
   </node> -->
     <group if="$(arg kinect)">
         <node machine="jetson-x-03" pkg="trtyolo" type="tensorrt_yolo" name= "trt_yolo_kinect" output="screen">
-            <param name="engine_path" value="$(arg trtyolo_path)/tensorRT_yolo/yolov3_fp16.engine" type="string"/>
+            <param name="engine_path" value="$(arg trtyolo_path)/tensorRT_yolo/yolov3_fp16_416.engine" type="string"/>
             <param name="detect_threshold" value="0.7"/>
             <param name="nms_threshold" value="0.45"/>
             <param name="bounding_boxes" value="/trt_yolo_boxes_kinect" type="string"/>
@@ -49,7 +49,7 @@
         <node machine="jetson-x-03" pkg="yoloconvertor" type="yoloconvertor_standard" name="yoloconvertor_kinect">
             <param name="world_scale" value="1.0"/>
             <param name="ground_plane" value="/ground_plane" type="string"/>
-            <param name="queue_size" value="10" type="int"/>
+            <param name="queue_size" value="1" type="int"/>
             <param name="detected_persons" value="/detected_persons/yolo_kinect" type="string"/>
             <param name="detection_id_offset" value="$0"/>
             <param name="detection_id_increment" value="1"/>
@@ -62,7 +62,7 @@
 
     <group if="$(arg pano)">
         <node machine="jetson-x-03" pkg="trtyolo" type="tensorrt_yolo" name= "trt_yolo_right" output="screen">
-            <param name="engine_path" value="$(arg trtyolo_path)/tensorRT_yolo/yolov3_fp16.engine" type="string"/>
+            <param name="engine_path" value="$(arg trtyolo_path)/tensorRT_yolo/yolov3_fp16_416.engine" type="string"/>
             <param name="detect_threshold" value="0.5"/>
             <param name="nms_threshold" value="0.45"/>
             <param name="bounding_boxes" value="/trt_yolo_boxes_right" type="string"/>
@@ -71,7 +71,7 @@
         </node>
 
         <node machine="jetson-x-04" pkg="trtyolo" type="tensorrt_yolo" name= "trt_yolo_left" output="screen">
-            <param name="engine_path" value="$(arg trtyolo_path)/tensorRT_yolo/yolov3_fp16.engine" type="string"/>
+            <param name="engine_path" value="$(arg trtyolo_path)/tensorRT_yolo/yolov3_fp16_416.engine" type="string"/>
             <param name="detect_threshold" value="0.5"/>
             <param name="nms_threshold" value="0.45"/>
             <param name="bounding_boxes" value="/trt_yolo_boxes_left" type="string"/>
@@ -80,7 +80,7 @@
         </node>
 
         <node machine="jetson-x-04" pkg="trtyolo" type="tensorrt_yolo" name= "trt_yolo_rear" output="screen">
-            <param name="engine_path" value="$(arg trtyolo_path)/tensorRT_yolo/yolov3_fp16.engine" type="string"/>
+            <param name="engine_path" value="$(arg trtyolo_path)/tensorRT_yolo/yolov3_fp16_416.engine" type="string"/>
             <param name="detect_threshold" value="0.5"/>
             <param name="nms_threshold" value="0.45"/>
             <param name="bounding_boxes" value="/trt_yolo_boxes_rear" type="string"/>
@@ -93,7 +93,7 @@
         <node machine="jetson-x-03" pkg="reid" type="reid_ros.py" name="reid_kinect" cwd="node" output="screen">
             <param name="image" value="/hardware/depth/kinect2/hd/image_color_rect" type="string"/>
             <param name="detected_persons" value="/detected_persons/yolo_kinect" type="string"/>
-            <param name="queue_size" value="10" type="int"/>
+            <param name="queue_size" value="1" type="int"/>
             <param name="model_path" value="./model_v1.pth"/>
             <param name="embed_detectedpersons" value="/detected_persons/yolo_kinect_id" type="string"/>
         </node>
@@ -101,7 +101,7 @@
         <node machine="jetson-x-03" pkg="reid" type="reid_ros.py" name="reid_pano_right" cwd="node" output="screen">
             <param name="image" value="/hardware/video/valeo/rectificationNIKRRight/PanoramaImage" type="string"/>
             <param name="detected_persons" value="/detected_persons/yolo_right" type="string"/>
-            <param name="queue_size" value="10" type="int"/>
+            <param name="queue_size" value="1" type="int"/>
             <param name="model_path" value="./model_v1.pth"/>
             <param name="embed_detectedpersons" value="/detected_persons/yolo_right_id" type="string"/>
         </node>
@@ -109,7 +109,7 @@
         <node machine="jetson-x-04" pkg="reid" type="reid_ros.py" name="reid_pano_left" cwd="node" output="screen">
             <param name="image" value="/hardware/video/valeo/rectificationNIKRLeft/PanoramaImage" type="string"/>
             <param name="detected_persons" value="/detected_persons/yolo_left" type="string"/>
-            <param name="queue_size" value="10" type="int"/>
+            <param name="queue_size" value="1" type="int"/>
             <param name="model_path" value="./model_v1.pth"/>
             <param name="embed_detectedpersons" value="/detected_persons/yolo_left_id" type="string"/>
         </node>
@@ -117,7 +117,7 @@
         <node machine="jetson-x-04" pkg="reid" type="reid_ros.py" name="reid_pano_rear" cwd="node" output="screen">
             <param name="image" value="/hardware/video/valeo/rectificationNIKRRear/PanoramaImage" type="string"/>
             <param name="detected_persons" value="/detected_persons/yolo_rear" type="string"/>
-            <param name="queue_size" value="10" type="int"/>
+            <param name="queue_size" value="1" type="int"/>
             <param name="model_path" value="./model_v1.pth"/>
             <param name="embed_detectedpersons" value="/detected_persons/yolo_rear_id" type="string"/>
         </node>
