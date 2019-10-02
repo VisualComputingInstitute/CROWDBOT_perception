@@ -30,6 +30,7 @@
     <arg name="pano_image_left" default="/hardware/video/valeo/rectificationNIKRLeft/PanoramaImage" />
     <arg name="pano_image_right" default="/hardware/video/valeo/rectificationNIKRRight/PanoramaImage" />
     <arg name="pano_image_rear" default="/hardware/video/valeo/rectificationNIKRRear/PanoramaImage" />
+    <arg name="fusion_rate" default="15" />
     <!-- general yolo-v3 arg -->
     <arg name="launch_prefix" default=""/>
     <arg name="yolo_weights_path" default="$(find darknet_ros)/yolo_network_config/weights"/>
@@ -219,6 +220,7 @@
            <param name="detected_persons_right" value="$(arg detected_persons_yolo_right)_id" if="$(arg reid)" type="string"/>
            <param name="detected_persons_rear" value="$(arg detected_persons_yolo_rear)_id" if="$(arg reid)" type="string"/>
            <param name="world_frame" value="$(arg world_frame)" type="string" />
+           <param name="fusion_rate" value="$(arg fusion_rate)" type="int" />
        </node>
 
        <group if="$(arg kinect)">
@@ -234,6 +236,7 @@
                <param name="detected_persons_rear" value="$(arg detected_persons_yolo_kinect)" unless="$(arg reid)" type="string"/>
                <param name="detected_persons_rear" value="$(arg detected_persons_yolo_kinect)_id" if="$(arg reid)" type="string"/>
                <param name="world_frame" value="$(arg world_frame)" type="string" />
+               <param name="fusion_rate" value="$(arg fusion_rate)" type="int" />
            </node>
        </group>
        <group unless="$(arg kinect)">
@@ -257,6 +260,7 @@
                <param name="detected_persons_rear" value="$(arg detected_persons_yolo_kinect)" unless="$(arg reid)" type="string"/>
                <param name="detected_persons_rear" value="$(arg detected_persons_yolo_kinect)_id" if="$(arg reid)" type="string"/>
                <param name="world_frame" value="$(arg world_frame)" type="string" />
+               <param name="fusion_rate" value="$(arg fusion_rate)" type="int" />
            </node>
        </group>
        <group unless="$(arg kinect)">
