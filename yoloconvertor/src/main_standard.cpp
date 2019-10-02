@@ -112,7 +112,7 @@ void calc3DPosFromBBox(const Matrix<double>& K, const Vector<double>& GPN_, doub
 
 // we already has depth from Kinect, can we directly use this depth and the ground plane
 // directly get the new person's plane?
-double calcHeightfromRay(const Matrix<double>& K, const Vector<double>& GPN_, double GPD_, const BoundingBox& curBox )
+double calcHeightfromRay(const Matrix<double>& K, const Vector<double>& GPN_, double GPD_, const BoundingBox& curBox, float corr_depth )
 {
 
         double x = curBox.xmin;
@@ -144,6 +144,10 @@ double calcHeightfromRay(const Matrix<double>& K, const Vector<double>& GPN_, do
 
         intersectPlane(GPN_, GPD_, ray_bot_left_1, ray_bot_left_2, gpPointLeft);
         intersectPlane(GPN_, GPD_, ray_bot_right_1, ray_bot_right_2, gpPointRight);
+        gpPointLeft(0) = (gpPointLeft(0)*corr_depth)/gpPointLeft(2);
+        gpPointLeft(2) = corr_depth;
+        gpPointRight(0) = (gpPointRight(0)*corr_depth)/gpPointRight(2);
+        gpPointRight(2) = corr_depth;
 
         // Find top point
         Vector<double> ray_top_1(3,0.0);
@@ -174,6 +178,8 @@ double calcHeightfromRay(const Matrix<double>& K, const Vector<double>& GPN_, do
 
         Vector<double> gpPointTop;
         intersectPlane(vpn, vpd, ray_top_1, ray_top_2, gpPointTop);
+        gpPointTop(0) = (gpPointTop(0)*corr_depth)/gpPointTop(2);
+        gpPointTop(2) = corr_depth;
 
         // Results
         gpPointTop -= gpPointLeft;
@@ -378,7 +384,7 @@ void yoloConvertorCallback(const BoundingBoxesConstPtr &boxes, const CameraInfoC
 
 
             // compute this bounding box's height
-            double detection_height = calcHeightfromRay(K ,GPN, GPd, curBox);
+            double detection_height = calcHeightfromRay(K ,GPN, GPd, curBox, detected_person.pose.pose.position.z);
             detected_person.height = detection_height;
 
             detected_persons.detections.push_back(detected_person);
