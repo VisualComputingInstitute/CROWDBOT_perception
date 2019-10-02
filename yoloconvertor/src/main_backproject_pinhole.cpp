@@ -51,7 +51,7 @@ tf::StampedTransform world2camera_transform; //this transform do transformation 
 int max_traj_frame_num; // at most we draw trajectory from previous 10 frames
 
 
-float hard_code_person_width = 0.7;
+float hard_code_person_width = 0.6;
 
 
 
@@ -165,6 +165,7 @@ void render_visualization(const frame_msgs::TrackedPersons2d& tracked_persons2d,
 
     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(color->header, "bgr8", image_rgb).toImageMsg();
     //sensor_image.encoding = "rgb8";//depth->encoding;
+    msg->header.stamp = ros::Time::now();
     pub_result_image.publish(msg);
     //debugend
 }
@@ -206,6 +207,8 @@ void backProjectCallback(const frame_msgs::TrackedPersonsConstPtr &tpks_ptr, con
         frame_msgs::TrackedPersons2d& tracked_persons_2d(*tps2d_ptr);
         tracked_persons_2d.header = tpks_ptr->header;
         tracked_persons_2d.header.frame_id = cam_info->header.frame_id;
+        tracked_persons_2d.frame_idx = tpks_ptr->header.seq;
+        tracked_persons_2d.header.stamp = ros::Time::now();
 
         // convert tracked person to image space
         for(unsigned int i=0;i<(tkps_in_camera_frame.tracks.size());i++)
@@ -245,8 +248,8 @@ void backProjectCallback(const frame_msgs::TrackedPersonsConstPtr &tpks_ptr, con
             ibox_w = ibox_bot_x - ibox_top_x;
             ibox_h = ibox_bot_y - ibox_top_y;
 
-            // only add, if x% of box is visible and in front of camera!
-            if (((float)ibox_w*ibox_h)/(tracked_person_2d.w*tracked_person_2d.h) >= 0.3 && tracked_person_2d.depth >= 0){
+            // only add, if (x% of box is visible and) in front of camera!
+            if (/*((float)ibox_w*ibox_h)/(tracked_person_2d.w*tracked_person_2d.h) >= 0.0 &&*/ tracked_person_2d.depth >= 0){
                 tracked_persons_2d.boxes.push_back(tracked_person_2d);
             }
         }
@@ -344,7 +347,7 @@ int main(int argc, char **argv)
     // Set queue size to 1 because generating a queue here will only pile up images and delay the output by the amount of queued images
     //ros::Subscriber sub_message;
     // Here these unsubscribes make at beginning this node doesn't subscribe any topic, until any other node subscribe this node, and want this node work.
-    Subscriber<CameraInfo> subscriber_camera_info(n, camera_info.c_str(), 10); subscriber_camera_info.unsubscribe();
+    Subscriber<CameraInfo> subscriber_camera_info(n, camera_info.c_str(), 1); subscriber_camera_info.unsubscribe();
     Subscriber<frame_msgs::TrackedPersons> subscriber_tracked_persons(n, tracked_persons.c_str(), 1); subscriber_tracked_persons.unsubscribe();
     Subscriber<frame_msgs::PersonTrajectories> subscriber_person_trajectories(n, trajectories.c_str(),1);subscriber_person_trajectories.unsubscribe();
     image_transport::SubscriberFilter subscriber_color;
@@ -385,7 +388,7 @@ int main(int argc, char **argv)
 
         // Create publishers
         private_node_handle_.param("tracked_persons_2d", pub_tracked_persons_2d, tracked_persons + "_2d");
-        pub_tracked_persons2d = n.advertise<frame_msgs::TrackedPersons2d>(pub_tracked_persons_2d, 10, con_cb, con_cb);
+        pub_tracked_persons2d = n.advertise<frame_msgs::TrackedPersons2d>(pub_tracked_persons_2d, 1, con_cb, con_cb);
 
         //debug image publisher
         private_node_handle_.param("backproject_visual_image", pub_topic_result_image, string("/yoloconvertor_visual_image"));

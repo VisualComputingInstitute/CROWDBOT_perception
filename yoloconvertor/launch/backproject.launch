@@ -7,7 +7,7 @@
     <arg name="person_trajectories" default="/rwth_tracker/person_trajectories" />
     <arg name="world_frame" default="/robot/OdometryFrame" />
     <arg name="camera_namespace" default="/hardware/depth/kinect2" /> 
-    <arg name="queue_size" default="10" />
+    <arg name="queue_size" default="1" />
 
     <arg name="backproject_visual_image" default="/backproject_visual_image" />
     <arg name="max_frame" default="20" />
