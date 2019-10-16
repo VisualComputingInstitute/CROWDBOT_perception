@@ -793,12 +793,13 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
             double embDist = embDistVec.norm();
             if(embDist<=40 && embDistVec.getSize()>0){
                 id_map[hypoStack(j).getHypoID()].insert(hypoStack(k).getHypoID());
+		hypoStack(k).setHypoID(hypoStack(j).getHypoID());
             }
             //std::cout << "kept hypoID " << hypoStack(j).getHypoID() << " in stack for reID" << std::endl;
             //std::cout << "last selected: " << (t - hypoStack(j).getLastSelected()) << " frames ago" << std::endl;
         }
     }
-    std::map<int, std::set<int>>::iterator it = id_map.begin();
+    /*std::map<int, std::set<int>>::iterator it = id_map.begin();
     while(it != id_map.end())
     {
         std::cout<<it->first<<" :: {";
@@ -809,7 +810,7 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
         }
         std::cout<< "} "<<std::endl;
         it++;
-    }
+    }*/
 
 
 }
