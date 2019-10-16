@@ -152,6 +152,7 @@ void ReadConfigFile(string path_config_file)
     Globals::dSameIdThresh = config.read<double>("dSameIdThresh");
     Globals::reIdThresh_HypoLevel = config.read<double>("reIdThresh_HypoLevel");
     Globals::reIdThresh_DALevel = config.read<double>("reIdThresh_DALevel");
+    Globals::changeID_onthefly = config.read<double>("changeID_onthefly");
 
     //======================================
     // Trajectory

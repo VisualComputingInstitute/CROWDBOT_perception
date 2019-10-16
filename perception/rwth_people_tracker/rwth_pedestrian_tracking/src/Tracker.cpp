@@ -590,7 +590,7 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
         if (HyposMDL(i).isTerminated()) continue;
         bTerminated = 0;
         // if the parent is known from trajectory extension
-        if (HyposMDL(i).getParentID() > 0)
+        if (!Globals::changeID_onthefly && HyposMDL(i).getParentID() > 0)
         {
             HyposMDL(i).setHypoID(HyposMDL(i).getParentID());
             ROS_DEBUG("Continuing extended trajectory %d (%f - %f) \n", HyposMDL(i).getHypoID(), (1 - Globals::k2)*HyposMDL(i).getNW(), Globals::k2*HyposMDL(i).getScoreW());
@@ -791,9 +791,10 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
             }
             Vector<double> embDistVec = hypoStack(j).getEmb_vec() - hypoStack(k).getEmb_vec();
             double embDist = embDistVec.norm();
-            if(embDist<=40 && embDistVec.getSize()>0){
+            if(embDist<=Globals::reIdThresh_HypoLevel && embDistVec.getSize()>0){
                 id_map[hypoStack(j).getHypoID()].insert(hypoStack(k).getHypoID());
-		hypoStack(k).setHypoID(hypoStack(j).getHypoID());
+                // CHANGE ID ON-THE-FLY
+                if(Globals::changeID_onthefly) hypoStack(k).setHypoID(hypoStack(j).getHypoID());
             }
             //std::cout << "kept hypoID " << hypoStack(j).getHypoID() << " in stack for reID" << std::endl;
             //std::cout << "last selected: " << (t - hypoStack(j).getLastSelected()) << " frames ago" << std::endl;

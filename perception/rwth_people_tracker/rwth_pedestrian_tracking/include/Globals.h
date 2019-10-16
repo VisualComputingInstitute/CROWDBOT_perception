@@ -53,6 +53,7 @@ public:
 
     static double reIdThresh_HypoLevel;
     static double reIdThresh_DALevel;
+    static bool changeID_onthefly;
 
     //Parameters for image-plane hypothesescom/
     static  double  dObjHeight;

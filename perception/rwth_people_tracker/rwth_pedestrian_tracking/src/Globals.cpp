@@ -26,6 +26,7 @@ int Globals::currentFrame;
 double Globals::dSameIdThresh;
 double Globals::reIdThresh_HypoLevel;
 double Globals::reIdThresh_DALevel;
+bool Globals::changeID_onthefly;
 
 // Kalman
 int Globals::frameRate;
