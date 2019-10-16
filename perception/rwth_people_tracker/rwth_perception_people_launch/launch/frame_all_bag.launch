@@ -9,7 +9,7 @@
     <arg name="odom_frame_id" default="/robot/OdometryFrame" />
     <!-- GP -->
     <arg name="ground_plane" default="/ground_plane" />
-    <arg name="rate" default="10.0"/>
+    <arg name="rate" default="15.0"/>
     <arg name="base_footprint" default="/robot/BaseFrame" />
     <arg name="camera_frame" default="/hardware/depth/kinect2/ColorImageFrame" />
     <arg name="world_frame" default="/robot/OdometryFrame" />
@@ -51,7 +51,7 @@
     <arg name="detected_persons_yolo_rear" default="/detected_persons/yolo_rear"/>
     <arg name="yolo_pano_remote" default="false"/>
     <arg name="reid" default="true"/>
-    <arg name="pose_variance" default="0.1"/>
+    <arg name="pose_variance" default="0.05"/>
     <!-- tracker -->
     <arg name="tracked_persons" default="/rwth_tracker/tracked_persons" />
     <!-- trajectories -->
