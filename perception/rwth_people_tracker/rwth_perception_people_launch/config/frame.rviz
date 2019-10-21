@@ -1,0 +1,1013 @@
+Panels:
+  - Class: rviz/Displays
+    Help Height: 0
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /Status1
+        - /TF1/Frames1
+        - /Odometry1/Shape1
+        - /KinectDepthCloud1/Status1
+        - /KinectDepthCloud1/Occlusion Compensation1
+        - /DetectedPersons1
+        - /DetectedPersons1/groundHOG1/Style1
+        - /DetectedPersons1/upperbody1/Style1
+        - /DetectedPersons1/YOLO1
+        - /DetectedPersons1/YOLO1/YOLO_kinect1
+        - /DetectedPersons1/YOLO1/YOLO_fused1
+        - /DetectedPersons1/YOLO1/YOLO_fused1/Render covariances1
+        - /TrackedPersons1
+        - /Images1
+        - /Images1/Panorama1
+        - /Helpers1
+        - /Helpers1/PotentialHelpers1/Style1
+        - /Camera1/Visibility1
+        - /Camera1/Visibility1/DetectedPersons1
+        - /Camera1/Visibility1/DetectedPersons1/YOLO1
+      Splitter Ratio: 0.6167800426483154
+    Tree Height: 953
+  - Class: rviz/Selection
+    Name: Selection
+  - Class: rviz/Tool Properties
+    Expanded:
+      - /2D Pose Estimate1
+      - /2D Nav Goal1
+      - /Publish Point1
+    Name: Tool Properties
+    Splitter Ratio: 0.5886790156364441
+  - Class: rviz/Views
+    Expanded:
+      - /Current View1
+    Name: Views
+    Splitter Ratio: 0.5
+  - Class: rviz/Time
+    Experimental: false
+    Name: Time
+    SyncMode: 0
+    SyncSource: LaserRear
+Preferences:
+  PromptSaveOnExit: true
+Toolbars:
+  toolButtonStyle: 2
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Alpha: 0.10000000149011612
+      Cell Size: 1
+      Class: rviz/Grid
+      Color: 85; 87; 83
+      Enabled: true
+      Line Style:
+        Line Width: 0.029999999329447746
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 200
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Frame Timeout: 1e+8
+      Frames:
+        All Enabled: false
+        GlobalFrame:
+          Value: true
+        hardware/depth/front/ColorImageFrame:
+          Value: true
+        hardware/depth/front/ColorMountFrame:
+          Value: true
+        hardware/depth/front/DepthImageFrame:
+          Value: true
+        hardware/depth/front/DepthMountFrame:
+          Value: true
+        hardware/depth/front/MountFrame:
+          Value: true
+        hardware/depth/front/MountFrameFixed:
+          Value: true
+        hardware/depth/kinect2/ColorImageFrame:
+          Value: true
+        hardware/depth/kinect2/ColorMountFrame:
+          Value: false
+        hardware/depth/kinect2/DepthImageFrame:
+          Value: false
+        hardware/depth/kinect2/DepthMountFrame:
+          Value: false
+        hardware/depth/kinect2/MountFrame:
+          Value: false
+        hardware/depth/rear/ColorImageFrame:
+          Value: true
+        hardware/depth/rear/ColorMountFrame:
+          Value: true
+        hardware/depth/rear/DepthImageFrame:
+          Value: true
+        hardware/depth/rear/DepthMountFrame:
+          Value: true
+        hardware/depth/rear/MountFrame:
+          Value: true
+        hardware/depth/rear/MountFrameFixed:
+          Value: true
+        hardware/head/eyes/LeftEyeFrame:
+          Value: false
+        hardware/head/eyes/RightEyeFrame:
+          Value: false
+        hardware/head/gaze/GazeRandomPose:
+          Value: true
+        hardware/head/gaze/GazeToTheBeatPose:
+          Value: true
+        hardware/laser/front/LaserFrame:
+          Value: true
+        hardware/laser/rear/LaserFrame:
+          Value: true
+        hardware/video/valeo/ValeoLeftImageFrame:
+          Value: true
+        hardware/video/valeo/ValeoLeftMountFrame:
+          Value: false
+        hardware/video/valeo/ValeoMountFrame:
+          Value: false
+        hardware/video/valeo/ValeoRearImageFrame:
+          Value: true
+        hardware/video/valeo/ValeoRearMountFrame:
+          Value: false
+        hardware/video/valeo/ValeoRightImageFrame:
+          Value: true
+        hardware/video/valeo/ValeoRightMountFrame:
+          Value: false
+        localization/amcl/RobotFrame_Poseidon:
+          Value: true
+        map:
+          Value: true
+        maps/BaseNodeFrame:
+          Value: true
+        maps/Zuse/ElevatorMapFrame:
+          Value: true
+        maps/Zuse/Floor0MapFrame:
+          Value: true
+        maps/Zuse/Floor1MapFrame:
+          Value: true
+        maps/Zuse/Floor2MapFrame:
+          Value: true
+        maps/Zuse/Floor3MapFrame:
+          Value: true
+        robot/BaseFrame:
+          Value: true
+        robot/MountingPlane2Frame:
+          Value: false
+        robot/MountingPlane3Frame:
+          Value: false
+        robot/OdometryFrame:
+          Value: true
+        robot/PTUFixedFrame:
+          Value: true
+        robot/PTUFrame:
+          Value: true
+        robot/PTUPlateFrame:
+          Value: true
+        robot/RobotFrame:
+          Value: true
+        robot/frontLaser/MountFrame:
+          Value: false
+        robot/head/MountFrame:
+          Value: false
+        robot/rearLaser/MountFrame:
+          Value: false
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        GlobalFrame:
+          maps/Zuse/ElevatorMapFrame:
+            {}
+          maps/Zuse/Floor0MapFrame:
+            {}
+          maps/Zuse/Floor1MapFrame:
+            {}
+          maps/Zuse/Floor2MapFrame:
+            localization/amcl/RobotFrame_Poseidon:
+              {}
+            maps/BaseNodeFrame:
+              robot/OdometryFrame:
+                robot/RobotFrame:
+                  robot/BaseFrame:
+                    map:
+                      {}
+                    robot/MountingPlane2Frame:
+                      robot/MountingPlane3Frame:
+                        hardware/depth/front/MountFrameFixed:
+                          hardware/depth/front/MountFrame:
+                            hardware/depth/front/ColorMountFrame:
+                              hardware/depth/front/ColorImageFrame:
+                                {}
+                            hardware/depth/front/DepthMountFrame:
+                              hardware/depth/front/DepthImageFrame:
+                                {}
+                        hardware/depth/rear/MountFrameFixed:
+                          hardware/depth/rear/MountFrame:
+                            hardware/depth/rear/ColorMountFrame:
+                              hardware/depth/rear/ColorImageFrame:
+                                {}
+                            hardware/depth/rear/DepthMountFrame:
+                              hardware/depth/rear/DepthImageFrame:
+                                {}
+                        hardware/video/valeo/ValeoMountFrame:
+                          hardware/video/valeo/ValeoLeftMountFrame:
+                            hardware/video/valeo/ValeoLeftImageFrame:
+                              {}
+                          hardware/video/valeo/ValeoRearMountFrame:
+                            hardware/video/valeo/ValeoRearImageFrame:
+                              {}
+                          hardware/video/valeo/ValeoRightMountFrame:
+                            hardware/video/valeo/ValeoRightImageFrame:
+                              {}
+                        robot/head/MountFrame:
+                          robot/PTUFixedFrame:
+                            robot/PTUFrame:
+                              robot/PTUPlateFrame:
+                                hardware/depth/kinect2/MountFrame:
+                                  hardware/depth/kinect2/ColorMountFrame:
+                                    hardware/depth/kinect2/ColorImageFrame:
+                                      {}
+                                  hardware/depth/kinect2/DepthMountFrame:
+                                    hardware/depth/kinect2/DepthImageFrame:
+                                      {}
+                                hardware/head/eyes/LeftEyeFrame:
+                                  {}
+                                hardware/head/eyes/RightEyeFrame:
+                                  {}
+                                hardware/head/gaze/GazeRandomPose:
+                                  {}
+                                hardware/head/gaze/GazeToTheBeatPose:
+                                  {}
+                  robot/frontLaser/MountFrame:
+                    hardware/laser/front/LaserFrame:
+                      {}
+                  robot/rearLaser/MountFrame:
+                    hardware/laser/rear/LaserFrame:
+                      {}
+          maps/Zuse/Floor3MapFrame:
+            {}
+      Update Interval: 0
+      Value: true
+    - Alpha: 1
+      Class: rviz/RobotModel
+      Collision Enabled: false
+      Enabled: false
+      Links:
+        All Links Enabled: true
+        Expand Joint Details: false
+        Expand Link Details: false
+        Expand Tree: false
+        Link Tree Style: Links in Alphabetic Order
+      Name: RobotModel
+      Robot Description: robot_description
+      TF Prefix: ""
+      Update Interval: 0
+      Value: false
+      Visual Enabled: true
+    - Angle Tolerance: 0.10000000149011612
+      Class: rviz/Odometry
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: false
+      Keep: 100
+      Name: Odometry
+      Position Tolerance: 0.10000000149011612
+      Shape:
+        Alpha: 1
+        Axes Length: 1
+        Axes Radius: 0.10000000149011612
+        Color: 239; 41; 41
+        Head Length: 0.05000000074505806
+        Head Radius: 0.029999999329447746
+        Shaft Length: 0.10000000149011612
+        Shaft Radius: 0.009999999776482582
+        Value: Arrow
+      Topic: /robot/Odometry
+      Unreliable: false
+      Value: false
+    - Alpha: 1
+      Auto Size:
+        Auto Size Factor: 1
+        Value: true
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz/DepthCloud
+      Color: 255; 255; 255
+      Color Image Topic: /hardware/depth/kinect2/hd/image_color_rect
+      Color Transformer: RGB8
+      Color Transport Hint: raw
+      Decay Time: 0
+      Depth Map Topic: /hardware/depth/kinect2/sync/SyncDepthImage
+      Depth Map Transport Hint: raw
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: KinectDepthCloud
+      Occlusion Compensation:
+        Occlusion Time-Out: 30
+        Value: false
+      Position Transformer: XYZ
+      Queue Size: 10
+      Selectable: true
+      Size (Pixels): 3
+      Style: Points
+      Topic Filter: true
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: false
+    - Class: rviz/Group
+      Displays:
+        - Alpha: 1
+          Autocompute Intensity Bounds: false
+          Autocompute Value Bounds:
+            Max Value: 0.384799987077713
+            Min Value: 0.384799987077713
+            Value: true
+          Axis: Z
+          Channel Name: intensity
+          Class: rviz/LaserScan
+          Color: 204; 0; 0
+          Color Transformer: FlatColor
+          Decay Time: 0
+          Enabled: true
+          Invert Rainbow: false
+          Max Color: 239; 41; 41
+          Max Intensity: 4096
+          Min Color: 164; 0; 0
+          Min Intensity: 0
+          Name: LaserFront
+          Position Transformer: XYZ
+          Queue Size: 10
+          Selectable: true
+          Size (Pixels): 2
+          Size (m): 0.019999999552965164
+          Style: Points
+          Topic: /hardware/laser/front/Laser
+          Unreliable: false
+          Use Fixed Frame: true
+          Use rainbow: true
+          Value: true
+        - Alpha: 1
+          Autocompute Intensity Bounds: true
+          Autocompute Value Bounds:
+            Max Value: 10
+            Min Value: -10
+            Value: true
+          Axis: Z
+          Channel Name: intensity
+          Class: rviz/LaserScan
+          Color: 204; 0; 0
+          Color Transformer: FlatColor
+          Decay Time: 0
+          Enabled: true
+          Invert Rainbow: false
+          Max Color: 239; 41; 41
+          Max Intensity: 4096
+          Min Color: 164; 0; 0
+          Min Intensity: 0
+          Name: LaserRear
+          Position Transformer: XYZ
+          Queue Size: 10
+          Selectable: true
+          Size (Pixels): 2
+          Size (m): 0.009999999776482582
+          Style: Points
+          Topic: /hardware/laser/rear/Laser
+          Unreliable: false
+          Use Fixed Frame: true
+          Use rainbow: true
+          Value: true
+      Enabled: true
+      Name: Laser
+    - Class: rviz/Group
+      Displays:
+        - Alpha: 1
+          Class: spencer_tracking_rviz_plugin/DetectedPersons
+          Color: 255; 255; 127
+          Color map offset: 0
+          Color transform: Constant color
+          Enabled: false
+          Excluded person IDs: ""
+          Font color: 255; 255; 255
+          Font color style: Same color
+          Font scale: 2
+          Included person IDs: ""
+          Low-confidence alpha: 0.5
+          Low-confidence threshold: 0.5
+          Name: groundHOG
+          Render confidences: true
+          Render covariances:
+            Line width: 0.10000000149011612
+            Value: false
+          Render detection IDs: false
+          Render modality text: false
+          Render orientation arrows: true
+          Style:
+            Line width: 0.029999999329447746
+            Scaling factor: 1
+            Value: Bounding boxes
+          Text spacing: 1
+          Topic: /detected_persons/groundHOG
+          Unreliable: false
+          Value: false
+          Z offset:
+            Use Z position from message: false
+            Value: 0
+        - Alpha: 1
+          Class: spencer_tracking_rviz_plugin/DetectedPersons
+          Color: 85; 170; 255
+          Color map offset: 9
+          Color transform: Constant color
+          Enabled: false
+          Excluded person IDs: ""
+          Font color: 255; 255; 255
+          Font color style: Same color
+          Font scale: 2
+          Included person IDs: ""
+          Low-confidence alpha: 0.5
+          Low-confidence threshold: 0.5
+          Name: upperbody
+          Render confidences: true
+          Render covariances:
+            Line width: 0.10000000149011612
+            Value: false
+          Render detection IDs: false
+          Render modality text: false
+          Render orientation arrows: true
+          Style:
+            Line width: 0.029999999329447746
+            Scaling factor: 1
+            Value: Bounding boxes
+          Text spacing: 1
+          Topic: /detected_persons/upper_body
+          Unreliable: false
+          Value: false
+          Z offset:
+            Use Z position from message: false
+            Value: 0
+        - Class: rviz/Group
+          Displays:
+            - Alpha: 1
+              Class: spencer_tracking_rviz_plugin/DetectedPersons
+              Color: 235; 0; 198
+              Color map offset: 0
+              Color transform: Constant color
+              Enabled: true
+              Excluded person IDs: ""
+              Font color: 255; 255; 255
+              Font color style: Same color
+              Font scale: 2
+              Included person IDs: ""
+              Low-confidence alpha: 0.5
+              Low-confidence threshold: 0.5
+              Name: YOLO_kinect
+              Render confidences: false
+              Render covariances:
+                Line width: 0.10000000149011612
+                Value: false
+              Render detection IDs: false
+              Render modality text: false
+              Render orientation arrows: false
+              Style:
+                Line width: 0.05000000074505806
+                Scaling factor: 1
+                Value: Bounding boxes
+              Text spacing: 1
+              Topic: /detected_persons/yolo_kinect
+              Unreliable: false
+              Value: true
+              Z offset:
+                Use Z position from message: false
+                Value: 0
+            - Alpha: 1
+              Class: spencer_tracking_rviz_plugin/DetectedPersons
+              Color: 235; 0; 198
+              Color map offset: 0
+              Color transform: Constant color
+              Enabled: true
+              Excluded person IDs: ""
+              Font color: 255; 255; 255
+              Font color style: Same color
+              Font scale: 2
+              Included person IDs: ""
+              Low-confidence alpha: 0.5
+              Low-confidence threshold: 0.5
+              Name: YOLO_left
+              Render confidences: false
+              Render covariances:
+                Line width: 0.10000000149011612
+                Value: false
+              Render detection IDs: false
+              Render modality text: false
+              Render orientation arrows: false
+              Style:
+                Line width: 0.05000000074505806
+                Scaling factor: 1
+                Value: Bounding boxes
+              Text spacing: 1
+              Topic: /detected_persons/yolo_left
+              Unreliable: false
+              Value: true
+              Z offset:
+                Use Z position from message: false
+                Value: 0
+            - Alpha: 1
+              Class: spencer_tracking_rviz_plugin/DetectedPersons
+              Color: 235; 0; 198
+              Color map offset: 0
+              Color transform: Constant color
+              Enabled: true
+              Excluded person IDs: ""
+              Font color: 255; 255; 255
+              Font color style: Same color
+              Font scale: 2
+              Included person IDs: ""
+              Low-confidence alpha: 0.5
+              Low-confidence threshold: 0.5
+              Name: YOLO_right
+              Render confidences: false
+              Render covariances:
+                Line width: 0.10000000149011612
+                Value: false
+              Render detection IDs: false
+              Render modality text: false
+              Render orientation arrows: true
+              Style:
+                Line width: 0.05000000074505806
+                Scaling factor: 1
+                Value: Bounding boxes
+              Text spacing: 1
+              Topic: /detected_persons/yolo_right
+              Unreliable: false
+              Value: true
+              Z offset:
+                Use Z position from message: false
+                Value: 0
+            - Alpha: 1
+              Class: spencer_tracking_rviz_plugin/DetectedPersons
+              Color: 235; 0; 198
+              Color map offset: 0
+              Color transform: Constant color
+              Enabled: true
+              Excluded person IDs: ""
+              Font color: 255; 255; 255
+              Font color style: Same color
+              Font scale: 2
+              Included person IDs: ""
+              Low-confidence alpha: 0.5
+              Low-confidence threshold: 0.5
+              Name: YOLO_rear
+              Render confidences: false
+              Render covariances:
+                Line width: 0.10000000149011612
+                Value: false
+              Render detection IDs: false
+              Render modality text: false
+              Render orientation arrows: true
+              Style:
+                Line width: 0.05000000074505806
+                Scaling factor: 1
+                Value: Bounding boxes
+              Text spacing: 1
+              Topic: /detected_persons/yolo_rear
+              Unreliable: false
+              Value: true
+              Z offset:
+                Use Z position from message: false
+                Value: 0
+            - Alpha: 1
+              Class: spencer_tracking_rviz_plugin/DetectedPersons
+              Color: 235; 0; 198
+              Color map offset: 0
+              Color transform: Constant color
+              Enabled: true
+              Excluded person IDs: ""
+              Font color: 255; 255; 255
+              Font color style: Same color
+              Font scale: 2
+              Included person IDs: ""
+              Low-confidence alpha: 0.5
+              Low-confidence threshold: 0.5
+              Name: YOLO_fused
+              Render confidences: false
+              Render covariances:
+                Line width: 0.05000000074505806
+                Value: true
+              Render detection IDs: false
+              Render modality text: false
+              Render orientation arrows: false
+              Style:
+                Line width: 0.05000000074505806
+                Scaling factor: 1
+                Value: Cylinders
+              Text spacing: 1
+              Topic: /yolofusion/detected_persons
+              Unreliable: false
+              Value: true
+              Z offset:
+                Use Z position from message: false
+                Value: 0
+          Enabled: true
+          Name: YOLO
+        - Class: rviz/Group
+          Displays:
+            - Alpha: 1
+              Class: spencer_tracking_rviz_plugin/DetectedPersons
+              Color: 115; 210; 22
+              Color map offset: 0
+              Color transform: Constant color
+              Enabled: true
+              Excluded person IDs: ""
+              Font color: 255; 255; 255
+              Font color style: Same color
+              Font scale: 2
+              Included person IDs: ""
+              Low-confidence alpha: 0.5
+              Low-confidence threshold: 0
+              Name: Laser_rear
+              Render confidences: false
+              Render covariances:
+                Line width: 0.10000000149011612
+                Value: true
+              Render detection IDs: false
+              Render modality text: false
+              Render orientation arrows: true
+              Style:
+                Line width: 0.05000000074505806
+                Scaling factor: 1
+                Value: Bounding boxes
+              Text spacing: 1
+              Topic: /trackingframework/detectors/legdetector/rearlaser/PoseFilter/OutputPoses
+              Unreliable: false
+              Value: true
+              Z offset:
+                Use Z position from message: false
+                Value: 0
+            - Alpha: 1
+              Class: spencer_tracking_rviz_plugin/DetectedPersons
+              Color: 115; 210; 22
+              Color map offset: 0
+              Color transform: Constant color
+              Enabled: true
+              Excluded person IDs: ""
+              Font color: 255; 255; 255
+              Font color style: Same color
+              Font scale: 2
+              Included person IDs: ""
+              Low-confidence alpha: 0.5
+              Low-confidence threshold: 0
+              Name: Laser_front
+              Render confidences: false
+              Render covariances:
+                Line width: 0.10000000149011612
+                Value: true
+              Render detection IDs: false
+              Render modality text: false
+              Render orientation arrows: true
+              Style:
+                Line width: 0.05000000074505806
+                Scaling factor: 1
+                Value: Bounding boxes
+              Text spacing: 1
+              Topic: /trackingframework/detectors/legdetector/frontlaser/PoseFilter/OutputPoses
+              Unreliable: false
+              Value: true
+              Z offset:
+                Use Z position from message: false
+                Value: 0
+          Enabled: false
+          Name: Laser
+      Enabled: true
+      Name: DetectedPersons
+    - Alpha: 1
+      Class: spencer_tracking_rviz_plugin/TrackedPersons
+      Color: 130; 130; 130
+      Color map offset: 0
+      Color transform: Rainbow
+      Delete after no. cycles: 10
+      Enabled: true
+      Excluded person IDs: ""
+      Font color: 255; 255; 255
+      Font color style: Same color
+      Font scale: 2
+      History as line:
+        Line width: 0.05000000074505806
+        Value: true
+      History size: 100
+      Included person IDs: ""
+      Min. history point distance: 0.4000000059604645
+      Missed alpha: 0.5
+      Name: TrackedPersons
+      Occlusion alpha: 0.30000001192092896
+      Render covariances:
+        Line width: 0.10000000149011612
+        Value: true
+      Render detection IDs: false
+      Render history: true
+      Render person visual: true
+      Render track IDs: true
+      Render track state: true
+      Render velocities: true
+      Show DELETED tracks: false
+      Show MATCHED tracks: true
+      Show MISSED tracks: true
+      Show OCCLUDED tracks: true
+      Style:
+        Line width: 0.05000000074505806
+        Scaling factor: 1
+        Value: Person meshes
+      Topic: /rwth_tracker/tracked_persons
+      Unreliable: false
+      Value: true
+      Z offset:
+        Use Z position from message: false
+        Value: 0
+    - Alpha: 0.699999988079071
+      Class: rviz/Map
+      Color Scheme: map
+      Draw Behind: true
+      Enabled: false
+      Name: Map
+      Topic: /maps/GlobalMap
+      Unreliable: false
+      Use Timestamp: false
+      Value: false
+    - Class: rviz/Group
+      Displays:
+        - Class: rviz/Image
+          Enabled: false
+          Image Topic: /hardware/depth/kinect2/sync/SyncColorImage
+          Max Value: 1
+          Median window: 5
+          Min Value: 0
+          Name: Kinect
+          Normalize Range: true
+          Queue Size: 2
+          Transport Hint: raw
+          Unreliable: false
+          Value: false
+        - Class: rviz/Group
+          Displays:
+            - Class: rviz/Image
+              Enabled: true
+              Image Topic: /hardware/video/valeo/rectificationNIKRLeft/PanoramaImage
+              Max Value: 1
+              Median window: 5
+              Min Value: 0
+              Name: Left
+              Normalize Range: true
+              Queue Size: 2
+              Transport Hint: raw
+              Unreliable: false
+              Value: true
+            - Class: rviz/Image
+              Enabled: true
+              Image Topic: /hardware/video/valeo/rectificationNIKRRight/PanoramaImage
+              Max Value: 1
+              Median window: 5
+              Min Value: 0
+              Name: Right
+              Normalize Range: true
+              Queue Size: 2
+              Transport Hint: raw
+              Unreliable: false
+              Value: true
+            - Class: rviz/Image
+              Enabled: true
+              Image Topic: /hardware/video/valeo/rectificationNIKRRear/PanoramaImage
+              Max Value: 1
+              Median window: 5
+              Min Value: 0
+              Name: Rear
+              Normalize Range: true
+              Queue Size: 2
+              Transport Hint: raw
+              Unreliable: false
+              Value: true
+          Enabled: false
+          Name: Panorama
+      Enabled: true
+      Name: Images
+    - Class: rviz/Group
+      Displays:
+        - Alpha: 1
+          Class: spencer_tracking_rviz_plugin/DetectedPersons
+          Color: 138; 226; 52
+          Color map offset: 0
+          Color transform: Constant color
+          Enabled: true
+          Excluded person IDs: ""
+          Font color: 255; 255; 255
+          Font color style: Same color
+          Font scale: 2
+          Included person IDs: ""
+          Low-confidence alpha: 0.5
+          Low-confidence threshold: 0.5
+          Name: PotentialHelpers
+          Render confidences: false
+          Render covariances:
+            Line width: 0.10000000149011612
+            Value: false
+          Render detection IDs: false
+          Render modality text: false
+          Render orientation arrows: false
+          Style:
+            Line width: 0.10000000149011612
+            Scaling factor: 0.5
+            Value: Crosshairs
+          Text spacing: 1
+          Topic: /rwth_tracker/potential_helpers_vis
+          Unreliable: false
+          Value: true
+          Z offset:
+            Use Z position from message: false
+            Value: 1.5
+        - Alpha: 1
+          Class: spencer_tracking_rviz_plugin/DetectedPersons
+          Color: 115; 210; 22
+          Color map offset: 0
+          Color transform: Constant color
+          Enabled: true
+          Excluded person IDs: ""
+          Font color: 255; 255; 255
+          Font color style: Same color
+          Font scale: 5
+          Included person IDs: ""
+          Low-confidence alpha: 0.5
+          Low-confidence threshold: 0.5
+          Name: SelectedHelper
+          Render confidences: false
+          Render covariances:
+            Line width: 0.10000000149011612
+            Value: false
+          Render detection IDs: false
+          Render modality text: false
+          Render orientation arrows: false
+          Style:
+            Line width: 0.15000000596046448
+            Scaling factor: 1
+            Value: Crosshairs
+          Text spacing: 1
+          Topic: /rwth_tracker/selected_helper_vis
+          Unreliable: false
+          Value: true
+          Z offset:
+            Use Z position from message: false
+            Value: 1.5
+      Enabled: true
+      Name: Helpers
+    - Class: rviz/Camera
+      Enabled: false
+      Image Rendering: background and overlay
+      Image Topic: /hardware/depth/kinect2/hd/image_color_rect
+      Name: Camera
+      Overlay Alpha: 0.5
+      Queue Size: 2
+      Transport Hint: raw
+      Unreliable: false
+      Value: false
+      Visibility:
+        DetectedPersons:
+          Laser:
+            Laser_front: true
+            Laser_rear: true
+            Value: true
+          Value: true
+          YOLO:
+            Value: true
+            YOLO_fused: true
+            YOLO_kinect: true
+            YOLO_left: true
+            YOLO_rear: true
+            YOLO_right: true
+          groundHOG: true
+          upperbody: true
+        Grid: false
+        Helpers:
+          PotentialHelpers: true
+          SelectedHelper: true
+          Value: false
+        Images:
+          Kinect: true
+          Panorama:
+            Left: true
+            Rear: true
+            Right: true
+            Value: true
+          Value: false
+        KinectDepthCloud: true
+        Laser:
+          LaserFront: true
+          LaserRear: true
+          Value: true
+        Map: false
+        Odometry: true
+        RobotModel: true
+        TF: false
+        TrackedPersons: true
+        Value: true
+      Zoom Factor: 1
+  Enabled: true
+  Global Options:
+    Background Color: 211; 215; 207
+    Default Light: true
+    Fixed Frame: maps/BaseNodeFrame
+    Frame Rate: 30
+  Name: root
+  Tools:
+    - Class: rviz/Interact
+      Hide Inactive Objects: true
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/FocusCamera
+    - Class: rviz/Measure
+    - Class: rviz/SetInitialPose
+      Theta std deviation: 0.2617993950843811
+      Topic: /initialpose
+      X std deviation: 0.5
+      Y std deviation: 0.5
+    - Class: rviz/SetGoal
+      Topic: /move_base_simple/goal
+    - Class: rviz/PublishPoint
+      Single click: true
+      Topic: /clicked_point
+  Value: true
+  Views:
+    Current:
+      Class: rviz/Orbit
+      Distance: 36.95888137817383
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Focal Point:
+        X: -0.01908111572265625
+        Y: 0.125518798828125
+        Z: 1.3703792095184326
+      Focal Shape Fixed Size: false
+      Focal Shape Size: 0.05000000074505806
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
+      Pitch: 1.5697963237762451
+      Target Frame: robot/BaseFrame
+      Value: Orbit (rviz)
+      Yaw: 0.09423443675041199
+    Saved: ~
+Window Geometry:
+  Camera:
+    collapsed: false
+  Displays:
+    collapsed: false
+  Height: 1172
+  Hide Left Dock: false
+  Hide Right Dock: false
+  Kinect:
+    collapsed: false
+  Left:
+    collapsed: false
+  QMainWindow State: 000000ff00000000fd0000000400000000000001bb000003f6fc0200000018fb0000001200530065006c0065006300740069006f006e00000001e10000009b0000005c00fffffffb0000001e0054006f006f006c002000500072006f007000650072007400690065007302000001ed000001df00000185000000a3fb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d000003f6000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e00650063007402000001b9000002340000017b000000e1fb0000000c004b0069006e00650063007402000001b4000002430000016a000000e2fb0000001400440053004c005200200069006d0061006700650200000c3e00000224000002c0000001a9fb00000028005200470042002000460072006f006e007400200054006f0070002000430061006d00650072006102000007b70000000f000003de00000375fb0000002800460072006f006e0074002000640065007000740068002000700061006e006f00720061006d00610000000000ffffffff0000000000000000fb0000002400460072006f006e00740020005200470042002000700061006e006f00720061006d006102000007c10000001800000262000003dbfb000000260052006500610072002000640065007000740068002000700061006e006f00720061006d0061020000051a0000002e00000266000003cbfb0000002200520065006100720020005200470042002000700061006e006f00720061006d006102000009ee0000001800000265000003cffb0000000c00430061006d0065007200610200000000000003310000016a00000146fb0000000c00430061006d006500720061000000041d000000160000000000000000fb0000000a0049006d0061006700650200000947000002f3000001e90000014bfb00000008004c00650066007402000001b90000031b0000017a00000127fb0000000a0052006900670068007402000003430000031c0000017a00000127fb00000008005200650061007202000004cd0000031f000001790000012bfb0000000a00520069006700680074020000031a0000032c0000015600000120fb00000008005200650061007202000004740000032c0000015600000120fb0000000c00430061006d00650072006103000004d30000024b00000175000000dc000000010000010f000003f6fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a00560069006500770073010000003d000003f6000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e100000197000000030000073d0000003efc0100000002fb0000000800540069006d006501000000000000073d000002eb00fffffffb0000000800540069006d0065010000000000000450000000000000000000000467000003f600000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  Rear:
+    collapsed: false
+  Right:
+    collapsed: false
+  Selection:
+    collapsed: false
+  Time:
+    collapsed: false
+  Tool Properties:
+    collapsed: false
+  Views:
+    collapsed: false
+  Width: 1853
+  X: 67
+  Y: 0
