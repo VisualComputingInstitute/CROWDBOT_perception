@@ -143,7 +143,7 @@ void callback(const TrackedPersons::ConstPtr &tps)
     potentialHelpersVis.header = tps->header;
     PersonTrajectories potentialHelpers;
     potentialHelpers.header = tps->header;
-    
+
     //for each trackedPerson tp in all trackedPersons tps
     for(int i = 0; i < tps->tracks.size(); i++){
         tp = tps->tracks.at(i);
@@ -243,13 +243,13 @@ void callback(const TrackedPersons::ConstPtr &tps)
         if(last_selected_person_id!=-1 && !last_person_selected_again && !blacklisted){
             curr_track_emb_vec = tp.embed_vector;
             double emb_dist = l2_norm(last_selected_person_emb_vec, curr_track_emb_vec);
-            if(emb_dist < helper_reid_thresh && emb_dist < min_emb_dist){
+            if(emb_dist < helper_reid_thresh && emb_dist < min_emb_dist && helper_reid_thresh!=0){
                 // if embedding distance to existing trajectory low enough (+last helper is/was not found), helper has probably switched ID
                 min_emb_dist = emb_dist;
                 selected_trajectory_idx = t_id_found_at;
-            } 
+            }
         }
-            
+
     }
 
     //publish all personTrajectories and the visualization of potential helpers
@@ -308,7 +308,7 @@ void callback(const TrackedPersons::ConstPtr &tps)
         currentSelectedPersonVis.header = tps->header;
         pub_selected_helper_vis.publish(currentSelectedPersonVis);
     }
-    
+
 }
 
 // Connection callback that unsubscribes from the tracker if no one is subscribed.
@@ -371,7 +371,7 @@ int main(int argc, char **argv)
 
     // Create a subscriber.
     //ros::Subscriber sub = n.subscribe("chatter", 1000, callback);
- 
+
     // Set queue size to 1 because generating a queue here will only pile up images and delay the output by the amount of queued images
     // The immediate unsubscribe is necessary to start without subscribing to any topic because message_filters does nor allow to do it another way.
     message_filters::Subscriber<TrackedPersons> subscriber_tracks(n, sub_topic_tracked_persons.c_str(), 1); subscriber_tracks.unsubscribe();
