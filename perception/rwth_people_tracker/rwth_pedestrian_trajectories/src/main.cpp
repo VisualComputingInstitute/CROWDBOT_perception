@@ -130,11 +130,11 @@ void callback_stopHelperSelection(const std_msgs::Bool::ConstPtr &stop_helper_se
 
 void callback(const TrackedPersons::ConstPtr &tps)
 {
+    const float max_dist = 5.0f; //maximum distance to be selected
+
     personTrajectories.header = tps->header;
-    TrackedPerson tp;
     int selected_trajectory_idx = -1;
     float selected_trajectory_min_dist = 10000.0f;
-    float max_dist = 5.0f; //maximum distance to be selected
     bool last_person_selected_again = false;
     double min_emb_dist = 999.0;
     std::vector<float> curr_track_emb_vec;
@@ -145,10 +145,11 @@ void callback(const TrackedPersons::ConstPtr &tps)
     potentialHelpers.header = tps->header;
 
     //for each trackedPerson tp in all trackedPersons tps
-    for(int i = 0; i < tps->tracks.size(); i++){
-        tp = tps->tracks.at(i);
-        int t_id = tp.track_id;
-        int t_id_found_at = -1;
+    for (int i = 0; i < tps->tracks.size(); i++)
+    {
+        const TrackedPerson& tp = tps->tracks.at(i);
+        const int t_id = tp.track_id;
+
         //prepare personTrajectoryEntry pje
         PersonTrajectoryEntry pje;
         pje.pose = tp.pose;
@@ -160,97 +161,133 @@ void callback(const TrackedPersons::ConstPtr &tps)
         //compute distance to robot
         bool is_potential_helper = false;
         bool is_best_helper = false;
-        bool blacklisted = blacklistedHelperIds.count(t_id)>0; //not added as potential helper, trajectory is updated anyway
-        geometry_msgs::PointStamped distancePointStamped;
-        geometry_msgs::PointStamped distancePointStampedCamera;
-        vector<double> polCo;
-        distancePointStamped.header.frame_id = tps->header.frame_id;
-        distancePointStamped.header.stamp = ros::Time();
-        distancePointStamped.point.x = pje.pose.pose.position.x;
-        distancePointStamped.point.y = pje.pose.pose.position.y;
-        distancePointStamped.point.z = pje.pose.pose.position.z;
-        try {
+
+        const bool blacklisted = blacklistedHelperIds.count(t_id)>0; //not added as potential helper, trajectory is updated anyway
+
+        try
+        {
+            geometry_msgs::PointStamped distancePointStamped, distancePointStampedCamera;
+            distancePointStamped.header.frame_id = tps->header.frame_id;
+            distancePointStamped.header.stamp = ros::Time();
+            distancePointStamped.point.x = pje.pose.pose.position.x;
+            distancePointStamped.point.y = pje.pose.pose.position.y;
+            distancePointStamped.point.z = pje.pose.pose.position.z;
+
             listener->waitForTransform(distancePointStamped.header.frame_id, camera_frame, ros::Time(), ros::Duration(1.0));
             listener->transformPoint(camera_frame, distancePointStamped, distancePointStampedCamera);
+
+            vector<double> polCo;
             polCo = cartesianToPolar(distancePointStampedCamera.point);
-            if( ( (polCo.at(0) <= max_dist) || (remember && past_helper_ids.count(t_id)>0 && !strict) ) && !blacklisted){
+            const double dist_to_cam = polCo.at(0);
+
+            const bool is_close = dist_to_cam <= max_dist;
+            const bool is_prev_helper = remember && past_helper_ids.count(t_id)>0 && !strict;
+
+            if (!blacklisted && (is_close || is_prev_helper))
+            {
                 // fulfills criterion, add to potential helpers
                 DetectedPerson potentialHelper;
                 potentialHelper.confidence = 0.5;
                 potentialHelper.pose.pose.position = tp.pose.pose.position;
                 potentialHelpersVis.detections.push_back(potentialHelper);
                 is_potential_helper = true;
-                if(polCo.at(0) < selected_trajectory_min_dist){
-                    // fulfills criterion best, set new min
+
+                if (dist_to_cam < selected_trajectory_min_dist)
+                {
                     is_best_helper = true;
-                    selected_trajectory_min_dist = polCo.at(0);
+                    selected_trajectory_min_dist = dist_to_cam;
                 }
             }
         }
-        catch(tf::TransformException ex) {
+        catch (tf::TransformException ex)
+        {
             ROS_WARN_THROTTLE(20.0, "Failed transform lookup in rwth_pedestrian_trajectories. Reason: %s. Message will re-appear within 20 seconds.", ex.what());
         }
 
         // loop through all existing ids in personTrajectories...
-        for(int j = 0; j < personTrajectories.trajectories.size(); j++){
-            if(personTrajectories.trajectories.at(j).track_id == t_id){
-                // ...and add this personTrajectoryEntry pje to this id
-                personTrajectories.trajectories.at(j).trajectory.push_back(pje);
-                //limit person Trajectory entries to trajectory_max_length
-                if(personTrajectories.trajectories.at(j).trajectory.size() >= trajectory_max_length){
-                    std::rotate(personTrajectories.trajectories.at(j).trajectory.begin(),
-                                personTrajectories.trajectories.at(j).trajectory.begin()+1,
-                                personTrajectories.trajectories.at(j).trajectory.end());
-                    personTrajectories.trajectories.at(j).trajectory.at(personTrajectories.trajectories.at(j).trajectory.size()-1) = pje;
-                } else{
-                    personTrajectories.trajectories.at(j).trajectory.push_back(pje);
-                }
-                // update reid embedding vector
-                personTrajectories.trajectories.at(j).embed_vector = tp.embed_vector;
-                if( ( keep && last_selected_person_id==t_id && (!strict || is_potential_helper) ) && !blacklisted){
-                    //std::cout << "last selected person found! it is " << t_id << std::endl;
-                    last_person_selected_again = true;
-                    selected_trajectory_idx = j;
-                    //std::cout << "set selected index to: " << selected_trajectory_idx << std::endl;
-                }else if(is_best_helper && !last_person_selected_again && !blacklisted && new_search_invoked){
-                    selected_trajectory_idx = j;
-                    //std::cout << "set selected index to: " << selected_trajectory_idx << std::endl;
-                }
-                t_id_found_at = j;
-                if(is_potential_helper) potentialHelpers.trajectories.push_back(personTrajectories.trajectories.at(j));
-                break;
+        int t_id_found_at = -1;
+        for (int j = 0; j < personTrajectories.trajectories.size(); j++)
+        {
+            if (personTrajectories.trajectories.at(j).track_id != t_id)
+            {
+                continue;
             }
+
+            t_id_found_at = j;
+
+            // ...and add this personTrajectoryEntry pje to this id
+            // limit person Trajectory entries to trajectory_max_length
+            if(personTrajectories.trajectories.at(j).trajectory.size() > trajectory_max_length)
+            {
+                std::rotate(personTrajectories.trajectories.at(j).trajectory.begin(),
+                            personTrajectories.trajectories.at(j).trajectory.begin()+1,
+                            personTrajectories.trajectories.at(j).trajectory.end());
+                personTrajectories.trajectories.at(j).trajectory.at(personTrajectories.trajectories.at(j).trajectory.size()-1) = pje;
+            }
+            else
+            {
+                personTrajectories.trajectories.at(j).trajectory.push_back(pje);
+            }
+
+            // update reid embedding vector
+            personTrajectories.trajectories.at(j).embed_vector = tp.embed_vector;
+            if (!blacklisted && keep && last_selected_person_id==t_id && (!strict || is_potential_helper))
+            {
+                //std::cout << "last selected person found! it is " << t_id << std::endl;
+                last_person_selected_again = true;
+                selected_trajectory_idx = j;
+                //std::cout << "set selected index to: " << selected_trajectory_idx << std::endl;
+            }
+            else if (is_best_helper && !last_person_selected_again && !blacklisted && new_search_invoked)
+            {
+                selected_trajectory_idx = j;
+                //std::cout << "set selected index to: " << selected_trajectory_idx << std::endl;
+            }
+
+            if (is_potential_helper)
+            {
+                potentialHelpers.trajectories.push_back(personTrajectories.trajectories.at(j));
+            }
+
+            break;
         }
+
         //new id?
-        if (t_id_found_at==-1){
+        if (t_id_found_at == -1)
+        {
             //new personTrajectory pj with one personTrajectoryEntry pje in personTrajectories
             PersonTrajectory pj;
             pj.track_id = t_id;
             pj.embed_vector = tp.embed_vector;
             pj.trajectory.push_back(pje);
             personTrajectories.trajectories.push_back(pj);
-            if((is_best_helper && !last_person_selected_again && !blacklisted && new_search_invoked)){
+            if (is_best_helper && !last_person_selected_again && !blacklisted && new_search_invoked)
+            {
                 //std::cout << "new min found and last selected person was not found (or should not be kept) " << std::endl;
-                selected_trajectory_idx = personTrajectories.trajectories.size()-1;
+                selected_trajectory_idx = personTrajectories.trajectories.size() - 1;
                 //std::cout << "set selected index to: " << selected_trajectory_idx << std::endl;
             }
-            t_id_found_at = personTrajectories.trajectories.size()-1;
-            if(is_potential_helper) potentialHelpers.trajectories.push_back(personTrajectories.trajectories.at(personTrajectories.trajectories.size()-1));
+            t_id_found_at = personTrajectories.trajectories.size() - 1;
+            if (is_potential_helper)
+            {
+                potentialHelpers.trajectories.push_back(personTrajectories.trajectories.back());
+            }
         }
 
         // compute reid embedding distance to last selected person and set new min
         // (only neccessary if last helper has not been found, if there was any yet + not blacklisted)
-        if(last_selected_person_id!=-1 && !last_person_selected_again && !blacklisted){
+        if (last_selected_person_id != -1 && !last_person_selected_again && !blacklisted)
+        {
             curr_track_emb_vec = tp.embed_vector;
-            double emb_dist = l2_norm(last_selected_person_emb_vec, curr_track_emb_vec);
-            if(emb_dist < helper_reid_thresh && emb_dist < min_emb_dist && helper_reid_thresh!=0){
+            const double emb_dist = l2_norm(last_selected_person_emb_vec, curr_track_emb_vec);
+            if (emb_dist < helper_reid_thresh && emb_dist < min_emb_dist && helper_reid_thresh != 0)
+            {
                 // if embedding distance to existing trajectory low enough (+last helper is/was not found), helper has probably switched ID
                 min_emb_dist = emb_dist;
                 selected_trajectory_idx = t_id_found_at;
             }
         }
-
-    }
+    }  // for (int i = 0; i < tps->tracks.size(); i++)
 
     //publish all personTrajectories and the visualization of potential helpers
     personTrajectories.header.stamp = ros::Time::now();
