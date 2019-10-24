@@ -2,7 +2,7 @@
 #include "std_msgs/String.h"
 #include <string.h>
 #include <unordered_set>
-
+#include <nav_msgs/OccupancyGrid.h>
 #include <message_filters/subscriber.h>
 
 #include "frame_msgs/TrackedPersons.h"
@@ -59,6 +59,8 @@ bool new_search_invoked = false;
 bool stop_selection = false;
 
 double helper_reid_thresh;
+
+std::shared_ptr<nav_msgs::OccupancyGrid> map_ptr_(nullptr);
 
 double l2_norm(vector<float> const& u, vector<float> const& v) {
     if(u.size() != v.size()){
@@ -128,6 +130,107 @@ void callback_stopHelperSelection(const std_msgs::Bool::ConstPtr &stop_helper_se
    is_helper_selected_mem = true;
 }
 
+bool noObstacle(const geometry_msgs::PointStamped& goal_stamp)
+{
+    geometry_msgs::PointStamped start_stamp;
+    start_stamp.header.frame_id = camera_frame;
+    start_stamp.header.stamp = goal_stamp.header.stamp;
+    start_stamp.point.x = 0.0;
+    start_stamp.point.y = 0.0;
+    start_stamp.point.z = 0.0;
+
+    geometry_msgs::PointStamped start_stamp_map, goal_stamp_map;
+    try
+    {
+        const string map_frame = map_ptr_->header.frame_id;
+
+        listener->waitForTransform(start_stamp.header.frame_id, map_frame, start_stamp.header.stamp, ros::Duration(1.0));
+        listener->waitForTransform(goal_stamp.header.frame_id, map_frame, goal_stamp.header.stamp, ros::Duration(1.0));
+        listener->transformPoint(map_frame, start_stamp, start_stamp_map);
+        listener->transformPoint(map_frame, goal_stamp, goal_stamp_map);
+    }
+    catch (tf::TransformException ex)
+    {
+        ROS_WARN_THROTTLE(20.0, "Failed transform lookup in rwth_pedestrian_trajectories. Reason: %s. Message will re-appear within 20 seconds. Ignore map check.", ex.what());
+        return true;
+    }
+
+    const double map_x = map_ptr_->info.origin.position.x;
+    const double map_y = map_ptr_->info.origin.position.y;
+    const int map_width = map_ptr_->info.width;
+    const int map_height = map_ptr_->info.height;
+    const double map_resolution = map_ptr_->info.resolution;
+
+    // std::cout << "Start pose (x, y): " << start_stamp_map.point.x << " " << start_stamp_map.point.y << " ";
+    // std::cout << "Goal pose (x, y): " << goal_stamp_map.point.x << " " << goal_stamp_map.point.y << " ";
+    // std::cout << "Map pose (x, y): " << map_x << " " << map_y << std::endl;
+
+    const int x_idx_start = (start_stamp_map.point.x - map_x) / map_resolution;
+    const int x_idx_goal = (goal_stamp_map.point.x - map_x) / map_resolution;
+    const int y_idx_start = (start_stamp_map.point.y - map_y) / map_resolution;
+    const int y_idx_goal = (goal_stamp_map.point.y - map_y) / map_resolution;
+
+    const int x0 = std::max(std::min(x_idx_start, x_idx_goal), 0);
+    const int x1 = std::min(std::max(x_idx_start, x_idx_goal), map_width);
+    const int y0 = std::max(std::min(y_idx_start, y_idx_goal), 0);
+    const int y1 = std::min(std::max(y_idx_start, y_idx_goal), map_height);
+    const int xdiff = x1 - x0;
+    const int ydiff = y1 - y0;
+
+    std::cout << "x0 " << x0 << " y0 " << y0
+              << " x1 " << x1 << " y1 " << y1 << std::endl;
+
+    // edge case: person and robot are in same map cell
+    if (xdiff == 0 && ydiff == 0)
+    {
+        return true;
+    }
+
+    // create search indices along line
+    std::vector<int> map_indices;
+    map_indices.reserve(10000);
+    if (ydiff > xdiff)
+    {
+        const double x_over_y = xdiff / ydiff;
+        for (int y = y0; y < y1; y++)
+        {
+            const int x = x_over_y * (y - y0) + x0;
+            map_indices.push_back(y * map_width + x);
+        }
+    }
+    else
+    {
+        const double y_over_x = ydiff / xdiff;
+        int obstacle_count = 0;
+        for (int x = x0; x < x1; x++)
+        {
+            const int y = y_over_x * (x - x0) + y0;
+            map_indices.push_back(y * map_width + x);
+        }
+    }
+    // std::cout << "number of map cells: " << map_indices.size() << std::endl;
+
+    // check grid occupancy along line
+    int obstacle_count = 0;
+    const auto& map_data = map_ptr_->data;
+    for (int idx : map_indices)
+    {
+        const int val = static_cast<int>(map_data[idx]);
+        // std::cout << val << std::endl;
+        if (val > 50)
+        {
+            obstacle_count++;
+        }
+
+        if (obstacle_count > 0)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 void callback(const TrackedPersons::ConstPtr &tps)
 {
     const float max_dist = 5.0f; //maximum distance to be selected
@@ -182,8 +285,9 @@ void callback(const TrackedPersons::ConstPtr &tps)
 
             const bool is_close = dist_to_cam <= max_dist;
             const bool is_prev_helper = remember && past_helper_ids.count(t_id)>0 && !strict;
+            const bool is_reachable = noObstacle(distancePointStamped);
 
-            if (!blacklisted && (is_close || is_prev_helper))
+            if (!blacklisted && (is_close || is_prev_helper) && is_reachable)
             {
                 // fulfills criterion, add to potential helpers
                 DetectedPerson potentialHelper;
@@ -365,6 +469,19 @@ void connectCallback(message_filters::Subscriber<TrackedPersons> &sub_tra){
     }
 }
 
+void mapCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg)
+{
+    // if (!map_ptr_)
+    // {
+    //     ROS_INFO("No map.");
+    // }
+    map_ptr_ = make_shared<nav_msgs::OccupancyGrid>(*msg);
+    // if (map_ptr_)
+    // {
+    //     ROS_INFO("Received map.");
+    // }
+}
+
 int main(int argc, char **argv)
 {
     //init ROS
@@ -423,6 +540,11 @@ int main(int argc, char **argv)
     message_filters::Subscriber<std_msgs::Bool> subscriber_stop_helper_selection(n, sub_topic_stop_helper_selection.c_str(), 1); subscriber_stop_helper_selection.unsubscribe();
     subscriber_stop_helper_selection.registerCallback(boost::bind(&callback_stopHelperSelection, _1));
     subscriber_stop_helper_selection.subscribe();
+
+    // Listen to map
+    string sub_topic_map;
+    private_node_handle_.param("maps", sub_topic_map, string("/map_latched"));
+    ros::Subscriber sub_map = n.subscribe(sub_topic_map, 1, mapCallback);
 
     // Create a topic publisher
     private_node_handle_.param("person_trajectories", pub_topic_trajectories, string("/rwth_tracker/person_trajectories"));
