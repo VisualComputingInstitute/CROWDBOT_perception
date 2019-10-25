@@ -177,8 +177,8 @@ bool noObstacle(const geometry_msgs::PointStamped& goal_stamp)
     const int xdiff = x1 - x0;
     const int ydiff = y1 - y0;
 
-    std::cout << "x0 " << x0 << " y0 " << y0
-              << " x1 " << x1 << " y1 " << y1 << std::endl;
+    // std::cout << "x0 " << x0 << " y0 " << y0
+    //           << " x1 " << x1 << " y1 " << y1 << std::endl;
 
     // edge case: person and robot are in same map cell
     if (xdiff == 0 && ydiff == 0)
