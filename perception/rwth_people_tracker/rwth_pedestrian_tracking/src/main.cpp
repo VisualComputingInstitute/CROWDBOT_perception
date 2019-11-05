@@ -310,10 +310,8 @@ void callback(const DetectedPersons::ConstPtr &detections)
     //printf("result: %d\n", (int) (1 / (color->header.stamp.toSec()-Globals::oldTimeForFPSUpdate)));
     // update framerate first after some tracking cycles, before use framerate from config file
     if (cnt>0) {
-        double dt = detections->header.stamp.toSec() - Globals::oldTimeForFPSUpdate;
-        double fps = 1.0 / dt; //replaced with direct dt as discretization of dt for lower framerates is too coarse
-
         //framerate-based
+        // double fps = 1.0 / dt; //replaced with direct dt as discretization of dt for lower framerates is too coarse
         /*if(!std::isfinite(fps) || fps < 1) {
             ROS_WARN("Abnormal frame rate detected: %f, dt: %f. Set to 1", fps, dt);
             Globals::frameRate = 1;
@@ -323,9 +321,15 @@ void callback(const DetectedPersons::ConstPtr &detections)
         }*/
 
         //dt-based
+        double dt = detections->header.stamp.toSec() - Globals::oldTimeForFPSUpdate;
         if(!std::isfinite(dt) || dt <= 0) {
-            ROS_WARN("Abnormal dt detected: %f. Set to 1.0", dt);
-            Globals::dt = 1.0;
+            // ROS_WARN("Abnormal dt detected: %f. Set to 1.0", dt);
+            // Globals::dt = 1.0;
+            if (dt != 0)
+            {
+                ROS_WARN("Abnormal dt detected: %f. Drop detections.", dt);
+            }
+            return;
         }
         else {
             Globals::dt = dt;
