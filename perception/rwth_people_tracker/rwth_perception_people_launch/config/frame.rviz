@@ -10,14 +10,12 @@ Panels:
         - /Odometry1/Shape1
         - /KinectDepthCloud1/Status1
         - /KinectDepthCloud1/Occlusion Compensation1
-        - /DetectedPersons1
         - /DetectedPersons1/groundHOG1/Style1
         - /DetectedPersons1/upperbody1/Style1
         - /DetectedPersons1/YOLO1
         - /DetectedPersons1/YOLO1/YOLO_kinect1
         - /DetectedPersons1/YOLO1/YOLO_fused1
         - /DetectedPersons1/YOLO1/YOLO_fused1/Render covariances1
-        - /TrackedPersons1
         - /Images1
         - /Images1/Panorama1
         - /Helpers1
@@ -191,67 +189,67 @@ Visualization Manager:
           maps/Zuse/Floor2MapFrame:
             localization/amcl/RobotFrame_Poseidon:
               {}
-            maps/BaseNodeFrame:
-              robot/OdometryFrame:
-                robot/RobotFrame:
-                  robot/BaseFrame:
-                    map:
-                      {}
-                    robot/MountingPlane2Frame:
-                      robot/MountingPlane3Frame:
-                        hardware/depth/front/MountFrameFixed:
-                          hardware/depth/front/MountFrame:
-                            hardware/depth/front/ColorMountFrame:
-                              hardware/depth/front/ColorImageFrame:
-                                {}
-                            hardware/depth/front/DepthMountFrame:
-                              hardware/depth/front/DepthImageFrame:
-                                {}
-                        hardware/depth/rear/MountFrameFixed:
-                          hardware/depth/rear/MountFrame:
-                            hardware/depth/rear/ColorMountFrame:
-                              hardware/depth/rear/ColorImageFrame:
-                                {}
-                            hardware/depth/rear/DepthMountFrame:
-                              hardware/depth/rear/DepthImageFrame:
-                                {}
-                        hardware/video/valeo/ValeoMountFrame:
-                          hardware/video/valeo/ValeoLeftMountFrame:
-                            hardware/video/valeo/ValeoLeftImageFrame:
-                              {}
-                          hardware/video/valeo/ValeoRearMountFrame:
-                            hardware/video/valeo/ValeoRearImageFrame:
-                              {}
-                          hardware/video/valeo/ValeoRightMountFrame:
-                            hardware/video/valeo/ValeoRightImageFrame:
-                              {}
-                        robot/head/MountFrame:
-                          robot/PTUFixedFrame:
-                            robot/PTUFrame:
-                              robot/PTUPlateFrame:
-                                hardware/depth/kinect2/MountFrame:
-                                  hardware/depth/kinect2/ColorMountFrame:
-                                    hardware/depth/kinect2/ColorImageFrame:
-                                      {}
-                                  hardware/depth/kinect2/DepthMountFrame:
-                                    hardware/depth/kinect2/DepthImageFrame:
-                                      {}
-                                hardware/head/eyes/LeftEyeFrame:
-                                  {}
-                                hardware/head/eyes/RightEyeFrame:
-                                  {}
-                                hardware/head/gaze/GazeRandomPose:
-                                  {}
-                                hardware/head/gaze/GazeToTheBeatPose:
-                                  {}
-                  robot/frontLaser/MountFrame:
-                    hardware/laser/front/LaserFrame:
-                      {}
-                  robot/rearLaser/MountFrame:
-                    hardware/laser/rear/LaserFrame:
-                      {}
           maps/Zuse/Floor3MapFrame:
             {}
+        maps/BaseNodeFrame:
+          robot/OdometryFrame:
+            robot/RobotFrame:
+              robot/BaseFrame:
+                map:
+                  {}
+                robot/MountingPlane2Frame:
+                  robot/MountingPlane3Frame:
+                    hardware/depth/front/MountFrameFixed:
+                      hardware/depth/front/MountFrame:
+                        hardware/depth/front/ColorMountFrame:
+                          hardware/depth/front/ColorImageFrame:
+                            {}
+                        hardware/depth/front/DepthMountFrame:
+                          hardware/depth/front/DepthImageFrame:
+                            {}
+                    hardware/depth/rear/MountFrameFixed:
+                      hardware/depth/rear/MountFrame:
+                        hardware/depth/rear/ColorMountFrame:
+                          hardware/depth/rear/ColorImageFrame:
+                            {}
+                        hardware/depth/rear/DepthMountFrame:
+                          hardware/depth/rear/DepthImageFrame:
+                            {}
+                    hardware/video/valeo/ValeoMountFrame:
+                      hardware/video/valeo/ValeoLeftMountFrame:
+                        hardware/video/valeo/ValeoLeftImageFrame:
+                          {}
+                      hardware/video/valeo/ValeoRearMountFrame:
+                        hardware/video/valeo/ValeoRearImageFrame:
+                          {}
+                      hardware/video/valeo/ValeoRightMountFrame:
+                        hardware/video/valeo/ValeoRightImageFrame:
+                          {}
+                    robot/head/MountFrame:
+                      robot/PTUFixedFrame:
+                        robot/PTUFrame:
+                          robot/PTUPlateFrame:
+                            hardware/depth/kinect2/MountFrame:
+                              hardware/depth/kinect2/ColorMountFrame:
+                                hardware/depth/kinect2/ColorImageFrame:
+                                  {}
+                              hardware/depth/kinect2/DepthMountFrame:
+                                hardware/depth/kinect2/DepthImageFrame:
+                                  {}
+                            hardware/head/eyes/LeftEyeFrame:
+                              {}
+                            hardware/head/eyes/RightEyeFrame:
+                              {}
+                            hardware/head/gaze/GazeRandomPose:
+                              {}
+                            hardware/head/gaze/GazeToTheBeatPose:
+                              {}
+              robot/frontLaser/MountFrame:
+                hardware/laser/front/LaserFrame:
+                  {}
+              robot/rearLaser/MountFrame:
+                hardware/laser/rear/LaserFrame:
+                  {}
       Update Interval: 0
       Value: true
     - Alpha: 1
@@ -753,12 +751,12 @@ Visualization Manager:
       Class: rviz/Map
       Color Scheme: map
       Draw Behind: true
-      Enabled: false
+      Enabled: true
       Name: Map
-      Topic: /maps/GlobalMap
+      Topic: /map_latched
       Unreliable: false
       Use Timestamp: false
-      Value: false
+      Value: true
     - Class: rviz/Group
       Displays:
         - Class: rviz/Image
@@ -904,8 +902,11 @@ Visualization Manager:
           "": true
           Value: false
         Images:
-          "":
-            "": true
+          Kinect: true
+          Panorama:
+            Left: true
+            Rear: true
+            Right: true
             Value: true
           Value: false
         KinectDepthCloud: true
@@ -947,7 +948,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 36.95888137817383
+      Distance: 18.673864364624023
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -962,10 +963,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5697963237762451
+      Pitch: 0.9597974419593811
       Target Frame: robot/BaseFrame
       Value: Orbit (rviz)
-      Yaw: 0.09423443675041199
+      Yaw: 0.5842344760894775
     Saved: ~
 Window Geometry:
   Camera:
