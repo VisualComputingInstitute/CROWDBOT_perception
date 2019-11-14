@@ -35,12 +35,11 @@ typedef message_filters::Subscriber<DP> DPSub;
 
 std::vector<DP::ConstPtr> dp_queue_;  // Keep only the latest detection msg for each sensor
 std::vector<std::shared_ptr<DPSub> > dp_sub_queue_;
-int latest_subscriber_id_ = -1;  // Used to track which sensor gives latest detection
 
 // Keep track if there has been new detection since last fusion. If no, don't publish.
 // Should be set to true after receiving new detection (in detection callback).
 // Should be set to false after publising fused detections (in main loop).
-bool new_detection_received_ = false;
+ros::Time latest_detection_stamp_, prev_fused_detection_stamp_;
 
 /*
 subscrible:
@@ -105,7 +104,7 @@ void fuseDetections(DP& dp_fused)
     }
 
     dp_fused.detections.reserve(detection_count);
-    dp_fused.header.stamp = dp_queue_.at(latest_subscriber_id_)->header.stamp;  // use stamp from latest detection
+    dp_fused.header.stamp = latest_detection_stamp_;  // use stamp from latest detection
     dp_fused.header.frame_id = world_frame_;
 
     // Keep track of number of fused detections after detections from one sensor
@@ -222,8 +221,8 @@ void fuseDetections(DP& dp_fused)
 void detectedPersonsCallback(const DP::ConstPtr& msg, const int subscriber_id)
 {
     dp_queue_.at(subscriber_id) = msg;
-    latest_subscriber_id_ = subscriber_id;
-    new_detection_received_ = true;
+    if (msg->header.stamp.toSec() > latest_detection_stamp_.toSec())
+        latest_detection_stamp_ = msg->header.stamp;
 }
 
 
@@ -254,7 +253,10 @@ int main(int argc, char **argv)
 {
     // Set up ROS.
     ros::init(argc, argv, "fuse_yolo_async");
-    ros::NodeHandle n, private_node_handle_("~");;
+    ros::NodeHandle n, private_node_handle_("~");
+
+    latest_detection_stamp_ = ros::Time::now();
+    prev_fused_detection_stamp_ = latest_detection_stamp_;
 
     // create a tf listener
     tf_ = std::make_shared<tf::TransformListener>();
@@ -325,12 +327,14 @@ int main(int argc, char **argv)
     ros::Rate r(fusion_rate_); // 10 hz
     while (ros::ok())
     {
-        if (new_detection_received_ && detected_persons_pub_.getNumSubscribers())
+        const bool new_detection_received =
+                latest_detection_stamp_.toSec() > prev_fused_detection_stamp_.toSec();
+        if (new_detection_received && detected_persons_pub_.getNumSubscribers())
         {
+            prev_fused_detection_stamp_ = latest_detection_stamp_;
             DP fused_detections;
             fuseDetections(fused_detections);
             detected_persons_pub_.publish(fused_detections);
-            new_detection_received_ = false;
         }
 
         ros::spinOnce();
