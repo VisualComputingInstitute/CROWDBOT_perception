@@ -40,8 +40,8 @@ float g_detect_threshold;
 float g_nms_threshold;
 
 // yolo network parameter, should be fixed with the given engine file?
-int g_net_h = 608;
-int g_net_w = 608;
+int g_net_h = 416;//608;
+int g_net_w = 416;//608;
 int g_net_c = 3;
 
 vector<float> prepareImage(cv::Mat& img)
@@ -271,7 +271,7 @@ void Callback(const sensor_msgs::ImageConstPtr& img)
 
      // generate darkent detection image
 
-     /*for(auto it = bbs.bounding_boxes.begin();it!=bbs.bounding_boxes.end();++it)
+     for(auto it = bbs.bounding_boxes.begin();it!=bbs.bounding_boxes.end();++it)
      {
          float height = it->ymax - it->ymin;
          float width = it->xmax - it->xmin;
@@ -279,10 +279,10 @@ void Callback(const sensor_msgs::ImageConstPtr& img)
          float y = (float)(it->ymin>0?it->ymin:0);
          render_bbox_2D(x,y,width,height,cvmat,0);
          render_text(it->Class,cvmat,x,y,0);
-     }*/
+     }
      // publish image
-     //sensor_msgs::ImagePtr msg = cv_bridge::CvImage(img->header, "bgr8", cvmat).toImageMsg();
-     //pub_result_image.publish(msg);
+     sensor_msgs::ImagePtr msg = cv_bridge::CvImage(img->header, "bgr8", cvmat).toImageMsg();
+     pub_result_image.publish(msg);
      // publish boundingbox
      pub_boundingboxes.publish(bbs);
 
@@ -306,7 +306,7 @@ int main(int argc, char **argv)
     // Use a private node handle so that multiple instances of the node can be run simultaneously
     // while using different parameters.
     ros::NodeHandle private_node_handle_("~");
-    private_node_handle_.param("queue_size", queue_size, int(10));
+    private_node_handle_.param("queue_size", queue_size, int(1));
     private_node_handle_.param("image", image_topic, string("/hardware/video/valeo/rectificationNIKRLeft/PanoramaImage"));
     private_node_handle_.param("bounding_boxes", boundingboxes, string("darknet_ros/bounding_boxes"));
     private_node_handle_.param("engine_path", engine_path, string("oops I need engine!"));

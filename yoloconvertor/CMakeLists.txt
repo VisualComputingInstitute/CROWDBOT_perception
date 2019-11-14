@@ -10,9 +10,6 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs sensor_msgs nav_msgs rwth_perception_people_msgs message_filters frame_msgs darknet_ros_msgs image_transport cv_bridge tf)
 
 
-find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
-include(${QT_USE_FILE})
-
 find_package(OpenCV)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
@@ -81,8 +78,8 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-# include_directories(include)
-include_directories( include
+include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -117,23 +114,14 @@ add_dependencies(backprojection_pinhole ${catkin_EXPORTED_TARGETS})
 ## Specify libraries to link a library or executable target against
  target_link_libraries(yoloconvertor_standard
    ${catkin_LIBRARIES}
-   ${QT_LIBRARIES}
-   ${QT_QTCORE_LIBRARY}
-   ${QT_QTGUI_LIBRARY}
    X11
  )
  target_link_libraries(yoloconvertor_panorama
    ${catkin_LIBRARIES}
-   ${QT_LIBRARIES}
-   ${QT_QTCORE_LIBRARY}
-   ${QT_QTGUI_LIBRARY}
    X11
  )
  target_link_libraries(yoloconvertor_fusion
    ${catkin_LIBRARIES}
-   ${QT_LIBRARIES}
-   ${QT_QTCORE_LIBRARY}
-   ${QT_QTGUI_LIBRARY}
    X11
  )
 
@@ -149,18 +137,12 @@ add_dependencies(backprojection_pinhole ${catkin_EXPORTED_TARGETS})
  target_link_libraries(backprojection_panorama
    ${catkin_LIBRARIES}
    ${OpenCV_LIBRARIES}
-   ${QT_LIBRARIES}
-   ${QT_QTCORE_LIBRARY}
-   ${QT_QTGUI_LIBRARY}
    X11
  )
 
  target_link_libraries(backprojection_pinhole
    ${catkin_LIBRARIES}
    ${OpenCV_LIBRARIES}
-   ${QT_LIBRARIES}
-   ${QT_QTCORE_LIBRARY}
-   ${QT_QTGUI_LIBRARY}
    X11
  )
 
@@ -206,6 +188,16 @@ install(TARGETS yoloconvertor_standard yoloconvertor_panorama yoloconvertor_fusi
 #   # myfile2
 #   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 # )
+
+install(DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+  PATTERN ".svn" EXCLUDE
+)
+
+install(DIRECTORY map/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/map
+  PATTERN ".svn" EXCLUDE
+)
 
 #############
 ## Testing ##

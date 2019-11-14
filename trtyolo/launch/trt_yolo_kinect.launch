@@ -1,5 +1,5 @@
 <launch>
-   <arg name="engine_path" default="$(find trtyolo)/tensorRT_yolo/yolov3_fp16.engine"/>
+   <arg name="engine_path" default="$(find trtyolo)/tensorRT_yolo/yolov3_int8.engine"/>
    <arg name="detect_threshold" default="0.7"/>
    <arg name="nms_threshold" default="0.45"/>
    <arg name="bounding_boxes" default="/trt_yolo_boxes_kinect"/>
