@@ -304,7 +304,7 @@ int main(int argc, char **argv)
     for (const string& t : sub_topics)
     {
         dp_sub_queue_.push_back(std::make_shared<DPSub>(n, t.c_str(), 1));
-        std::cout << dp_sub_queue_.size() << " " << t.c_str() << std::endl;
+        // std::cout << dp_sub_queue_.size() << " " << t.c_str() << std::endl;
         dp_sub_queue_.back()->unsubscribe();
         dp_queue_.push_back(nullptr);
     }
