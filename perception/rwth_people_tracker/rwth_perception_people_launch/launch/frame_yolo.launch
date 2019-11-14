@@ -9,7 +9,7 @@
     <!-- <machine name="jetson10" address="192.168.4.10" user="nvidia" env-loader="/home/nvidia/ros_ws/devel/env.sh" default="true" />
     <machine name="jetson11" address="192.168.4.11" user="nvidia" env-loader="/home/nvidia/frame_ws/devel/env.sh" default="true" />
     <machine name="jetson12" address="192.168.4.12" user="nvidia" env-loader="/home/nvidia/ros_ws/devel/env.sh" default="true" /> -->
-    <machine name="jetson-x-03" address="192.168.4.10" user="nvidia" env-loader="/home/nvidia/ros_ws/devel/env.sh" default="true" />
+    <machine name="jetson-x-03" address="192.168.4.10" user="nvidia" env-loader="/home/nvidia/env2.sh" default="true" />
     <machine name="jetson-x-04" address="192.168.4.11" user="nvidia" env-loader="/home/nvidia/ros_ws/devel/env.sh" default="true" />
 
 
