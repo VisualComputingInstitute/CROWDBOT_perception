@@ -228,20 +228,17 @@ bool checkReady()
         return false;
     }
 
-    if (true)
-    {
-        if (!depth_)
-        {
-            ROS_WARN("Missing depth.");
-            return false;
-        }
+	if (!depth_)
+	{
+		ROS_WARN("Missing depth.");
+		return false;
+	}
 
-        if (!depth_camera_info_)
-        {
-            ROS_WARN("Missing depth camera info.");
-            return false;
-        }
-    }
+	if (!depth_camera_info_)
+	{
+		ROS_WARN("Missing depth camera info.");
+		return false;
+	}
 
     return true;
 }
@@ -476,7 +473,10 @@ int main(int argc, char **argv)
     // Subscribers
     std::string camera_ns;
     nh_private.param("camera_namespace", camera_ns, std::string("/head_xtion"));
-    const std::string camera_info = camera_ns + "/hd/camera_info";
+
+    std::string camera_info;
+    nh_private.param("camera_info", camera_info, std::string("/hd/camera_info"));
+    camera_info = camera_ns + camera_info;
     ros::Subscriber camera_info_sub = nh.subscribe(camera_info.c_str(), 1, cameraInfoCallback);
 
     std::string boundingboxes;
@@ -487,17 +487,17 @@ int main(int argc, char **argv)
     nh_private.param("ground_plane", ground_plane, std::string(""));
     ros::Subscriber ground_plane_sub = nh.subscribe(ground_plane.c_str(), 1, groundPlaneCallback);
 
-    // Optionally, use depth
+    // Use depth
+    std::string depth_camera_info;
+    nh_private.param("depth_camera_info", depth_camera_info, std::string("/sd/camera_info"));
+    depth_camera_info = camera_ns + depth_camera_info;
+	ros::Subscriber depth_camera_info_sub = nh.subscribe(depth_camera_info.c_str(), 1, depthCameraInfoCallback);
+
+    std::string depth_topic;
+    nh_private.param("depth_topic", depth_topic, std::string("/hd/image_depth_rect"));
+	depth_topic = camera_ns + depth_topic;
     image_transport::ImageTransport it(nh_private);
-    image_transport::Subscriber depth_sub;
-    ros::Subscriber depth_camera_info_sub;
-    if (true)
-    {
-        const std::string topic_depth_info = camera_ns + "/sd/camera_info";
-        const std::string topic_depth_image = camera_ns + "/hd/image_depth_rect";
-        depth_sub = it.subscribe(topic_depth_image.c_str(), 1, depthCallback);
-        depth_camera_info_sub = nh.subscribe(topic_depth_info.c_str(), 1, depthCameraInfoCallback);
-    }
+	image_transport::Subscriber depth_sub = it.subscribe(depth_topic.c_str(), 1, depthCallback);
 
     ros::spin();
 

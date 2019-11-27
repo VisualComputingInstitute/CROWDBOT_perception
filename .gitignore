@@ -210,4 +210,7 @@ qtcreator-*
 # Catkin custom files
 CATKIN_IGNORE
 
+# For development with vim
+tags
+
 # End of https://www.gitignore.io/api/ros,c++,python
