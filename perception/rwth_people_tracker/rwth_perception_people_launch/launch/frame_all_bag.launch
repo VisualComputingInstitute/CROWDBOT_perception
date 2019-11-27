@@ -16,7 +16,12 @@
     <!-- detectors -->
     <arg name="kinect" default="true" />
     <arg name="pano" default="true" />
+
     <arg name="camera_namespace" default="/hardware/depth/kinect2"/>
+    <arg name="camera_info" default="/hd/camera_info"/>
+    <arg name="depth_camera_info" default="/sd/camera_info"/>
+    <arg name="depth_topic" default="/hd/image_depth_rect"/>
+
     <arg name="fused_detections" default="/yolofusion/detected_persons"/>
     <arg name="fused_detections_pano" default="/yolofusion/detected_persons_pano"/>
     <arg name="queue_size" default="10"/>
@@ -129,6 +134,9 @@
             <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
             <param name="bounding_boxes" value="$(arg bounding_boxes_yolo_kinect)"/>
             <param name="camera_namespace" value="$(arg camera_namespace)" type="string"/>
+            <param name="camera_info" value="$(arg camera_info)" type="string"/>
+            <param name="depth_camera_info" value="$(arg depth_camera_info)" type="string"/>
+            <param name="depth_topic" value="$(arg depth_topic)" type="string"/>
             <param name="depth_scale" value="$(arg depth_scale)"/>
             <param name="pose_variance" value="$(arg pose_variance)"/>
         </node>
@@ -307,4 +315,4 @@
     <!-- sim parameter -->
     <arg name="use_sim_time" default="true" />
 
-</launch> 
+</launch>
