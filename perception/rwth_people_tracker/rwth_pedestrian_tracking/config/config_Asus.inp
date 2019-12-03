@@ -103,9 +103,9 @@ reIdThresh_DALevel = 55 #! threshold deciding if a detection is counted as inlie
 accepted_frames_without_det = 0 #! consecutive (!) frames without detections, when looking backwards for new hypos (running Kalman down)
 
 #=======EVALUATION========================================================================================================================
-save_for_eval = false
-save_path_tracking = /home/breuers/results/spencer_tracker/last_run/tracking_result.txt
-save_path_img_info = /home/breuers/results/spencer_tracker/last_run/image_info.txt
-save_path_cam_info = /home/breuers/results/spencer_tracker/last_run/camera_info.txt
-save_path_img = /home/breuers/results/spencer_tracker/last_run/img/
-save_path_cam = /home/breuers/results/spencer_tracker/last_run/camera/camera_%08d.txt
+save_for_eval = true
+save_path_tracking = /work/nekrasov/data/crowdbot/scenarios/last_run/tracking_result.txt
+save_path_img_info = /work/nekrasov/data/crowdbot/scenarios/last_run/image_info.txt
+save_path_cam_info = /work/nekrasov/data/crowdbot/scenarios/last_run/camera_info.txt
+save_path_img = /work/nekrasov/data/crowdbot/scenarios/last_run/img/
+save_path_cam = /work/nekrasov/data/crowdbot/scenarios/last_run/camera/camera_%08d.txt

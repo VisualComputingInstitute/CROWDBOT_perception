@@ -2,7 +2,7 @@
 <launch>
 
 	<!-- Prefixes -->
-	<arg name="anno_folder_prefix" default="/home/sabari/Documents/crowdbot/ucl_video_capture/scenarios/tracker_output"/>
+	<arg name="anno_folder_prefix" default="/work/nekrasov/data/crowdbot/scenarios/"/>
 
 	<!-- Tracking paras -->
 	<arg name="queue_size" default="10"/>
@@ -36,6 +36,8 @@
 		<param name="visual_odometry" value="$(arg visual_odometry)"/>
 		<param name="boxes_path" value="$(arg boxes_path)"/>
 		<param name="timestamps_path" value="$(arg timestamps_path)"/>
+
+		<remap from="/camera/rgb/camera_info" to="/camera/color/camera_info"/>
 	</node>
 
     <!-- Evaluation -->
@@ -59,7 +61,7 @@
 		<param name="hypotheses_filename" value="$(arg hypotheses_filename)"/>
 
 		<remap from="/groundtruth" to="/spencer/perception/annotated_persons2d"/>
-		<remap from="/spencer/perception/tracked_persons" to="/rwth_tracker/tracked_persons_2d"/>
+		<remap from="/spencer/perception/tracked_persons" to="/rwth_tracker/tracked_persons"/>
 		<remap from="/srl_nearest_neighbor_tracker/tracking_timing_metrics" to="/tracking_timing_metrics"/>
 	</node>
 

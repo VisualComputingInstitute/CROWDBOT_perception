@@ -160,6 +160,9 @@
        <param name="backproject_visual_image" value="$(arg backproject_visual_image)" type="string"/>
        <param name="person_trajectories" value="$(arg person_trajectories)" />
        <param name="max_frame" value="$(arg max_frame)" type="int"/>
+
+       <remap from="/head_xtion/hd/camera_info" to="/camera/color/camera_info"/>
+       <remap from="/head_xtion/hd/image_color_rect" to="/camera/color/image_raw"/>
    </node>
 
 </launch>
