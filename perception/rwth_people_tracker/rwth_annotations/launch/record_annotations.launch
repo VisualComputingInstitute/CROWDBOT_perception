@@ -55,7 +55,7 @@
     <!-- Evaluation -->
     <node name="spencer_tracking_metrics" pkg="spencer_tracking_metrics" type="online_analysis.py" required="true" output="screen" clear_params="true">
         <param name="approximate_sync" value="true"/>
-        <param name="sync_slop" value="$(arg sync_slop)"/> 
+        <param name="sync_slop" value="$(arg sync_slop)"/>
         <param name="sync_queue_size" value="$(arg sync_queue_size)"/>
         <param name="clear_metrics" value="false"/>
         <param name="ospa" value="false"/>
@@ -70,7 +70,7 @@
         <remap from="/groundtruth" to="/spencer/perception/annotated_persons"/>
         <remap from="/spencer/perception/tracked_persons" to="/spencer/perception_internal/people_tracking/rgbd_front_top/tracked_persons"/>
         <remap from="/srl_nearest_neighbor_tracker/tracking_timing_metrics" to="/tracking_timing_metrics"/>
-    </node>  
+    </node>
 
 </launch>
 

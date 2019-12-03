@@ -1,0 +1,66 @@
+<!-- Launch file for evaluating crowdbot sequence -->
+<launch>
+
+	<!-- Prefixes -->
+	<arg name="anno_folder_prefix" default="/home/sabari/Documents/crowdbot/ucl_video_capture/scenarios/tracker_output"/>
+
+	<!-- Tracking paras -->
+	<arg name="queue_size" default="10"/>
+	<arg name="camera_namespace" default="/camera"/>
+	<arg name="ground_plane" default="/ground_plane"/>
+	<arg name="visual_odometry" default="/motion_matrix"/>
+
+	<!-- Annotation paras -->
+	<!--Boxes+Timestamps path have to meet format + belong to playbacked sequence in folder, of course-->
+	<arg name="anno_sequence_path" default="$(arg anno_folder_prefix)/annotation_sequence_1"/> <!-- RESET FOR NEW SEQ -->
+	<arg name="boxes_path" default="$(arg anno_sequence_path)/annotations.txt"/>
+	<arg name="timestamps_path" default="$(arg anno_sequence_path)/image_info.txt"/>
+	<arg name="misses_filename" default="$(arg anno_sequence_path)/last_run/misses.txt"/>
+	<arg name="falsepositives_filename" default="$(arg anno_sequence_path)/last_run/falsepositives.txt"/>
+	<arg name="mismatches_filename" default="$(arg anno_sequence_path)/last_run/mismatches.txt"/>
+	<arg name="groundtruth_filename" default="$(arg anno_sequence_path)/last_run/groundtruth.txt"/>
+	<arg name="hypotheses_filename" default="$(arg anno_sequence_path)/last_run/hypotheses.txt"/>
+
+	<!-- Evaluation paras -->
+	<arg name="sync_slop" default="0.05"/>
+	<arg name="sync_queue_size" default="10"/>
+	<arg name="evaluation_prefix" default="schiphol02/front_rgbd_only/mdl/baseline"/> <!-- RESET FOR NEW SEQ -->
+	<arg name="eval_2d" default="true"/>
+	<arg name="num_expected_gt_cycles" default="10"/> <!-- RESET FOR NEW SEQ, should be 90-95% of num_annotated_frames (see log.txt) -->
+
+    <!-- Annotation publisher -->
+	<node name="annotation" pkg="rwth_annotations" type="annotation">
+		<param name="queue_size" value="$(arg queue_size)" type="int"/>
+		<param name="camera_namespace" value="$(arg camera_namespace)"/>
+		<param name="ground_plane" value="$(arg ground_plane)"/>
+		<param name="visual_odometry" value="$(arg visual_odometry)"/>
+		<param name="boxes_path" value="$(arg boxes_path)"/>
+		<param name="timestamps_path" value="$(arg timestamps_path)"/>
+	</node>
+
+    <!-- Evaluation -->
+	<node name="spencer_tracking_metrics_2d" pkg="spencer_tracking_metrics_2d" type="online_analysis.py" required="true" output="screen" clear_params="true">
+		<param name="approximate_sync" value="true"/>
+		<param name="sync_slop" value="$(arg sync_slop)"/>
+		<param name="sync_queue_size" value="$(arg sync_queue_size)"/>
+		<param name="clear_metrics" value="false"/>
+		<param name="ospa" value="false"/>
+		<param name="timing_metrics" value="false"/>
+		<param name="matching_threshold" value="0.5"/>
+		<param name="subscriber_timeout" value="20"/>
+		<param name="transform_flag" value="false"/>
+		<param name="evaluation_prefix" value="$(arg evaluation_prefix)"/>
+		<param name="aggregate_results" value="true"/>
+		<param name="num_expected_gt_cycles" value="$(arg num_expected_gt_cycles)"/>
+		<param name="misses_filename" value="$(arg misses_filename)"/>
+		<param name="falsepositives_filename" value="$(arg falsepositives_filename)"/>
+		<param name="mismatches_filename" value="$(arg mismatches_filename)"/>
+		<param name="groundtruth_filename" value="$(arg groundtruth_filename)"/>
+		<param name="hypotheses_filename" value="$(arg hypotheses_filename)"/>
+
+		<remap from="/groundtruth" to="/spencer/perception/annotated_persons2d"/>
+		<remap from="/spencer/perception/tracked_persons" to="/rwth_tracker/tracked_persons_2d"/>
+		<remap from="/srl_nearest_neighbor_tracker/tracking_timing_metrics" to="/tracking_timing_metrics"/>
+	</node>
+
+</launch>

@@ -4,7 +4,18 @@ project(rwth_pedestrian_tracking)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS cmake_modules cv_bridge message_filters roscpp sensor_msgs std_msgs rwth_perception_people_msgs frame_msgs image_transport tf)
+find_package(catkin REQUIRED COMPONENTS
+	cmake_modules
+	cv_bridge
+	message_filters
+	roscpp
+	sensor_msgs
+	std_msgs
+	rwth_perception_people_msgs
+	frame_msgs
+	image_transport
+	tf
+)
 
 # If we can use C++11, we do want to make use of it.
 # Otherwise, currently, we implicitly fallback on boost.
@@ -18,8 +29,8 @@ elseif(COMPILER_SUPPORTS_CXX0X)
 endif()
 
 # Include Eigen
-find_package(Eigen REQUIRED) 
-include_directories(${EIGEN_INCLUDE_DIRS}) 
+find_package(Eigen REQUIRED)
+include_directories(${EIGEN_INCLUDE_DIRS})
 add_definitions(${EIGEN_DEFINITIONS})
 
 find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
@@ -97,11 +108,29 @@ include_directories(include
 # )
 
 ## Declare a cpp executable
-add_executable(pedestrian_tracking src/main.cpp src/Camera.cpp src/ConfigFile.cpp src/Globals.cpp src/AncillaryMethods.cpp src/Hypo.cpp src/FrameInlier.cpp src/Detections.cpp src/EKalman.cpp src/Kalman.cpp src/Math.cpp src/MDL.cpp src/Tracker.cpp src/Visualization.cpp)
+add_executable(pedestrian_tracking
+	src/main.cpp
+	src/Camera.cpp
+	src/ConfigFile.cpp
+	src/Globals.cpp
+	src/AncillaryMethods.cpp
+	src/Hypo.cpp
+	src/FrameInlier.cpp
+	src/Detections.cpp
+	src/EKalman.cpp
+	src/Kalman.cpp
+	src/Math.cpp
+	src/MDL.cpp
+	src/Tracker.cpp
+	src/Visualization.cpp
+)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-add_dependencies(pedestrian_tracking rwth_perception_people_msgs_generate_messages_cpp rwth_perception_people_msgs_gencpp)
+add_dependencies(pedestrian_tracking
+	rwth_perception_people_msgs_generate_messages_cpp
+	rwth_perception_people_msgs_gencpp
+)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(pedestrian_tracking

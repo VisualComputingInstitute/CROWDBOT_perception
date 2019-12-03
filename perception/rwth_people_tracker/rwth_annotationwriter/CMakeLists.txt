@@ -4,7 +4,17 @@ project(rwth_annotationwriter)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS cv_bridge message_filters roscpp sensor_msgs std_msgs rwth_perception_people_msgs spencer_tracking_msgs image_transport tf)
+find_package(catkin REQUIRED COMPONENTS
+	cv_bridge
+	message_filters
+	roscpp
+	sensor_msgs
+	std_msgs
+	image_transport
+	tf
+	rwth_perception_people_msgs
+	spencer_tracking_msgs
+)
 
 find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
 include(${QT_USE_FILE})

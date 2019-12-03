@@ -1,0 +1,13 @@
+2018-07-27.14-43-58 cd realsense_tf/
+2018-07-27.14-43-59 ls
+2018-07-27.14-44-45 cd ..
+2018-07-27.14-45-06 vim CMakeLists.txt 
+2018-07-27.14-45-30 catkin build realsense_tf 
+2018-07-27.14-45-47 ls
+2018-07-27.14-46-56 cd realsense_tf/
+2018-07-27.14-47-07 source ../../devel/setup.bash
+2018-07-27.15-05-39 rosrun realsense_tf tf_broadcaster 
+2018-07-27.15-18-21 rosrun realsense_tf tf_broadcaster 
+2018-07-27.15-48-03 rosrun realsense_tf tf_broadcaster 
+2018-07-27.16-02-14 rosrun realsense_tf tf_broadcaster 
+2018-07-27.17-04-50 rosrun realsense_tf tf_broadcaster 
