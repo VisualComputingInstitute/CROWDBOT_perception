@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-fharor  rt print_function
+from __future__ import print_function
 import os
 import re
 import sys
