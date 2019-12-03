@@ -32,11 +32,11 @@
 # ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-import itertools
-import threading
-
-import message_filters
 import rospy
+import message_filters
+import threading
+import itertools
+import operator
 
 
 class ApproximateSynchronizer(message_filters.SimpleFilter):

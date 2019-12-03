@@ -1,8 +1,9 @@
 import rospy
 
 import numpy
-import spencer_tracking_metrics.clearmetrics as clearmetrics
-import spencer_tracking_metrics.pymot as pymot
+import spencer_tracking_metrics_2d.clearmetrics as clearmetrics
+import spencer_tracking_metrics_2d.pymot as pymot
+
 
 
 class ClearMotInput(object):
@@ -131,9 +132,9 @@ def calculateClearMetrics(clearMotInput):
     return results
 
 
-def calculatePyMot(clearMotInput):
+def calculatePyMot2d(clearMotInput2d):
     """
-    Calculate CLEARMOT metrics using the implementation by Markus Roth et al. (modified to use Euclidean distances instead of bbox overlap)
+    Calculate CLEARMOT metrics using the implementation by Markus Roth et al. (with bbox overlap for 2d evaluation)
     """
 
     groundtruth = dict()
@@ -142,25 +143,33 @@ def calculatePyMot(clearMotInput):
     hypotheses = dict()
     hypotheses["frames"] = []
 
-    for cycleIdx in xrange(0, len(clearMotInput.groundTruthArray)):
+    for cycleIdx in xrange(0, len(clearMotInput2d.groundTruthArray)):
         # Make sure input data is in the same coordinate frame
-        assert (clearMotInput.groundTruthArray[cycleIdx].header.frame_id ==
-                clearMotInput.trackedPersonsArray[cycleIdx].header.frame_id)
+        assert (clearMotInput2d.groundTruthArray[cycleIdx].header.frame_id ==
+                clearMotInput2d.trackedPersonsArray[cycleIdx].header.frame_id)
 
         # Groundtruth
         frame = dict()
         frame["timestamp"] = float(cycleIdx)
         frame["num"] = cycleIdx
         frame["annotations"] = []
+        frame["img_timestamp"] = clearMotInput2d.groundTruthArray[
+            cycleIdx].header.stamp
+        frame["frame_idx"] = clearMotInput2d.groundTruthArray[
+            cycleIdx].frame_idx
 
-        for gtPerson in clearMotInput.groundTruthArray[cycleIdx].tracks:
+        for gtPerson in clearMotInput2d.groundTruthArray[cycleIdx].boxes:
             if not gtPerson.track_id in rospy.get_param(
                     "~groundtruth_track_ids_to_ignore", []):
                 entity = dict()
                 entity["id"] = gtPerson.track_id
-                entity["x"] = gtPerson.pose.pose.position.x
-                entity["y"] = gtPerson.pose.pose.position.y
-                entity["dco"] = gtPerson.is_occluded
+                entity["x"] = gtPerson.x
+                entity["y"] = gtPerson.y
+                entity["w"] = gtPerson.w
+                entity["h"] = gtPerson.h
+                entity["dco"] = False  #no is_occluded flag yet!
+                entity["img_timestamp"] = clearMotInput2d.groundTruthArray[
+                    cycleIdx].header.stamp
                 frame["annotations"].append(entity)
 
         groundtruth["frames"].append(frame)
@@ -170,21 +179,31 @@ def calculatePyMot(clearMotInput):
         frame["timestamp"] = float(cycleIdx)
         frame["num"] = cycleIdx
         frame["hypotheses"] = []
+        frame["img_timestamp"] = clearMotInput2d.groundTruthArray[
+            cycleIdx].header.stamp
+        frame["frame_idx"] = clearMotInput2d.trackedPersonsArray[
+            cycleIdx].frame_idx
 
-        for trackedPerson in clearMotInput.trackedPersonsArray[
-                cycleIdx].tracks:
+        for trackedPerson in clearMotInput2d.trackedPersonsArray[
+                cycleIdx].boxes:
             entity = dict()
             entity["id"] = trackedPerson.track_id
-            entity["x"] = trackedPerson.pose.pose.position.x
-            entity["y"] = trackedPerson.pose.pose.position.y
-            entity["dco"] = trackedPerson.is_occluded
+            entity["x"] = trackedPerson.x
+            entity["y"] = trackedPerson.y
+            entity["w"] = trackedPerson.w
+            entity["h"] = trackedPerson.h
+            entity["dco"] = False  #no is_occluded flag yet!
+            entity["timestamp"] = clearMotInput2d.trackedPersonsArray[
+                cycleIdx].header.stamp
             frame["hypotheses"].append(entity)
 
         hypotheses["frames"].append(frame)
 
     evaluation = pymot.MOTEvaluation(groundtruth, hypotheses,
-                                     clearMotInput.matchingThreshold)
-    evaluation.evaluate()
+                                     clearMotInput2d.matchingThreshold)
+
+    # 2d evaluation
+    evaluation.evaluate(True)
 
     relativeStatistics = evaluation.getRelativeStatistics()
     absoluteStatistics = evaluation.getAbsoluteStatistics()
@@ -195,12 +214,12 @@ def calculatePyMot(clearMotInput):
     results['motp'] = relativeStatistics['MOTP']
     results['fn'] = float(
         'nan')  # FIXME: is this 'lonely ground truth tracks' !?
-    results['fp'] = absoluteStatistics['false positives']
-    results['mismatches'] = absoluteStatistics['mismatches']
     results['matches'] = absoluteStatistics['correspondences']
     results['gt_tracks'] = absoluteStatistics['ground truth tracks']
     results['tracker_tracks'] = absoluteStatistics['hypothesis tracks']
     results['correspondences'] = absoluteStatistics['correspondences']
+    results['groundtruths'] = absoluteStatistics['ground truths']
+
     # Extra results
     results['miss_rate'] = relativeStatistics['miss rate']
     results['fp_rate'] = relativeStatistics['false positive rate']

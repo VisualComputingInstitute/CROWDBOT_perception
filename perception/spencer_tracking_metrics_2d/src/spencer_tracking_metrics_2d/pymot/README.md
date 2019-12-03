@@ -49,45 +49,45 @@ The groundtruth json format looks like this and is [sloth](https://github.com/cv
     {
         "frames": [
             {
-                "timestamp": 0.054,
-                "num": 0,
-                "class": "frame",
+                "timestamp": 0.054, 
+                "num": 0, 
+                "class": "frame", 
                 "annotations": [
                     {
-                        "dco": true,
-                        "height": 31.0,
-                        "width": 31.0,
-                        "id": "sheldon",
-                        "y": 105.0,
-                        "x": 608.0
+                        "dco": true, 
+                        "height": 31.0, 
+                        "width": 31.0, 
+                        "id": "sheldon", 
+                        "y": 105.0, 
+                        "x": 608.0 
                     }
                 ]
-            },
+            }, 
             {
-                "timestamp": 3.854,
-                "num": 95,
-                "class": "frame",
+                "timestamp": 3.854, 
+                "num": 95, 
+                "class": "frame", 
                 "annotations": [
                     {
-                        "dco": true,
-                        "height": 31.0,
-                        "width": 31.0,
-                        "id": "sheldon",
-                        "y": 105.0,
-                        "x": 608.0
-                    },
+                        "dco": true, 
+                        "height": 31.0, 
+                        "width": 31.0, 
+                        "id": "sheldon", 
+                        "y": 105.0, 
+                        "x": 608.0 
+                    }, 
                     {
-                        "dco": true,
-                        "height": 38.0,
-                        "width": 29.0,
-                        "id": "leonard",
-                        "y": 145.0,
+                        "dco": true, 
+                        "height": 38.0, 
+                        "width": 29.0, 
+                        "id": "leonard", 
+                        "y": 145.0, 
                         "x": 622.0
                     }
                 ]
             }
         ],
-        "class": "video",
+        "class": "video", 
         "filename": "/cvhci/data/multimedia/bigbangtheory/bbt_s01e01/bbt_s01e01.idx"
     }
 ]
@@ -100,42 +100,42 @@ The `frames` list contains a list of annotated frames. Frames from groundtruth a
     {
         "frames": [
             {
-                "timestamp": 0.054,
-                "num": 0,
-                "class": "frame",
-                "hypotheses": [
+                "timestamp": 0.054, 
+                "num": 0, 
+                "class": "frame", 
+                "hypotheses": [                    
                     {
-                        "height": 31.0,
-                        "width": 31.0,
-                        "id": "sheldon",
-                        "y": 105.0,
-                        "x": 608.0
+                        "height": 31.0, 
+                        "width": 31.0, 
+                        "id": "sheldon", 
+                        "y": 105.0, 
+                        "x": 608.0 
                     }
                 ]
-            },
+            }, 
             {
-                "timestamp": 3.854,
-                "num": 95,
-                "class": "frame",
+                "timestamp": 3.854, 
+                "num": 95, 
+                "class": "frame", 
                 "hypotheses": [
                     {
-                        "height": 31.0,
-                        "width": 31.0,
-                        "id": "sheldon",
-                        "y": 105.0,
+                        "height": 31.0, 
+                        "width": 31.0, 
+                        "id": "sheldon", 
+                        "y": 105.0, 
                         "x": 608.0
-                    },
+                    }, 
                     {
-                        "height": 38.0,
-                        "width": 29.0,
-                        "id": "leonard",
-                        "y": 145.0,
+                        "height": 38.0, 
+                        "width": 29.0, 
+                        "id": "leonard", 
+                        "y": 145.0, 
                         "x": 622.0
                     }
                 ]
             }
         ],
-        "class": "video",
+        "class": "video", 
         "filename": "/cvhci/data/multimedia/bigbangtheory/bbt_s01e01/bbt_s01e01.idx"
     }
 ]
@@ -165,19 +165,19 @@ Total hypothesis tracks 2
 `getAbsoluteStatistics()`
 ```json
 {
-    "correspondences": 3,
-    "covered ground truth tracks": 2,
-    "covering hypothesis tracks": 2,
-    "false positives": 0,
-    "ground truth tracks": 2,
-    "ground truths": 3,
-    "hypothesis tracks": 2,
-    "lonely ground truth tracks": 0,
-    "lonely hypothesis tracks": 0,
-    "mismatches": 0,
-    "misses": 0,
-    "non-recoverable mismatches": 0,
-    "recoverable mismatches": 0,
+    "correspondences": 3, 
+    "covered ground truth tracks": 2, 
+    "covering hypothesis tracks": 2, 
+    "false positives": 0, 
+    "ground truth tracks": 2, 
+    "ground truths": 3, 
+    "hypothesis tracks": 2, 
+    "lonely ground truth tracks": 0, 
+    "lonely hypothesis tracks": 0, 
+    "mismatches": 0, 
+    "misses": 0, 
+    "non-recoverable mismatches": 0, 
+    "recoverable mismatches": 0, 
     "total overlap": 3.0
 }
 
@@ -187,14 +187,14 @@ Total hypothesis tracks 2
 `getRelativeStatistics()`
 ```json
 {
-    "MOTA": 1.0,
-    "MOTP": 1.0,
-    "false positive rate": 0.0,
-    "mismatch rate": 0.0,
-    "miss rate": 0.0,
-    "non-recoverable mismatch rate": 0.0,
-    "recoverable mismatch rate": 0.0,
-    "track precision": 1.0,
+    "MOTA": 1.0, 
+    "MOTP": 1.0, 
+    "false positive rate": 0.0, 
+    "mismatch rate": 0.0, 
+    "miss rate": 0.0, 
+    "non-recoverable mismatch rate": 0.0, 
+    "recoverable mismatch rate": 0.0, 
+    "track precision": 1.0, 
     "track recall": 1.0
 }
 ```
@@ -220,7 +220,7 @@ Please feel free to contribute.
 ## Contributors
 * [Markus Roth](https://github.com/herr-biber) (roth@videmo.de)
 * [Martin Bäuml](https://github.com/baeuml) (baeuml@kit.edu)
-* [Mika Fischer](https://github.com/mika-fischer) (fischer@videmo.de)
+* [Mika Fischer](https://github.com/mika-fischer) (fischer@videmo.de) 
 * Keni Bernardin (bernardin@videmo.de)
 
 Feel free to report bugs and contribute new features.

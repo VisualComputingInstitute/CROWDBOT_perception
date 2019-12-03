@@ -13,15 +13,14 @@ import rospy
 import std_msgs
 import tf
 import tf.transformations as transformations
-from spencer_tracking_msgs.msg import (ImmDebugInfos, TrackedPersons,
-                                       TrackingTimingMetrics)
+from frame_msgs.msg import TrackedPersons2d
 from std_msgs.msg import Float32 as ResultMsg
 
 import numpy
-import spencer_tracking_metrics.aggregate_results_over_runs as aggregate_results_over_runs
-import spencer_tracking_metrics.ospa as ospa
-from spencer_tracking_metrics import *
-from spencer_tracking_metrics.approxsync import ApproximateSynchronizer
+import spencer_tracking_metrics_2d.aggregate_results_over_runs as aggregate_results_over_runs
+import spencer_tracking_metrics_2d.ospa as ospa
+from spencer_tracking_metrics_2d import *
+from spencer_tracking_metrics_2d.approxsync import ApproximateSynchronizer
 
 
 def newTracksAvailable(trackedPersons):
@@ -57,7 +56,7 @@ def newTracksAndGroundtruthAvailable(trackedPersons, groundtruthPersons):
                 return
 
             # Transform pose of each groundtruth person
-            for groundtruthPerson in groundtruthPersons.tracks:
+            for groundtruthPerson in groundtruthPersons.boxes:
                 groundtruthPerson.pose.pose = transformPose(
                     transformMatrix, groundtruthPerson.pose)
             groundtruthPersons.header.frame_id = trackedPersons.header.frame_id
@@ -150,7 +149,7 @@ if __name__ == '__main__':
         "~") + "/tracking_evaluation/" + evaluationPrefix
     evaluation_folder = evaluation_base_folder + dateStamp + "/"
     if not os.path.exists(evaluation_folder):
-        print "Saving tracking metrics in folder: " + evaluation_folder
+        print("Saving tracking metrics in folder: " + evaluation_folder)
         os.makedirs(evaluation_folder)
 
     saveAllParams(evaluation_folder + "params_%s.txt" % dateStamp)
@@ -206,9 +205,9 @@ if __name__ == '__main__':
     transformListener = tf.TransformListener()
 
     synchronizedSubscribers = [
-        message_filters.Subscriber("/spencer/perception/tracked_persons",
-                                   TrackedPersons),
-        message_filters.Subscriber("groundtruth", TrackedPersons)
+        message_filters.Subscriber("/rwth_tracker/tracked_persons_2d",
+                                   TrackedPersons2d),
+        message_filters.Subscriber("groundtruth", TrackedPersons2d)
     ]
 
     if approximateSync:
@@ -223,24 +222,10 @@ if __name__ == '__main__':
 
     # Listen for tracked persons to count number of total tracker cycles
     trackedPersonsSubscriber = rospy.Subscriber(
-        "/spencer/perception/tracked_persons",
-        TrackedPersons,
+        "/rwth_tracker/tracked_persons_2d",
+        TrackedPersons2d,
         newTracksAvailable,
         queue_size=1000)
-    if immDebug:
-        immDebugSubscriber = rospy.Subscriber(
-            "/srl_nearest_neighbor_tracker/imm_debug_infos",
-            ImmDebugInfos,
-            newDebugIngosAvailable,
-            queue_size=10)
-        debugInfosArray = []
-    if timingMetrics:
-        timingMetricsSubscriber = rospy.Subscriber(
-            "/srl_nearest_neighbor_tracker/tracking_timing_metrics",
-            TrackingTimingMetrics,
-            newTimingMetricAvailable,
-            queue_size=10)
-        timingMetricsArray = []
 
     # Listen for tracked persons and groundtruth tracked persons messages to determine metrics
     rospy.loginfo(
@@ -299,8 +284,8 @@ if __name__ == '__main__':
 
     pyMotResults = []
     if pyMot:
-        rospy.loginfo("Running PyMot analysis...")
-        pyMotResults = calculatePyMot(clearMotInput)
+        rospy.loginfo("Running 2D PyMot analysis...")
+        pyMotResults = calculatePyMot2d(clearMotInput)
         pyMotResults["cycles_synched_with_gt"] = len(groundTruthArray)
         pyMotResults["tracker_cycles"] = numTrackerCycles
         pyMotResults["duration"] = totalDuration
@@ -321,6 +306,7 @@ if __name__ == '__main__':
         time.sleep(1)
         writeResults(pyMotResults,
                      evaluation_folder + "pymot_metrics_%s.txt" % dateStamp)
+
     if ospaFlag:
         rospy.loginfo("Running OSPA analysis ...")
         for trackedPersons, groundtruthPersons in zip(trackedPersonsArray,

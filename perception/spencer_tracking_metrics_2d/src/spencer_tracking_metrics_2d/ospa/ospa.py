@@ -17,9 +17,9 @@ class OSPADistance():
         self.p = p
         # Cut off distannce
         self.c = c
-        #mapping
+        # mapping
         self.gt_mappings = dict()
-        #use lapjv instead of munkres? (requires library to be installed from http://www.starklab.org/members/kazmar/software/)
+        # use lapjv instead of munkres? (requires library to be installed from http://www.starklab.org/members/kazmar/software/)
         self.use_lapjv = rospy.get_param("~use_lapjv", True)
 
         if self.use_lapjv:
@@ -174,6 +174,12 @@ class OSPADistance():
         # Not contained in version from github implemented
         # acc. to paper "A Metric for Performance Evaluation of Multi-Target Tracking Algorithms"
         # Implementation of labeling error
+        # Penalizes ID switches from frame to frame
+        #rospy.loginfo(wrong_labels)
+        err_label = float(((self.a**self.p)) / float(n) *
+                          float(fragments))**(1 / float(self.p))
+        # store current assignments of labels to track
+        #ospa_err = ( float(total_loc + (n-m)*self.c**self.p) / n)**(1/float(self.p))
         ospa_err = (float(total_loc + self.a * wrong_labels +
                           (n - m) * self.c**self.p) / n)**(1 / float(self.p))
         ospa_tuple = (float(ospa_err), float(err_loc), float(err_cn),

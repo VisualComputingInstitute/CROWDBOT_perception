@@ -1,5 +1,5 @@
 <package>
-  <name>spencer_tracking_metrics</name>
+  <name>spencer_tracking_metrics_2d</name>
   <version>0.0.1</version>
   <description>
      Wrappers for CLEAR MOT and OSPA (multi-object tracking) metrics which use the SPENCER message definitions

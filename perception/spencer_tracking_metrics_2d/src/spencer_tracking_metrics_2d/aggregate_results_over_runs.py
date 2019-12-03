@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-from __future__ import print_function
-
+fharor  rt print_function
 import os
 import re
 import sys
@@ -32,7 +31,7 @@ def formatField(value, maxlen=10):
 
 
 def aggregateResults(resultsPath, numExpectedGTCycles):
-    # print("Aggregating results in folder: " + resultsPath)
+    #print("Aggregating results in folder: " + resultsPath)
 
     if not resultsPath.endswith("/"):
         resultsPath += "/"
@@ -220,3 +219,4 @@ if __name__ == "__main__":
 
     resultsPath = sys.argv[1]
     aggregateResults(resultsPath, 2400)
+

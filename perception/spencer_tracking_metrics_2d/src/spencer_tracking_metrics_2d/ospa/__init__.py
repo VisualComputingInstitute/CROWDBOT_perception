@@ -5,7 +5,6 @@ from std_msgs.msg import Float32 as ResultMsg
 import numpy
 import ospa as ospa_implementation
 
-
 class OspaAnalysis(ospa_implementation.OSPADistance):
     def __init__(self, p=1.0, c=10.0, a=1.0, publishResult=True):
         ospa_implementation.OSPADistance.__init__(self, p=p, c=c, a=a)

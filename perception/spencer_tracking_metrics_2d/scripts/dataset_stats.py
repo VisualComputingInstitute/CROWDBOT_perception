@@ -5,7 +5,7 @@ import time
 
 import message_filters
 import rospy
-from spencer_tracking_msgs.msg import TrackedPersons
+from frame_msgs.msg import TrackedPersons
 
 import numpy
 

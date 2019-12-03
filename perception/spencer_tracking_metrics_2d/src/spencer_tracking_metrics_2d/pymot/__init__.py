@@ -71,9 +71,18 @@ class MOTEvaluation:
         # List of dicts, containing ground truths and hypotheses for visual debugging
         self.visualDebugFrames_ = []
 
+        # miss (fn)   : [frameid annoid x y w h]
+        # false pos   : [frameid hypoid x y w h]
+        # mismatch    : [frameid hypoid x y w h]
+        # groundtruth : [frameid annoid x y w h]
+        # hypotheses  : [frameid hypoid x y w h]
+
         self.evalMisses = []
         self.evalFalsePositives = []
         self.evalMismatches = []
+        self.evalGroundtruth = []
+        self.evalHypotheses = []
+        self.evalMappings = []
 
     def get_hypotheses_frame(self, timestamp):
         """Get list of hypotheses occuring chronologically close to ground truth timestamp, but at most with time difference self.sync_delta"""
@@ -98,50 +107,89 @@ class MOTEvaluation:
 
         return hypotheses_frames[0]  # return first and only element of list
 
-    def evaluate(self):
+    def evaluate(self, evaluate2d=False):
         """Compute MOTA metric from ground truth and hypotheses for all frames."""
 
         frames = self.groundtruth_["frames"]
         for frame in frames:
-            self.evaluateFrame(frame)
+            self.evaluateFrame(frame, evaluate2d)
 
         misses_filename = rospy.get_param("~misses_filename", "misses.txt")
         falsepositives_filename = rospy.get_param("~falsepositives_filename",
                                                   "falsepositives.txt")
         mismatches_filename = rospy.get_param("~mismatches_filename",
                                               "mismatches.txt")
+        groundtruth_filename = rospy.get_param("~groundtruth_filename",
+                                               "groundtruth.txt")
+        hypotheses_filename = rospy.get_param("~hypotheses_filename",
+                                              "hypotheses.txt")
+        mappings_filename = rospy.get_param("~mappings_filename",
+                                            "mappings.txt")
 
         with open(misses_filename, 'w') as file:
             for item in self.evalMisses:
-                file.write("%s " % str(item[0]) + " " + str(item[1]) + "\n")
+                file.write("%s " % str(item[0]) + " " + str(item[1]) + " " +
+                           str(item[2]) + " " + str(item[3]) + " " +
+                           str(item[4]) + " " + str(item[5]) + " " +
+                           str(item[6]) + "\n")
             file.close
-            #print "Wrote misses to "
 
         with open(falsepositives_filename, 'w') as file:
             for item in self.evalFalsePositives:
                 file.write("%s " % str(item[0]) + " " + str(item[1]) + " " +
                            str(item[2]) + " " + str(item[3]) + " " +
-                           str(item[4]) + " " + str(item[5]) + "\n")
+                           str(item[4]) + " " + str(item[5]) + " " +
+                           str(item[6]) + "\n")
             file.close
 
         with open(mismatches_filename, 'w') as file:
             for item in self.evalMismatches:
                 file.write("%s " % str(item[0]) + " " + str(item[1]) + " " +
                            str(item[2]) + " " + str(item[3]) + " " +
-                           str(item[4]) + " " + str(item[5]) + "\n")
+                           str(item[4]) + " " + str(item[5]) + " " +
+                           str(item[6]) + "\n")
             file.close
 
-    def evaluateFrame(self, frame):
+        with open(groundtruth_filename, 'w') as file:
+            for item in self.evalGroundtruth:
+                file.write("%s " % str(item[0]) + " " + str(item[1]) + " " +
+                           str(item[2]) + " " + str(item[3]) + " " +
+                           str(item[4]) + " " + str(item[5]) + " " +
+                           str(item[6]) + "\n")
+            file.close
+
+        with open(hypotheses_filename, 'w') as file:
+            for item in self.evalHypotheses:
+                file.write("%s " % str(item[0]) + " " + str(item[1]) + " " +
+                           str(item[2]) + " " + str(item[3]) + " " +
+                           str(item[4]) + " " + str(item[5]) + " " +
+                           str(item[6]) + "\n")
+            file.close
+
+        with open(mappings_filename, 'w') as file:
+            for item in self.evalMappings:
+                file.write("%s " % str(item[0]) + " " + str(item[1]) + " " +
+                           str(item[2]) + " " + str(item[3]) + " " +
+                           str(item[4]) + "\n")
+            file.close
+
+    def evaluateFrame(self, frame, evaluate2d=False):
         """Update statistics by evaluating a new frame."""
 
         timestamp = frame["timestamp"]
         groundtruths = frame["annotations"]
-        hypotheses = self.get_hypotheses_frame(timestamp)["hypotheses"]
+        closest_hypos = self.get_hypotheses_frame(timestamp)
+        hypotheses = closest_hypos["hypotheses"]
+        img_timestamp = frame["img_timestamp"]
 
         visualDebugAnnotations = []
 
         # Save occuring ground truth ids
         for g in groundtruths:
+            self.evalGroundtruth.append([
+                frame["num"], g["id"], g["x"], g["y"], g["w"], g["h"],
+                img_timestamp
+            ])
             self.groundtruth_ids_.add(g["id"])
             # Added for Mostly Tracked calculation
             temp_id = g["id"]
@@ -158,6 +206,10 @@ class MOTEvaluation:
 
         # Save occuring hypothesis ids
         for h in hypotheses:
+            self.evalHypotheses.append([
+                frame["num"], h["id"], h["x"], h["y"], h["w"], h["h"],
+                img_timestamp
+            ])
             self.hypothesis_ids_.add(h["id"])
 
         rospy.logdebug("")
@@ -216,10 +268,49 @@ class MOTEvaluation:
 
             # Hypothesis found for known mapping
             # Check hypothesis for overlap
-            distance = numpy.linalg.norm(
-                Rect(groundtruth[0]).asNumpyArray() -
-                Rect(hypothesis[0]).asNumpyArray())
-            if distance <= self.matching_threshold_ and not groundtruth[0].get(
+            if evaluate2d:
+                x1 = groundtruth[0]["x"]
+                x2 = hypothesis[0]["x"]
+                y1 = groundtruth[0]["y"]
+                y2 = hypothesis[0]["y"]
+                w1 = groundtruth[0]["w"]
+                w2 = hypothesis[0]["w"]
+                h1 = groundtruth[0]["h"]
+                h2 = hypothesis[0]["h"]
+                #print("before clipping")
+                #print("GT %s: (%.2f, %.2f, %.2f, %.2f)" % (groundtruth["id"], x1, y1, w1, h1))
+                #print("HY %s: (%.2f, %.2f, %.2f, %.2f)" % (hypothesis["id"], x2, y2, w2, h2))
+
+                #clip hypo box
+                if x2 < 0:
+                    w2 = w2 + x2
+                    x2 = 0
+                elif (x2 + w2) > 639:
+                    w2 = 639 - x2
+
+                if y2 < 0:
+                    h2 = h2 + y2
+                    y2 = 0
+                elif (y2 + h2) > 479:
+                    h2 = 479 - y2
+
+                #print("after clipping")
+                #print("GT %s: (%.2f, %.2f, %.2f, %.2f)" % (groundtruth["id"], x1, y1, w1, h1))
+                #print("HY %s: (%.2f, %.2f, %.2f, %.2f)" % (hypothesis["id"], x2, y2, w2, h2))
+
+                intersection = (min(x1 + w1, x2 + w2) - max(x1, x2)) * (
+                    min(y1 + h1, y2 + h2) - max(y1, y2))
+                union = (w1 * h1 + w2 * h2) - intersection
+                # distance = Rect(groundtruth[0]).overlap(Rect(hypothesis[0]))
+                distance = float(intersection) / union
+                #print("STEP1: DIST candidate %s %s %.2f" % (groundtruth["id"], hypothesis["id"], distance))
+                #print("(int: %.2f / union: %.2f" % (intersection, union))
+            else:
+                distance = numpy.linalg.norm(
+                    Rect(groundtruth[0]).asNumpyArray() -
+                    Rect(hypothesis[0]).asNumpyArray())
+
+            if distance >= self.matching_threshold_ and not groundtruth[0].get(
                     "dco", False):
                 rospy.logdebug("Keeping correspondence between %s and %s" %
                                (groundtruth[0]["id"], hypothesis[0]["id"]))
@@ -230,11 +321,15 @@ class MOTEvaluation:
             elif groundtruth[0].get("dco", False):
                 correspondences[gt_id] = hypothesis[0]["id"]
             elif hypothesis[0].get("dco", False) and not groundtruth[0].get(
-                    "dco", False) and distance <= 2 * self.matching_threshold_:
+                    "dco", False) and distance >= self.matching_threshold_:
                 self.misses_ += 1
                 correspondences[gt_id] = hypothesis[0]["id"]
                 self.total_distance_ += distance
-                self.evalMisses.append([frame["num"], correspondences[gt_id]])
+                self.evalMisses.append([
+                    frame["num"], correspondences[gt_id], hypothesis[0]["x"],
+                    hypothesis[0]["y"], hypothesis[0]["w"], hypothesis[0]["h"],
+                    img_timestamp
+                ])
 
         munk_hypotheses = filter(
             lambda h: h['id'] not in correspondences.values(), hypotheses)
@@ -277,12 +372,52 @@ class MOTEvaluation:
 
                 rect_groundtruth = Rect(groundtruth)
                 rect_hypothesis = Rect(hypothesis)
-                distance = numpy.linalg.norm(rect_groundtruth.asNumpyArray() -
-                                             rect_hypothesis.asNumpyArray())
+                if evaluate2d:
+                    x1 = groundtruth["x"]
+                    x2 = hypothesis["x"]
+                    y1 = groundtruth["y"]
+                    y2 = hypothesis["y"]
+                    w1 = groundtruth["w"]
+                    w2 = hypothesis["w"]
+                    h1 = groundtruth["h"]
+                    h2 = hypothesis["h"]
 
-                if distance <= self.matching_threshold_:
+                    #print("before clipping")
+                    #print("GT %s: (%.2f, %.2f, %.2f, %.2f)" % (groundtruth["id"], x1, y1, w1, h1))
+                    #print("HY %s: (%.2f, %.2f, %.2f, %.2f)" % (hypothesis["id"], x2, y2, w2, h2))
+
+                    #clip hypo box
+                    if x2 < 0:
+                        w2 = w2 + x2
+                        x2 = 0
+                    elif (x2 + w2) > 639:
+                        w2 = 639 - x2
+
+                    if y2 < 0:
+                        h2 = h2 + y2
+                        y2 = 0
+                    elif (y2 + h2) > 479:
+                        h2 = 479 - y2
+
+                    #print("after clipping")
+                    #print("GT %s: (%.2f, %.2f, %.2f, %.2f)" % (groundtruth["id"], x1, y1, w1, h1))
+                    #print("HY %s: (%.2f, %.2f, %.2f, %.2f)" % (hypothesis["id"], x2, y2, w2, h2))
+
+                    intersection = (min(x1 + w1, x2 + w2) - max(x1, x2)) * (
+                        min(y1 + h1, y2 + h2) - max(y1, y2))
+                    union = (w1 * h1 + w2 * h2) - intersection
+                    # distance = Rect(groundtruth[0]).overlap(Rect(hypothesis[0]))
+                    distance = float(intersection) / union
+                    #print("STEP2: DIST candidate %s %s %.2f" % (groundtruth["id"], hypothesis["id"], distance))
+                    #print("(int: %.2f / union: %.2f" % (intersection, union))
+                else:
+                    distance = numpy.linalg.norm(
+                        rect_groundtruth.asNumpyArray() -
+                        rect_hypothesis.asNumpyArray())
+
+                if distance >= self.matching_threshold_:
                     #                        print "Fill Hungarian", rect_groundtruth, rect_hypothesis, overlap
-                    munkres_matrix[i][j] = distance
+                    munkres_matrix[i][j] = 1 / distance
                     valid_counter += 1
                     rospy.logdebug(
                         "DIFF candidate %s %s %.2f" %
@@ -418,8 +553,8 @@ class MOTEvaluation:
                         h = h[0]
 
                         self.evalMismatches.append([
-                            frame["num"], h["id"], h["x"], h["y"], h["w"],
-                            h["h"]
+                            frame["num"], g["id"], g["x"], g["y"], g["w"],
+                            g["h"], img_timestamp
                         ])
 
                         g["class"] = "mismatch"
@@ -444,6 +579,14 @@ class MOTEvaluation:
 
             # Save (overwrite) mapping even if ground truth is dco
             self.mappings_[gt_id] = hypo_id  # Update mapping
+
+        # SAVE CORRESPONDENCS GT->HYPO (MAPPING MATRIX)
+        #print(correspondences);
+        for corr_gt_id in correspondences.keys():
+            self.evalMappings.append([
+                frame["frame_idx"], corr_gt_id, closest_hypos["frame_idx"],
+                correspondences[corr_gt_id], img_timestamp
+            ])
 
         # Sorted DIFF output
         for c in sorted(correspondencelist):
@@ -481,7 +624,11 @@ class MOTEvaluation:
                 groundtruth["class"] = "miss"
                 visualDebugAnnotations.append(groundtruth)
                 self.misses_ += 1
-                self.evalMisses.append([frame["num"], groundtruth["id"]])
+                self.evalMisses.append([
+                    frame["num"], groundtruth["id"], groundtruth["x"],
+                    groundtruth["y"], groundtruth["w"], groundtruth["h"],
+                    img_timestamp
+                ])
 
         # Count false positives
         for hypothesis in hypotheses:
@@ -493,7 +640,8 @@ class MOTEvaluation:
                 hypothesis["class"] = "false positive"
                 self.evalFalsePositives.append([
                     frame["num"], hypothesis["id"], hypothesis["x"],
-                    hypothesis["y"], hypothesis["w"], hypothesis["h"]
+                    hypothesis["y"], hypothesis["w"], hypothesis["h"],
+                    img_timestamp
                 ])
 
         self.total_correspondences_ += len(correspondences)
