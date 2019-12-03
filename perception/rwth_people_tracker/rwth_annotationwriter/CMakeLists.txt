@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 	image_transport
 	tf
 	rwth_perception_people_msgs
-	spencer_tracking_msgs
+	frame_msgs
 )
 
 find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
