@@ -1,5 +1,5 @@
 import rospy
-from spencer_tracking_msgs.msg import TrackedPersons
+from frame_msgs.msg import TrackedPersons
 from std_msgs.msg import Float32 as ResultMsg
 
 import numpy

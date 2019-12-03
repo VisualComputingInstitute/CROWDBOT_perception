@@ -238,13 +238,13 @@ void callback(const CameraInfoConstPtr &info, const GroundPlane::ConstPtr &gp,
   Vector<double> planeInCam_i = projectPlaneToCam(gp_i, camera);
   Camera camI(camInt_i, camRot_i, camPos_i, planeInCam_i);
 
-  spencer_tracking_msgs::TrackedPersons annotatedPersons;
+  frame_msgs::TrackedPersons annotatedPersons;
   annotatedPersons.header.stamp = currentFrame.timestamp;
   annotatedPersons.header.seq = currentIndex;
   annotatedPersons.header.frame_id =
       "odom"; //"optitrack" for eval, "odom" for vis
 
-  spencer_tracking_msgs::TrackedPersons2d annotatedPersons2d;
+  frame_msgs::TrackedPersons2d annotatedPersons2d;
   annotatedPersons2d.header.stamp = currentFrame.timestamp;
   annotatedPersons2d.header.seq = currentIndex;
   // annotatedPersons2d.header.frame_id = "rgbd_front_top_rgb_optical_frame";
@@ -292,7 +292,7 @@ void callback(const CameraInfoConstPtr &info, const GroundPlane::ConstPtr &gp,
     // Init one tracked person (one 2D, one 3D)
 
     // 3D
-    spencer_tracking_msgs::TrackedPerson annotatedPerson;
+    frame_msgs::TrackedPerson annotatedPerson;
     annotatedPerson.track_id = anno.id;
     annotatedPerson.age = ros::Duration(0);
     annotatedPerson.is_occluded = false;
@@ -328,7 +328,7 @@ void callback(const CameraInfoConstPtr &info, const GroundPlane::ConstPtr &gp,
     annotatedPersons.tracks.push_back(annotatedPerson);
 
     // 2D
-    spencer_tracking_msgs::TrackedPerson2d annotatedPerson2d;
+    frame_msgs::TrackedPerson2d annotatedPerson2d;
     annotatedPerson2d.track_id = anno.id;
     annotatedPerson2d.x = anno.tlx;
     annotatedPerson2d.y = anno.tly;
@@ -443,14 +443,14 @@ int main(int argc, char **argv) {
   // Create Publishers
   private_node_handle_.param("annotated_persons", pub_topic_annotated_persons,
                              string("/spencer/perception/annotated_persons"));
-  pub_annotated_persons = n.advertise<spencer_tracking_msgs::TrackedPersons>(
+  pub_annotated_persons = n.advertise<frame_msgs::TrackedPersons>(
       pub_topic_annotated_persons, 10, con_cb, con_cb);
 
   private_node_handle_.param("annotated_persons2d",
                              pub_topic_annotated_persons2d,
                              string("/spencer/perception/annotated_persons2d"));
   pub_annotated_persons2d =
-      n.advertise<spencer_tracking_msgs::TrackedPersons2d>(
+      n.advertise<frame_msgs::TrackedPersons2d>(
           pub_topic_annotated_persons2d, 10, con_cb, con_cb);
   ///////////////////////////////////////////////////////////////////////////////////
 
