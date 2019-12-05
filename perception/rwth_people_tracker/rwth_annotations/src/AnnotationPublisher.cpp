@@ -249,6 +249,7 @@ void callback(const CameraInfoConstPtr &info, const GroundPlane::ConstPtr &gp,
   annotatedPersons2d.header.seq = currentIndex;
   // annotatedPersons2d.header.frame_id = "rgbd_front_top_rgb_optical_frame";
   // //"optitrack" for eval, "odom" for vis
+  annotatedPersons2d.frame_idx = currentIndex;
   annotatedPersons2d.header.frame_id =
       info->header.frame_id; //"optitrack" for eval, "odom" for vis
 

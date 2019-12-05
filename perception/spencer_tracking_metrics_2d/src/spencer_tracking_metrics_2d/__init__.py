@@ -42,6 +42,7 @@ def calculateClearMetrics(clearMotInput):
     """
     Calculate CLEARMOT metrics using the implementation by Matej Smid
     """
+    __import__('pudb').set_trace()
 
     # Remap track IDs (in groundtruth and tracker output) to zero-based indices
     rospy.logdebug(
@@ -108,7 +109,7 @@ def calculateClearMetrics(clearMotInput):
         # Remove unnecessary None entries from the right
         while True:
             if cmTracks_thisFrame and cmTracks_thisFrame[-1] is None:
-                del cmTracks_thisFrame[-1]
+                del cmTracks_thisFrame[0]
             else:
                 break
 
@@ -212,8 +213,7 @@ def calculatePyMot2d(clearMotInput2d):
     results = ClearMotResults()
     results['mota'] = relativeStatistics['MOTA']
     results['motp'] = relativeStatistics['MOTP']
-    results['fn'] = float(
-        'nan')  # FIXME: is this 'lonely ground truth tracks' !?
+    results['fn'] = float( 'nan')  # FIXME: is this 'lonely ground truth tracks' !?
     results['matches'] = absoluteStatistics['correspondences']
     results['gt_tracks'] = absoluteStatistics['ground truth tracks']
     results['tracker_tracks'] = absoluteStatistics['hypothesis tracks']
@@ -223,23 +223,17 @@ def calculatePyMot2d(clearMotInput2d):
     # Extra results
     results['miss_rate'] = relativeStatistics['miss rate']
     results['fp_rate'] = relativeStatistics['false positive rate']
-    results['mismatch_rate'] = relativeStatistics[
-        'mismatch rate']  # relative to GT count
+    results['mismatch_rate'] = relativeStatistics[ 'mismatch rate']  # relative to GT count
     results['relative_id_switches'] = relativeStatistics[
         'relative ID switches']  # relative to recovered track count (i.e. tracker with higher track recall is allowed to have more ID switches), see MOTChallenge 2015
     results['track_precision'] = relativeStatistics['track precision']
     results['track_recall'] = relativeStatistics['track recall']
     results['misses'] = absoluteStatistics['misses']
-    results['non-recoverable_mismatches'] = absoluteStatistics[
-        'non-recoverable mismatches']
-    results['recoverable_mismatches'] = absoluteStatistics[
-        'recoverable mismatches']
-    results['lonely_ground_truth_tracks'] = absoluteStatistics[
-        'lonely ground truth tracks']
-    results['covered_ground_truth_tracks'] = absoluteStatistics[
-        'covered ground truth tracks']
-    results['lonely_hypothesis_tracks'] = absoluteStatistics[
-        'lonely hypothesis tracks']
+    results['non-recoverable_mismatches'] = absoluteStatistics[ 'non-recoverable mismatches']
+    results['recoverable_mismatches'] = absoluteStatistics[ 'recoverable mismatches']
+    results['lonely_ground_truth_tracks'] = absoluteStatistics[ 'lonely ground truth tracks']
+    results['covered_ground_truth_tracks'] = absoluteStatistics[ 'covered ground truth tracks']
+    results['lonely_hypothesis_tracks'] = absoluteStatistics[ 'lonely hypothesis tracks']
 
     results['mostly_tracked'] = mostlyStatistics['mostly_tracked']
     results['partially_tracked'] = mostlyStatistics['partially_tracked']

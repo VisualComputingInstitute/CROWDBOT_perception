@@ -69,7 +69,7 @@ def newTracksAndGroundtruthAvailable(trackedPersons, groundtruthPersons):
         )
     firstTracksReceived = True
 
-    ## Uncomment for online analysis for direct output of mismatches
+    # Uncomment for online analysis for direct output of mismatches
     #     if ospaFlag:
     #         ospaAnalysis.doOspaAnalysis(trackedPersons, groundtruthPersons)
 
@@ -263,7 +263,6 @@ if __name__ == '__main__':
         % (len(trackedPersonsArray), totalDuration))
 
     # Run analysis
-
     # Aggregate input data
     clearMotInput = ClearMotInput(trackedPersonsArray, groundTruthArray,
                                   matchingThreshold)
@@ -272,6 +271,7 @@ if __name__ == '__main__':
         "Ignoring the following groundtruth track IDs in metrics calculations: "
         + str(rospy.get_param("~groundtruth_track_ids_to_ignore", [])))
 
+    __import__('pudb').set_trace()
     clearResults = []
     if clearMetrics:
         rospy.loginfo("Running ClearMetrics analysis...")

@@ -219,4 +219,3 @@ if __name__ == "__main__":
 
     resultsPath = sys.argv[1]
     aggregateResults(resultsPath, 2400)
-
