@@ -8,3 +8,4 @@ int32       y               # top left corner y of 2d image bbox
 uint32      w               # width of 2d image bbox
 uint32      h               # height of 2d image bbox
 float32     depth           # distance from the camera in m
+float32     warp_loss       # optical flow agreement for bbox

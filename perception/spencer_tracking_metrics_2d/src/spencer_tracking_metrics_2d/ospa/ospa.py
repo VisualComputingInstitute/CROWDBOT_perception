@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
 # code based on github implemenation https://github.com/cheesinglee/cuda-PHDSLAM/blob/master/python/ospa.py
 
-import time
-
-import rospy
-
-import numpy
 from munkres import Munkres
+import rospy, numpy, time
 
 
 class OSPADistance():

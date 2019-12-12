@@ -4,17 +4,7 @@ project(rwth_annotations)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-	roscpp
-	cv_bridge
-	message_filters
-	sensor_msgs
-	std_msgs
-	image_transport
-	tf
-	rwth_perception_people_msgs
-	frame_msgs
-)
+find_package(catkin REQUIRED COMPONENTS cv_bridge message_filters roscpp sensor_msgs std_msgs rwth_perception_people_msgs frame_msgs image_transport tf)
 
 find_package(Qt4 REQUIRED COMPONENTS QtCore QtGui)
 include(${QT_USE_FILE})
@@ -94,17 +84,11 @@ include_directories(include
 # )
 
 ## Declare a cpp executable
-add_executable(annotation
-	src/AnnotationPublisher.cpp
-	src/Camera.cpp
-)
+add_executable(annotation src/AnnotationPublisher.cpp src/Camera.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
-add_dependencies(annotation
-	rwth_perception_people_msgs_generate_messages_cpp
-	rwth_perception_people_msgs_gencpp
-)
+add_dependencies(annotation rwth_perception_people_msgs_generate_messages_cpp rwth_perception_people_msgs_gencpp)
 
 ## Specify libraries to link a library or executable target against
  target_link_libraries(annotation

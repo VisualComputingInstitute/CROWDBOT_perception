@@ -8,11 +8,11 @@
   <maintainer email="linder@cs.uni-freiburg.de">Timm Linder</maintainer>
 
   <license>TODO</license>
-
+  
   <author>Timm Linder</author>
   <author>Fabian Girrbach</author>
   <author>Other authors (for actual CLEAR MOT and OSPA implementations)</author>
-
+  
   <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>rospy</build_depend>

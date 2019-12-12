@@ -1,6 +1,7 @@
 """
 CLEAR multi target tracking metric evaluation.
 """
+
 """
 The MIT License (MIT)
 
@@ -65,6 +66,7 @@ class ClearMetrics(object):
                   clear.get_object_count(),
                   clear.get_matches_count()]
     """
+
     def __init__(self, groundtruth, measurements, thresh):
         """
         Initialize ClearMetrics.
@@ -115,8 +117,7 @@ class ClearMetrics(object):
         """
         rospy.logdebug("match_sequence() start")
         prev_gt_matches = [-1] * len(self.groundtruth[self.get_frames()[0]])
-        prev_measurement_matches = [-1] * len(
-            self.measurements[self.get_frames()[0]])
+        prev_measurement_matches = [-1] * len(self.measurements[self.get_frames()[0]])
         self.gt_matches = {}
         self.gt_distances = {}
         self.measurements_matches = {}
@@ -131,8 +132,7 @@ class ClearMetrics(object):
                 return
 
             if frame % 50 == 0:
-                rospy.loginfo("Cycle %5d of %5d" %
-                              (frame, len(self.measurements)))
+                rospy.loginfo("Cycle %5d of %5d" % (frame, len(self.measurements)) )
 
             self.gt_matches[frame], self.gt_distances[frame], self.measurements_matches[frame] = \
                 self._match_frame(frame, prev_gt_matches, prev_measurement_matches)
@@ -182,8 +182,7 @@ class ClearMetrics(object):
             matches = np.array(self.gt_matches[frame])
             mask_match_in_both_frames = (matches != -1) & (last_matches != -1)
             mismatches += np.count_nonzero(
-                matches[mask_match_in_both_frames] !=
-                last_matches[mask_match_in_both_frames])
+                matches[mask_match_in_both_frames] != last_matches[mask_match_in_both_frames])
             last_matches = matches
         return mismatches
 
@@ -199,8 +198,7 @@ class ClearMetrics(object):
             if frame >= len(self.measurements):
                 break
             targets = self.groundtruth[frame]
-            object_count += len(targets) - targets.count(
-                None)  # TODO np.array([]) empty arrays?
+            object_count += len(targets) - targets.count(None)  # TODO np.array([]) empty arrays?
         return object_count
 
     def get_matches_count(self):
@@ -260,7 +258,7 @@ class ClearMetrics(object):
                 if gt_pos is None or measured_pos is None:
                     distance_mat[i, j] = np.nan
                 else:
-                    distance_mat[i, j] = np.sum((measured_pos - gt_pos)**2)
+                    distance_mat[i, j] = np.sum((measured_pos - gt_pos) ** 2)
         return distance_mat
 
     def _match_frame(self, frame, prev_gt_matches, prev_measurement_matches):
@@ -284,10 +282,10 @@ class ClearMetrics(object):
         sq_distance = self._get_sq_distance_matrix(frame)
         sq_distance_undefined = math.ceil(np.nanmax(sq_distance)) + 1
         sq_distance[np.isnan(sq_distance)] = sq_distance_undefined
-        sq_distance[sq_distance > (self.thresh**2)] = sq_distance_undefined
+        sq_distance[sq_distance > (self.thresh ** 2)] = sq_distance_undefined
 
         rospy.logdebug("Matching measurements...")
-
+        
         # set all ground truth matches to FN or not defined
         gt_matches = []
         for i in xrange(len(self.groundtruth[frame])):
@@ -306,9 +304,7 @@ class ClearMetrics(object):
                 measurements_matches.append(-1)
 
         # verify TP from previous frame
-        prev_matches = [(prev_measurement_matches[m], m)
-                        for m in prev_gt_matches
-                        if (m is not None) and (m != -1)]
+        prev_matches = [(prev_measurement_matches[m], m) for m in prev_gt_matches if (m is not None) and (m != -1)]
         for prev_gt, prev_m in prev_matches:
             if sq_distance[prev_gt, prev_m] != sq_distance_undefined:
                 gt_matches[prev_gt] = prev_m
@@ -319,9 +315,7 @@ class ClearMetrics(object):
                 sq_distance[:, prev_m] = sq_distance_undefined
 
         # fill in new TP
-        rospy.logdebug(
-            "Running Munkres algorithm with %d tracks and %d groundtruth tracks..."
-            % (len(self.measurements[frame]), len(self.groundtruth[frame])))
+        rospy.logdebug("Running Munkres algorithm with %d tracks and %d groundtruth tracks..." % (len(self.measurements[frame]), len(self.groundtruth[frame])))
 
         sq_dist_list = sq_distance.tolist()
         if sq_dist_list:
@@ -337,7 +331,7 @@ class ClearMetrics(object):
             measurements_matches[m[1]] = m[0]
             gt_distances[m[0]] = np.sqrt(sq_distance[m[0], m[1]])
         rospy.logdebug("Finished with Munkres algorithm...")
-
+        
         return gt_matches, gt_distances, measurements_matches
 
     def get_frames(self):

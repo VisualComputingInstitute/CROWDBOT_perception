@@ -1,13 +1,6 @@
 #!/usr/bin/env python
-import os
-import sys
-import time
-
-import message_filters
-import rospy
-from frame_msgs.msg import TrackedPersons
-
-import numpy
+import rospy, sys, time, message_filters, numpy, os
+from spencer_tracking_msgs.msg import TrackedPersons
 
 
 def newTracksAvailable(trackedPersons):

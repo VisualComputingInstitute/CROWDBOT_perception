@@ -14,7 +14,7 @@
     <arg name="fixed_sensor" default="true"/>
 
     <remap from="/laser" to="/spencer/sensors/laser_front/echo0"/>
-
+    
     <include file="$(find srl_tracking_logfile_import)/launch/publish_logfile.launch">
         <arg name="filename" value="/home/linder/Datasets/old/fr_mainstation1_cut_trimmed.lab"/>
         <arg name="visualization" value="false"/>

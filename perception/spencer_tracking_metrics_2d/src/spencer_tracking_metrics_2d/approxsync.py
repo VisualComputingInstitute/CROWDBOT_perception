@@ -38,8 +38,8 @@ import threading
 import itertools
 import operator
 
-
 class ApproximateSynchronizer(message_filters.SimpleFilter):
+
     def __init__(self, slop, fs, queue_size):
         message_filters.SimpleFilter.__init__(self)
         self.connectInput(fs)
@@ -49,9 +49,7 @@ class ApproximateSynchronizer(message_filters.SimpleFilter):
 
     def connectInput(self, fs):
         self.queues = [{} for f in fs]
-        self.input_connections = [
-            f.registerCallback(self.add, q) for (f, q) in zip(fs, self.queues)
-        ]
+        self.input_connections = [f.registerCallback(self.add, q) for (f, q) in zip(fs, self.queues)]
 
     def add(self, msg, my_queue):
         self.lock.acquire()
@@ -60,10 +58,10 @@ class ApproximateSynchronizer(message_filters.SimpleFilter):
             del my_queue[min(my_queue)]
         for vv in itertools.product(*[list(q.keys()) for q in self.queues]):
             qt = list(zip(self.queues, vv))
-            if (((max(vv) - min(vv)) < self.slop)
-                    and (len([1 for q, t in qt if t not in q]) == 0)):
-                msgs = [q[t] for q, t in qt]
+            if ( ((max(vv) - min(vv)) < self.slop) and 
+                (len([1 for q,t in qt if t not in q]) == 0) ):
+                msgs = [q[t] for q,t in qt]
                 self.signalMessage(*msgs)
-                for q, t in qt:
+                for q,t in qt:
                     del q[t]
         self.lock.release()
