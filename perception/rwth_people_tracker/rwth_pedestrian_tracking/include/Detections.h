@@ -6,124 +6,115 @@
  */
 
 #ifndef _DENNIS_DETECTIONS_H
-#define	_DENNIS_DETECTIONS_H
+#define _DENNIS_DETECTIONS_H
 
-#include "Camera.h"
 #include "Math.h"
-
+#include "Camera.h"
 #include "CImageHeader.h"
 
 #include <ros/ros.h>
-
 #include "frame_msgs/DetectedPersons.h"
 
 #ifndef cim_v
-#include <QImage>
 #include <QColor>
+#include <QImage>
 #endif
 
-//***************************************************************************************
-// Detections are stored in detC as follows
-//
-//         frame                   detections
-//          | |                    | |
-//          | |                    | |
-//          | |                    | |                      infos about det i.e. 3D pos
-// Vector   | |----------> Vector  | |-------------------->| | | | | | | | | | |
-//          | |                    | |
-//          | |
-//***************************************************************************************
-
-
-//+++++++++++++++++++++++++++++++ Definition +++++++++++++++++++++++++++++++++
-class Detections
-{
+class Detections {
 public:
+  Detections(int x, const int flag);
+  ~Detections();
 
+  /* get information from other messages */
+  int globalFrameToBufferFrame(int global_frame);
+  int numberDetectionsAtFrame(int frame);
 
-//    Detections(Matrix <double>& detO, const int flag, double dThresh, bool HOG);
-    Detections(int x, const int flag);
-//    Detections(Detections& det1, Detections& det2, int flag);
+  void getPos3D(int frame, int detec, Vector<double> &pos);
+  void getBBox(int frame, int detec, Vector<double> &bbox);
+  double getScore(int frame, int detec);
+  double getHeight(int frame, int detec);
+  double getWarp(int frame, int detec);
 
-    ~Detections();
+  int getCategory(int frame, int detec);
 
-    //*******************************************************
-    // getter methods
-    //*******************************************************
-//    int numberFrames();
-    int globalFrameToBufferFrame(int global_frame);
-    int numberDetectionsAtFrame( int frame);
-    void getPos3D( int frame,  int detec, Vector<double>& pos);
-    void getBBox( int frame,  int detec, Vector<double>& bbox);
-    double getScore( int frame,  int detec);
-    double getHeight( int frame,  int detec);
-//    void getDetection(int frame, int detec, Vector<double>& det);
-    int getCategory(int frame, int detec);
-//    int getDetNumber(int frame, int detec);
-//    Vector<Vector<double> > get3Dpoints(int frame, int detec);
-//    Vector<Vector<int> > getOccCells(int frame, int detec);
-
-    //*******************************************************
-    // setter methods
-    //*******************************************************
-
-//    void setScore(int frame, int pos, double scoreValue);
-
-    //*************************************************************
-    // Methode for adding online Detections
-    //*************************************************************
-
+  /* Method for adding online Detections */
 #ifdef cim_v
-    void addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr & det, int frame/*, CImg<unsigned char>& imageLeft, Camera cam*/);
+  void addDetsOneFrame(const frame_msgs::DetectedPersons::ConstPtr &det,
+                       int frame);
 #else
-    void addHOGdetOneFrame(const frame_msgs::DetectedPersons::ConstPtr & det, int frame, QImage& imageLeft, Camera cam, Matrix<double>& depth);
+  void addHOGdetOneFrame(const frame_msgs::DetectedPersons::ConstPtr &det,
+                         int frame,
+                         QImage &imageLeft,
+                         Camera cam,
+                         Matrix<double> &depth);
+#endif
+  int prepareDet(Vector<double> &detContent,
+                 const frame_msgs::DetectedPersons::ConstPtr &det,
+                 int i,
+                 int frame,
+                 bool leftDet,
+                 Matrix<double> &covariance);
+
+  /* Compute 3D Position out of BBox */
+  void compute3DPosition(Vector<double> &detection, Camera cam);
+
+  /* Compute 3D Position out of BBox */
+#ifdef cim_v
+  void computeColorHist(Volume<double> &colHist,
+                        Vector<double> &bbox,
+                        int nBins,
+                        CImg<unsigned char> &imageLeft);
+#else
+  void computeColorHist(Volume<double> &colHist,
+                        Vector<double> &bbox,
+                        int nBins,
+                        QImage &imageLeft);
 #endif
 
-    int prepareDet(Vector<double> &detContent, const frame_msgs::DetectedPersons::ConstPtr & det, int i, int frame, bool leftDet,
-                   /*Camera cam,*/ Matrix<double> &covariance);
+  void getColorHist(int frame, int pos, Volume<double> &colHist);
+  void getEmbVec(int frame, int pos, Vector<double> &embVecs);
 
-    //*****************************************************************
-    // Compute 3D Position out of BBox
-    //*****************************************************************
-    void compute3DPosition(Vector<double>& detection, Camera cam);
-    //*****************************************************************
-    // Compute 3D Position out of BBox
-    //*****************************************************************
-#ifdef cim_v
-    void computeColorHist(Volume<double>& colHist, Vector<double>& bbox, int nBins, CImg<unsigned char>& imageLeft);
-#else
-    void computeColorHist(Volume<double>& colHist, Vector<double>& bbox, int nBins, QImage& imageLeft);
-#endif
-    void getColorHist(int frame, int pos, Volume<double>& colHist);
-    void getEmbVec(int frame, int pos, Vector<double>& embVecs);
-    //*****************************************************************
-    // Compute the 3D uncertainty for a point
-    //*****************************************************************
-    void compute3DCov(Vector<double> pos3d, Matrix<double> &cov, Camera camL, Camera camR);
-    void get3Dcovmatrix(int frame, int pos, Matrix<double>& covariance);
+  /* Compute the 3D uncertainty for a point */
+  void compute3DCov(Vector<double> pos3d,
+                    Matrix<double> &cov, Camera camL,
+                    Camera camR);
+  void get3Dcovmatrix(int frame, int pos, Matrix<double> &covariance);
 
-    Vector<double> fromCamera2World(Vector<double> posInCamera, Camera cam);
-    Vector<double> projectPlaneToCam(Vector<double> p, Camera cam);
+  Vector<double> fromCamera2World(Vector<double> posInCamera, Camera cam);
+  Vector<double> projectPlaneToCam(Vector<double> p, Camera cam);
 
-    double get_mediandepth_inradius(Vector<double>& bbox, int radius, Matrix<double>& depthMap, double var, double pOnGp);
+  double get_mediandepth_inradius(Vector<double> &bbox,
+                                  int radius,
+                                  Matrix<double> &depthMap,
+                                  double var,
+                                  double pOnGp);
 
 protected:
-
-    Vector< Vector < Vector  <double> > > detC;
-    Vector< Vector < Matrix  <double> > > cov3d;
-    Vector<Vector<Volume<double> > > colHists;
-    Vector< Vector < Vector  <double> > > embed_vecs;
-//    Vector<Vector<double> > gp;
-//    Vector<Vector<Vector<Vector<double> > > > points3D_;
-//    Vector<Vector<Vector<Vector<int> > > > occBins_;
-
-//    int sizeOfDetVec;
-    int offSet;
-    int img_num, hypo_num, center_x, center_y, scale, categ, bbox, initscore,
-    score, dist, height, rot, pos, numberAllAccDetections, numberOfFrames, nrColinDetFile, carOrient, det_id;
-    int buff_size;
-
+  Vector<Vector<Vector<double>>> detC;
+  Vector<Vector<Matrix<double>>> cov3d;
+  Vector<Vector<Volume<double>>> colHists;
+  Vector<Vector<Vector<double>>> embed_vecs;
+  int offSet;
+  int img_num;
+  int hypo_num;
+  int center_x;
+  int center_y;
+  int scale;
+  int categ;
+  int bbox;
+  int initscore;
+  int score;
+  int warp_loss;
+  int dist;
+  int height;
+  int rot;
+  int pos;
+  int numberAllAccDetections;
+  int numberOfFrames;
+  int nrColinDetFile;
+  int carOrient;
+  int det_id;
+  int buff_size;
 };
 
-#endif	/* _DENNIS_DETECTIONS_H */
-
+#endif /* _DENNIS_DETECTIONS_H */

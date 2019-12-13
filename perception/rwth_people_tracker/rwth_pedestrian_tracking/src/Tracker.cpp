@@ -59,7 +59,6 @@ Tracker::Tracker()
 
     possibleColors = Matrix<unsigned char>(3, 40, color_array);
     lastHypoID = -1;
-//    aStream = new ofstream("export_bboxes.txt");
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -81,7 +80,6 @@ void Tracker::check_termination(Camera &cam, Vector<Hypo>& HyposAll)
         //*********************************************************
         // Define the "exit zones"
         //*********************************************************
-
         Vector<double> aux(3, 1);
         aux(0) = 1;
         aux(1) = Globals::dImHeight*(5.0/5.0);
@@ -97,7 +95,6 @@ void Tracker::check_termination(Camera &cam, Vector<Hypo>& HyposAll)
         Vector<double> vXBR = AncillaryMethods::backprojectGP(aux, cam, gp);
 
         // Calculate exit planes, 4th value in normal just keeps time stamp
-
         Vector<double> Gp = cam.get_GPN();
         Vector<double> nR4d;
         Vector<double> nL4d;
@@ -105,8 +102,6 @@ void Tracker::check_termination(Camera &cam, Vector<Hypo>& HyposAll)
         double dL4d;
         double dR4d;
         double dC4d;
-
-        //Gp *= 100.0;
 
         vXBL -= vXTL;
         nL4d = cross(Gp, vXBL);
@@ -127,7 +122,6 @@ void Tracker::check_termination(Camera &cam, Vector<Hypo>& HyposAll)
         nC4d = KRt.getRow(2);
         dC4d = -KRtT(2) * Globals::WORLD_SCALE;
 
-        //unsigned int nStartTolerance = 10;
         int nEndTolerance = 0;
         double zonesizeL = 0.7;
         double zonesizeR = 0.7;
@@ -136,10 +130,7 @@ void Tracker::check_termination(Camera &cam, Vector<Hypo>& HyposAll)
 
         Vector<Vector <double> > TrajPts;
 
-
-
         Vector<int> hyposToRemove;
-
 
         for (int i = 0; i < HyposAll.getSize(); i++)
         {
@@ -151,12 +142,9 @@ void Tracker::check_termination(Camera &cam, Vector<Hypo>& HyposAll)
             Vector<double> dvec3;
 
             int j = TrajPts.getSize()-1;
-            //            for(int j = 0; j < TrajPts.getSize(); j++)
-            //            {
             dvec1.pushBack(TrajPts(j)(0) * nL4d(0) + TrajPts(j)(1)*nL4d(1) + TrajPts(j)(2)*nL4d(2) + dL4d);
             dvec2.pushBack(TrajPts(j)(0) * nR4d(0) + TrajPts(j)(1)*nR4d(1) + TrajPts(j)(2)*nR4d(2) + dR4d);
             dvec3.pushBack(TrajPts(j)(0) * nC4d(0) + TrajPts(j)(1)*nC4d(1) + TrajPts(j)(2)*nC4d(2) + dC4d);
-            //            }
 
             Vector<int> IdxVec1;
             Vector<int> IdxVec2;
@@ -171,35 +159,17 @@ void Tracker::check_termination(Camera &cam, Vector<Hypo>& HyposAll)
                 if (dvec3(j) < zonesizeC2) IdxVec4.pushBack(j);
             }
 
-
-            //            if (IdxVec3.getSize() > nEndTolerance || (IdxVec4.getSize() > 2))
-            //                        {
-            //                            if(Globals::verbose){
-            //                                cout << "HYPO entered entered behind camera EXIT ZONE" << endl;
-            //                            }
-            //                            hyposToRemove.pushBack(i);
-            //                        }
-
             if(IdxVec1.getSize() > nEndTolerance)
             {
-//                if(Globals::verbose){
-//                    cout << "HYPO entered left EXIT ZONE" << endl;
-//                }
                 ROS_DEBUG("HYPO entered left EXIT ZONE");
                 hyposToRemove.pushBack(i);
             }
             else if(IdxVec2.getSize() > nEndTolerance)
             {
-//                if(Globals::verbose){
-//                    cout << "HYPO entered right EXIT ZONE" << endl;
-//                }
                 ROS_DEBUG("HYPO entered right EXIT ZONE");
                 hyposToRemove.pushBack(i);
             }else if (IdxVec3.getSize() > nEndTolerance || (IdxVec4.getSize() > 2))
             {
-//                if(Globals::verbose){
-//                    cout << "HYPO entered entered behind camera EXIT ZONE" << endl;
-//                }
                 ROS_DEBUG("HYPO entered entered behind camera EXIT ZONE");
                 hyposToRemove.pushBack(i);
             }
@@ -226,7 +196,6 @@ void Tracker::process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allD
 {
 
     char imageSavePath[200];
-    //    Vector<double> camPos = cam.get_t();
 
     allDet.addHOGdetOneFrame(foundDetInFrame, frame, im, cam, depthMap);
 
@@ -251,7 +220,6 @@ void Tracker::process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allD
 
 
     Vector<Vector<double> > hyposToWrite(HyposMDL.getSize());
-
 
     if(Globals::render_bbox3D)
     {
@@ -280,12 +248,6 @@ void Tracker::process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allD
             hyposToWrite(i)(2) = vX(1);
             hyposToWrite(i)(3) = vX(2);
             hyposToWrite(i)(4) = HyposMDL(i).getHeight();
-
-            //            if(frame - inlier(inlier.getSize()-1).getFrame() > number_of_frames_hypo_visualized_without_inlier)
-            //            {
-            //                cout << "stop visualization of a Hypo due to missing inliers !!!" << endl;
-            //                continue;
-            //            }
 
             Vector<double> b(3);
             vvHypoTrajPts.clearContent();
@@ -327,166 +289,13 @@ void Tracker::process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allD
                                         const frame_msgs::DetectedPersons::ConstPtr &foundDetInFrame/*, CImg<unsigned char>& im, Camera &cam, Matrix<double> &depthMap*/)
 {
 
-//    Vector<double> camPos = cam.get_t();
     allDet.addDetsOneFrame(foundDetInFrame, frame/*, im, cam, depthMap*/);
 
     //*****************************************************************************************************
     HyposMDL.clearContent();
     process_frame( allDet , /*cam,*/ frame, HyposAll);
-
-    //***************************************************************************************
-    // Visualization part 3D
-    //***************************************************************************************
-    //Vector<Vector<double> > hyposToWrite(HyposMDL.getSize());
-
-    //Vector<Vector<double> > vvHypoTrajPts;
-    //Vector<double> vX(3);
-    //Vector<double> bbox_img(4);
-    //Vector<double> pos_img(2);
-    //Vector<double> copyX;
-    //Vector<double> vDir;
-    //Vector<FrameInlier> Idx;
-
-    //Vector<unsigned char> colors;
-    //Visualization vis;
-
-    //int number_of_frames_hypo_visualized_without_inlier = 8;
-
-    /*if(Globals::render_bbox3D)
-    {
-
-        for(int i = 0; i < HyposMDL.getSize(); i++)
-        {
-            // Render only if the last occurence of an inlier is not far away
-            Vector<FrameInlier> inlier;
-            HyposMDL(i).getIdx(inlier);
-            hyposToWrite(i).setSize(10);
-
-            HyposMDL(i).getTrajPts(vvHypoTrajPts);
-            Matrix<double> allP;
-            HyposMDL(i).getXProj(allP);
-
-            vX = allP.getRow(allP.y_size()-1);
-            //printf("vX:\n");
-            //vX.show();
-            // from [x z frame_num y] to [x y z] format (in world pos)
-            vX(2) = vX(1);
-            vX(1) = vX(3);
-            vX.resize(3);
-            //printf("vX/copyX after resize:\n");
-            //vX.show();
-
-            // write out bbox and world_pos in "MOTChallenge2015" format, which is
-            // [ <frame>, <id>, <bb_left>, <bb_top>, <bb_width>, <bb_height>, <conf>, <x'>, <y'>, <z'> ]
-            // where x' = x (left/right), y' = z (near/far), z' = y (up/down)
-            if(Globals::save_for_eval){
-                // preparation
-                copyX = vX;
-                cam.ProjectToGP(copyX, Globals::WORLD_SCALE, copyX);
-
-                // save world coordinates (on GP)
-                hyposToWrite(i)(7) = copyX(0);
-                hyposToWrite(i)(8) = copyX(2);
-                hyposToWrite(i)(9) = copyX(1);
-
-                // define image bbox via cam cord
-                Vector<double> copyXCam;
-                copyXCam = AncillaryMethods::fromWorldToCamera(copyX, cam);
-                //printf("copyX -> copxXcam\n");
-                //copyXCam.show();
-                copyXCam.pushBack(1);
-                //printf("pushBack(1)\n");
-                //copyXCam.show();
-
-                //top left point
-                copyXCam(0) = copyXCam(0)-Globals::pedSizeWVis/2.0;
-                copyX = AncillaryMethods::fromCameraToWorld(copyXCam, cam);
-                //printf("copyXcam - >copyX\n");
-                //copyX.show();
-                copyX.resize(3);
-                //printf("resized\n");
-                //copyX.show();
-                copyX(1) = copyX(1)-HyposMDL(i).getHeight();
-                cam.WorldToImage(copyX,Globals::WORLD_SCALE,pos_img);
-                //printf("copyX -> img \n");
-                //pos_img.show();
-                bbox_img(0) = pos_img(0);
-                bbox_img(1) = pos_img(1);
-
-                //bottom right point
-                copyXCam(0) = copyXCam(0)+Globals::pedSizeWVis;
-                copyX = AncillaryMethods::fromCameraToWorld(copyXCam, cam);
-                copyX.resize(3);
-                cam.WorldToImage(copyX,Globals::WORLD_SCALE,pos_img);
-                bbox_img(2) = pos_img(0);
-                bbox_img(3) = pos_img(1);
-
-                hyposToWrite(i)(0) = frame;
-                hyposToWrite(i)(1) = HyposMDL(i).getHypoID();
-                hyposToWrite(i)(2) = bbox_img(0);
-                hyposToWrite(i)(3) = bbox_img(1);
-                hyposToWrite(i)(4) = bbox_img(2)-bbox_img(0);
-                hyposToWrite(i)(5) = bbox_img(3)-bbox_img(1);
-                hyposToWrite(i)(6) = HyposMDL(i).getScoreMDL();
-            }
-
-            //double nsecs = ros::Time::now().toSec();
-            //hyposToWrite(i)(10) = nsecs;
-
-
-//                        if(frame - inlier(inlier.getSize()-1).getFrame() > number_of_frames_hypo_visualized_without_inlier)
-//                        {
-//                            cout << "stop visualization of a Hypo due to missing inliers !!!" << endl;
-//                            continue;
-//                        }
-
-            Vector<double> b(3);
-            vvHypoTrajPts.clearContent();
-            vvHypoTrajPts.setSize(allP.y_size());
-            for(int j = 0; j < vvHypoTrajPts.getSize(); j++)
-            {
-                b(0) = allP(0,j);
-                b(1) = allP(3,j);
-                b(2) = allP(1,j);
-                vvHypoTrajPts(j) = b;
-            }
-
-            HyposMDL(i).getDir(vDir);
-//            HyposMDL(i).getIdx(Idx);
-
-
-            vis.render_hypos(cam, frame, assignedBBoxCol, hypoLastSelForVis, possibleColors, im, HyposMDL(i).getSpeed(), Globals::minvel, Globals::pedSizeWVis,
-                             Globals::pedSizeWVis, HyposMDL(i).getHeight(), HyposMDL(i).getHypoID(), vvHypoTrajPts, Globals::WORLD_SCALE, vX, vDir, colors);
-
-        }
-
-        if(Globals::render_bbox2D)
-        {
-            int nrDet = allDet.numberDetectionsAtFrame(frame);
-            Vector<double> bbox;
-            for(int i = 0; i < nrDet; i++)
-            {
-                allDet.getBBox(frame, i, bbox);
-                vis.render_bbox_2D(bbox, im, 0, 255, 0, 1);
-            }
-        }
-
-    }*/
-    //AncillaryMethods::exportBBOX(HyposMDL, cam, frame, *aStream);
-
-    // *********
-    // EVAL STUFF
-    // *********
-    /*if(Globals::save_for_eval){
-        //static string path_to_results_hypos = "/home/stefan/results/spencer_tracker/tracking_result.txt";
-        char imageSavePath[200];
-        sprintf(imageSavePath, Globals::save_path_tracking.c_str());
-        Matrix<double> result;
-        result.transferVecVecToMat(hyposToWrite);
-        result.appendToTXT(imageSavePath);
-    }*/
-
 }
+
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -520,7 +329,6 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
 
 
     double normfct = 0.3;
-    //    double normfct = 1.5*max(0.2,(0.1 + 0.9*(1-(1./Globals::history)*t)));
     //*****************************************************************
     // Define frame range for finding new Hypos
     //*****************************************************************
@@ -536,7 +344,6 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
     extend_trajectories(HyposAll,  det, LTPmax, LTPmin, normfct, HypoExtended, extendUsedDet/*, cam*/);
     ROS_DEBUG("\33[36;40;1m Extended %i trajectories\33[0m", HypoExtended.getSize());
 
-    //        extendUsedDet.clearContent();
     //******************************************************************
     // Find new Hypos
     //******************************************************************
@@ -566,7 +373,7 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
     }
 
     HyposAll = temp;
-    
+
     //******************************************************************
     // Build the MDL Matrix
     //******************************************************************
@@ -857,7 +664,6 @@ void Tracker::prepare_hypos(Vector<Hypo>& vHypos)
 
         vHypos(i).getTrajT(vTrajT);
         vHypos(i).getIdx(Idx);
-
 
         int nrInlier = 0;
 
@@ -1467,6 +1273,7 @@ void Tracker::compute_hypo_entries(Matrix<double>& allX,  Vector<double>& vX, Ve
     int maxHoleLen = Globals::maxHoleLen;
     double tau = Globals::dTau;
     int numberInlier = 0;
+    if (Idx.getSize() == 0) {return;}
 
     for( int i = 0; i < Idx.getSize(); i++)
     {

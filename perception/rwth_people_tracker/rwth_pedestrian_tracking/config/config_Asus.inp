@@ -17,7 +17,7 @@ pedSizeHCom = 1.7 #! (CURRENTLY UNUSED) hardcoded width of a person for overlap 
 #====================================
 # History
 #====================================
-history = 5 #! when looking backwards for new hypos, KF runs this far into past and back, as long as accepted_frames_without_det holds (see below), also used for hypo speed calculation
+history = 10 #! when looking backwards for new hypos, KF runs this far into past and back, as long as accepted_frames_without_det holds (see below), also used for hypo speed calculation
 
 #========================
 # Pedestrians parameter

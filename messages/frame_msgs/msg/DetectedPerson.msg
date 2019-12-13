@@ -14,17 +14,17 @@ geometry_msgs/PoseWithCovariance    pose
 # height of detected person in 3D (in meters)
 float64 height
 
-# 2D bbox position (x and y is the top-left corner, width, height) 
+# 2D bbox position (x and y is the top-left corner, width, height)
 float64 bbox_x
 float64 bbox_y
 float64 bbox_w
 float64 bbox_h
 
-# Sensor modality / detector type, see example constants below. 
+# Sensor modality / detector type, see example constants below.
 # used e.g. later in tracking to check which tracks have been visually confirmed
-string          modality            
+string          modality
 
-                                    
+
 string          MODALITY_GENERIC_LASER_2D = laser2d
 string          MODALITY_GENERIC_LASER_3D = laser3d
 string          MODALITY_GENERIC_MONOCULAR_VISION = mono
@@ -33,3 +33,6 @@ string          MODALITY_GENERIC_RGBD = rgbd
 
 # ReID output
 float32[] embed_vector
+
+# optical flow consistancy
+float32 warp_loss

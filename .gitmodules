@@ -1,0 +1,6 @@
+[submodule "addwarp"]
+	path = addwarp
+	url = git@git.rwth-aachen.de:kumuji/addwarp.git
+[submodule "pwc_net_ros"]
+	path = pwc_net_ros
+	url = git@git.rwth-aachen.de:sabarinath.mahadevan/pwc_net_ros.git

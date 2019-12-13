@@ -34,7 +34,6 @@
     <arg name="overlap_thresh_pano" default="0.7"/>
     <arg name="overlap_thresh_pano_kinect" default="0.3"/>
     <arg name="depth_scale" default="1.0"/>
-    <arg name="image_kinect" default="$(arg depth_topic)" />
     <arg name="pano_image_left" default="/camera/color/image_raw" />
     <arg name="pano_image_right" default="/camera/color/image_raw" />
     <arg name="pano_image_rear" default="/camera/color/image_raw" />
@@ -56,7 +55,7 @@
     <arg name="detected_persons_yolo_right" default="/detected_persons/yolo"/>
     <arg name="detected_persons_yolo_rear" default="/detected_persons/yolo"/>
     <arg name="yolo_pano_remote" default="false"/>
-    <arg name="reid" default="false"/>
+    <arg name="reid" default="true"/>
     <arg name="pose_variance" default="0.05"/>
 
     <!-- tracker, need to specify only the output topic -->
@@ -80,13 +79,17 @@
     <arg name="additional_arguments" default=""/>
     <arg name="delay_bag_file" default="10" />
 
+    <!-- addwarp -->
+    <arg name="use_optical_flow" default="true" />
+    <!-- pwc -->
+
     <!-- end of settings -->
 
     <!-- Visual Odometry -->
     <include file="$(find odometry_to_motion_matrix)/launch/tf2visual.launch">
-        <arg name="motion_parameters" value="$(arg motion_parameters)" />
-        <arg name="sensor_frame_id" value="$(arg sensor_frame_id)" />
-        <arg name="odom_frame_id" value="$(arg odom_frame_id)" />
+	<arg name="motion_parameters" value="$(arg motion_parameters)" />
+	<arg name="sensor_frame_id" value="$(arg sensor_frame_id)" />
+	<arg name="odom_frame_id" value="$(arg odom_frame_id)" />
     </include>
 
     <!-- Ground Plane -->
@@ -122,32 +125,59 @@
 	<param name="pose_variance" value="$(arg pose_variance)"/>
     </node>
 
-   <!-- yolofusion-->
-   <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion" output="screen">
-       <param name="queue_size" value="$(arg queue_size)" type="int"/>
-       <param name="detection_id_offset" value="$(arg detection_id_offset)"/>
-       <param name="detection_id_increment" value="$(arg detection_id_increment)"/>
-       <param name="overlap_thresh" value="$(arg overlap_thresh_pano)"/>
-	   <!-- duplicating inputs -->
-       <param name="detected_persons_left" value="$(arg detected_persons_yolo)" type="string"/>
-       <param name="detected_persons_right" value="$(arg detected_persons_yolo)" type="string"/>
-       <param name="detected_persons_rear" value="$(arg detected_persons_yolo)" type="string"/>
+    <!-- yolofusion-->
+    <node pkg="yoloconvertor" type="yoloconvertor_fusion" name="yoloconvertor_fusion" output="screen">
+	<param name="queue_size" value="$(arg queue_size)" type="int"/>
+	<param name="detection_id_offset" value="$(arg detection_id_offset)"/>
+	<param name="detection_id_increment" value="$(arg detection_id_increment)"/>
+	<param name="overlap_thresh" value="$(arg overlap_thresh_pano)"/>
+	    <!-- duplicating inputs -->
+	<param name="detected_persons_left" value="$(arg detected_persons_yolo_left)" unless="$(arg reid)" type="string"/>
+	<param name="detected_persons_right" value="$(arg detected_persons_yolo_right)" unless="$(arg reid)" type="string"/>
+	<param name="detected_persons_rear" value="$(arg detected_persons_yolo_rear)" unless="$(arg reid)" type="string"/>
+	<param name="detected_persons_left" value="$(arg detected_persons_yolo_left)_id" if="$(arg reid)" type="string"/>
+	<param name="detected_persons_right" value="$(arg detected_persons_yolo_right)_id" if="$(arg reid)" type="string"/>
+	<param name="detected_persons_rear" value="$(arg detected_persons_yolo_rear)_id" if="$(arg reid)" type="string"/>
 	   <!-- output -->
-       <param name="total_detected_persons" value="$(arg fused_detections)" type="string"/>
-       <param name="world_frame" value="$(arg world_frame)" type="string"/>
-   </node>
+	<param name="total_detected_persons" value="$(arg fused_detections)" type="string"/>
+	<param name="world_frame" value="$(arg world_frame)" type="string"/>
+    </node>
 
+    <group if="$(arg reid)">
+        <node pkg="reid" type="reid_ros.py" name="reid_kinect" cwd="node" output="screen">
+            <param name="image" value="$(arg pano_image_rear)" type="string"/>
+            <param name="detected_persons" value="$(arg detected_persons_yolo)" type="string"/>
+            <param name="queue_size" value="$(arg queue_size_small)" type="int"/>
+            <param name="model_path" value="./model_v1.pth"/>
+            <param name="embed_detectedpersons" value="$(arg detected_persons_yolo)_id" type="string"/>
+        </node>
+    </group>
+
+    <group if="$(arg use_optical_flow)">
+	<!-- PWC_net >
+	<include file="$(find pwc_net_ros)/launch/demo.launch" /-->
+	<!-- PWC_net -->
+	<node pkg="pwc_net_ros" type="node.py" name="pwc_net_ros" output="screen" launch-prefix="xterm -e bash -c 'source ~/.local/python-2.7/bin/activate;source ~/catkin_ws/devel/setup.bash;roslaunch pwc_net_ros demo.launch'">
+  </node>
+
+    </group>
+
+    <!-- Addwarp -->
+    <node pkg="addwarp" type="addwarp" name="addwarp" output="screen">
+	<rosparam command="load" file="$(find addwarp)/config/addwarp.yaml"/>
+	<rosparam command="load" file="$(find addwarp)/config/topics.yaml"/>
+    </node>
     <!-- Pedestrian Tracking -->
     <include file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking.launch">
-        <arg name="camera_namespace" value="$(arg camera_namespace)" />
-        <arg name="ground_plane" value="$(arg ground_plane)" />
+	<arg name="camera_namespace" value="$(arg camera_namespace)" />
+	<arg name="ground_plane" value="$(arg ground_plane)" />
 	<!-- remaping the input from normal to addwarp -->
-        <arg name="detections" value="$(arg fused_detections)" />
-        <arg name="visual_odometry" value="$(arg motion_parameters)" />
-        <arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
-        <arg name="pedestrian_image" value="/rwth_tracker/image" />
-        <arg name="tracked_persons" value="$(arg tracked_persons)" />
-        <arg name="queue_size" value="10" />
+	<arg name="detections" value="/addwarp/detected_persons" />
+	<arg name="visual_odometry" value="$(arg motion_parameters)" />
+	<arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
+	<arg name="pedestrian_image" value="/rwth_tracker/image" />
+	<arg name="tracked_persons" value="$(arg tracked_persons)" />
+	<arg name="queue_size" value="10" />
     </include>
 
    <!-- Person Trajectories -->
@@ -166,20 +196,19 @@
        <param name="person_trajectories" value="$(arg person_trajectories)" />
        <param name="max_frame" value="$(arg max_frame)" type="int"/>
 
-       <remap from="/head_xtion/hd/camera_info" to="/camera/color/camera_info"/>
-       <remap from="/head_xtion/hd/image_color_rect" to="/camera/color/image_raw"/>
-   </node>
-
-   <!-- run tf_broadcaster -->
-   <node pkg="realsense_tf" type="tf_broadcaster" name= "tf_broadcaster" output="screen"/>
+	<remap from="/head_xtion/hd/camera_info" to="/camera/color/camera_info"/>
+	<remap from="/head_xtion/hd/image_color_rect" to="/camera/color/image_raw"/>
+    </node>
 
     <!-- sim parameter -->
     <param name="use_sim_time" value="true" />
 
     <!-- run rosbag -->
     <group if="$(arg use_bag)">
-	<node pkg="rosbag" type="play" name="player" output="screen" required="true" args="--clock $(arg additional_arguments) -d $(arg delay_bag_file) $(arg path_to_bag)"/>
-	<remap from="/tf" to="/tf_null" />
+	<!-- run tf_broadcaster -->
+	<node pkg="realsense_tf" type="tf_broadcaster" name= "tf_broadcaster" output="screen"/>
+	<node pkg="rosbag" type="play" name="player" output="screen" required="true" args="--clock $(arg additional_arguments) -d $(arg delay_bag_file) $(arg path_to_bag) /tf:=/tf_null"/>
+
     </group>
 
 </launch>
