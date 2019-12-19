@@ -1,0 +1,9 @@
+<launch>
+  <node pkg="pwc_net_ros" type="node.py" name="pwc_net_ros" output="screen">
+    <rosparam command="load" file="$(find pwc_net_ros)/config/pwc_net_ros.yaml" subst_value="true"/>
+    <remap from="image_in"                to="/camera/color/image_raw"/>
+    <remap from="optical_flow_out"        to="optical_flow_out"/>
+    <remap from="optical_flow_hsv_out"    to="optical_flow_hsv_out"/>
+    <remap from="optical_flow_warp_out"   to="optical_flow_warp_out"/>
+  </node>
+</launch>

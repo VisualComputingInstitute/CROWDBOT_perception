@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="drow_ros" type="node.py" name="drow_ros" output="screen">
+    <rosparam command="load" file="$(find drow_ros)/config/drow_ros.yaml"/>
+    <rosparam command="load" file="$(find drow_ros)/config/topics.yaml"/>
+  </node>
+</launch>

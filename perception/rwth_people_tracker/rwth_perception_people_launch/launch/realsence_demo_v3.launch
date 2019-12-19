@@ -1,7 +1,7 @@
 <launch>
 
     <!-- going back to workspace folder and find data folder there -->
-    <arg name="path_to_bag" default="/home/nekrasov/catkin_ws/data/sc1_1.bag"/>
+    <arg name="path_to_bag" default="/globalwork/datasets/crowdbot/sc1_1.bag"/>
 
     <!-- global parameters for multiple nodes -->
     <arg name="camera_namespace" default="/camera"/>
@@ -154,11 +154,23 @@
     </group>
 
     <group if="$(arg use_optical_flow)">
+
 	<!-- PWC_net >
 	<include file="$(find pwc_net_ros)/launch/demo.launch" /-->
 	<!-- PWC_net -->
-	<node pkg="pwc_net_ros" type="node.py" name="pwc_net_ros" output="screen" launch-prefix="xterm -e bash -c 'source ~/.local/python-2.7/bin/activate;source ~/catkin_ws/devel/setup.bash;roslaunch pwc_net_ros demo.launch'">
+<!-- 	<node pkg="pwc_net_ros" type="node.py" name="pwc_net_ros" output="screen"
+        launch-prefix="xterm -e bash -c 'source ~/.local/python-2.7/bin/activate;source ~/catkin_ws/devel/setup.bash;roslaunch pwc_net_ros demo.launch'">
+  </node> -->
+
+  <node pkg="pwc_net_ros" type="node.py" name="pwc_net_ros" output="screen"
+        launch-prefix="xterm -e bash -c 'source ~/pwc_venv/bin/activate'">
+    <rosparam command="load" file="$(find pwc_net_ros)/config/pwc_net_ros.yaml" subst_value="true"/>
+    <remap from="image_in"                to="/camera/color/image_raw"/>
+    <remap from="optical_flow_out"        to="optical_flow_out"/>
+    <remap from="optical_flow_hsv_out"    to="optical_flow_hsv_out"/>
+    <remap from="optical_flow_warp_out"   to="optical_flow_warp_out"/>
   </node>
+
 
     </group>
 

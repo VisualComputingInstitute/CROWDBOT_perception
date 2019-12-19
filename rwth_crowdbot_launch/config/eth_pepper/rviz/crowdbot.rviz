@@ -257,7 +257,7 @@ Visualization Manager:
       Color: 237; 212; 0
       Color map offset: 0
       Color transform: Constant color
-      Enabled: true
+      Enabled: false
       Excluded person IDs: ""
       Font color: 255; 255; 255
       Font color style: Same color
@@ -279,6 +279,38 @@ Visualization Manager:
         Value: Bounding boxes
       Text spacing: 1
       Topic: /detected_persons/yolo
+      Unreliable: false
+      Value: false
+      Z offset:
+        Use Z position from message: false
+        Value: 0
+    - Alpha: 1
+      Class: spencer_tracking_rviz_plugin/DetectedPersons
+      Color: 237; 212; 0
+      Color map offset: 0
+      Color transform: Constant color
+      Enabled: true
+      Excluded person IDs: ""
+      Font color: 255; 255; 255
+      Font color style: Same color
+      Font scale: 2
+      Included person IDs: ""
+      Low-confidence alpha: 0.5
+      Low-confidence threshold: 0.5
+      Name: /detected_persons/yolo_with_warp
+      Render confidences: false
+      Render covariances:
+        Line width: 0.10000000149011612
+        Value: true
+      Render detection IDs: true
+      Render modality text: false
+      Render orientation arrows: true
+      Style:
+        Line width: 0.05000000074505806
+        Scaling factor: 1
+        Value: Bounding boxes
+      Text spacing: 1
+      Topic: /detected_persons/yolo_with_warp
       Unreliable: false
       Value: true
       Z offset:
@@ -411,7 +443,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 34.57389450073242
+      Distance: 29.905784606933594
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -426,17 +458,15 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.0703978538513184
+      Pitch: 0.8803979754447937
       Target Frame: camera_color_optical_frame
       Value: ThirdPersonFollower (rviz)
-      Yaw: 4.787224769592285
+      Yaw: 4.902225494384766
     Saved: ~
 Window Geometry:
   /detection_votes_image:
     collapsed: false
   /image_with_bounding_boxes:
-    collapsed: false
-  Camera:
     collapsed: false
   Displays:
     collapsed: false

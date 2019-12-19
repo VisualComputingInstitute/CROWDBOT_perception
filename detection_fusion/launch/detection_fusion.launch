@@ -1,0 +1,49 @@
+<launch>
+
+  <node pkg="detection_fusion" type="node.py" name="detection_fusion" output="screen">
+    <rosparam command="load" file="$(find detection_fusion)/config/detection_fusion.yaml"/>
+    <rosparam command="load" file="$(find detection_fusion)/config/topics.yaml"/>
+  </node>
+
+  <node pkg="yolo_to_3d" type="node.py" name="yolo_to_3d" output="screen">
+    <rosparam command="load" file="$(find yolo_to_3d)/config/yolo_to_3d.yaml"/>
+    <rosparam command="load" file="$(find yolo_to_3d)/config/topics.yaml"/>
+  </node>
+
+  <node pkg="drow_ros" type="node.py" name="drow_ros" output="screen">
+    <rosparam command="load" file="$(find drow_ros)/config/drow_ros.yaml"/>
+    <rosparam command="load" file="$(find drow_ros)/config/topics.yaml"/>
+  </node>
+
+  <node pkg="drow_ros" type="node.py" name="drow_ros_rear" output="screen">
+    <rosparam command="load" file="$(find drow_ros)/config/drow_ros.yaml"/>
+    <rosparam command="load" file="$(find drow_ros)/config/topics_rear.yaml"/>
+  </node>
+
+  <arg name="base_footprint" default="/base_footprint" />
+  <arg name="world_frame" default="/base_footprint" />
+  <arg name="ground_plane" default="/ground_plane" />
+  <arg name="rate" default="10.0"/>
+  <arg name="yolo_weights_path" default="$(find darknet_ros)/yolo_network_config/weights"/>
+  <arg name="yolo_config_path" default="$(find darknet_ros)/yolo_network_config/cfg"/>
+  <arg name="yolo_version" default="v3"/>
+  <arg name="launch_prefix" default=""/>
+
+  <!-- Ground Plane -->
+  <include file="$(find rwth_ground_plane)/launch/ground_plane_tf_based_fixed.launch">
+      <arg name="base_footprint" value="$(arg base_footprint)" />
+      <arg name="camera_frame" value="$(arg world_frame)" />
+      <arg name="ground_plane" value="$(arg ground_plane)" />
+      <arg name="rate" value="$(arg rate)"/>
+  </include>
+
+  <!-- YOLO -->
+  <rosparam command="load" ns="darknet_ros" file="$(find darknet_ros)/config/ros.yaml"/>
+  <rosparam command="load" ns="darknet_ros" file="$(find darknet_ros)/config/yolo$(arg yolo_version).yaml"/>
+  <node pkg="darknet_ros" type="darknet_ros" name="darknet_ros" output="screen" launch-prefix="$(arg launch_prefix)" respawn="true">
+    <param name="weights_path"          value="$(arg yolo_weights_path)" />
+    <param name="config_path"           value="$(arg yolo_config_path)" />
+  </node>
+
+</launch>
+

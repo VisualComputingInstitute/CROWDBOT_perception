@@ -1,0 +1,9 @@
+<launch>
+  <node pkg="drow_ros" type="drow_data_publisher.py" name="drow_data_publisher" output="screen" />
+  <node pkg="tf" type="static_transform_publisher" name="fixed_frame" args="0 0 0 0 0 0 /base_footprint /sick_laser_front 100"/>
+
+  <node pkg="drow_ros" type="node.py" name="drow_ros" output="screen">
+    <rosparam command="load" file="$(find drow_ros)/config/drow_ros.yaml"/>
+    <rosparam command="load" file="$(find drow_ros)/config/topics.yaml"/>
+  </node>
+</launch>

@@ -1,7 +1,6 @@
 <launch>
   <arg name="trt" default="false" />
   <arg name="optical_flow" default="false" />
-  <arg name="reid" default="false" />
 
   <!-- Ground Plane -->
   <arg name="base_footprint" default="/odom" />
@@ -57,70 +56,30 @@
     <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/drow_ros/topics_rear.yaml"/>
   </node>
 
-  <group if="$(arg optical_flow)">
-    <!-- Add warp -->
-    <node pkg="addwarp" type="addwarp" name="addwarp" output="screen">
-      <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/addwarp/addwarp.yaml"/>
-      <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/addwarp/topics.yaml"/>
-    </node>
+  <!-- Fuse Detection -->
+  <node pkg="detection_fusion" type="node.py" name="detection_fusion" output="screen">
+    <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/detection_fusion/detection_fusion.yaml"/>
+    <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/detection_fusion/topics.yaml"/>
+    <remap from="/detected_persons/yolo"   to="/detected_persons/yolo_with_warp" if="$(arg optical_flow)"/>
+  </node>
 
-    <!-- With optical flow, with ReID -->
-    <group if="$(arg reid)">
-      <!-- ReID -->
+  <!-- Re ID -->
+  <arg name="reid" default="false" />
+  <group if="$(arg reid)">
       <node pkg="reid" type="reid_ros.py" name="reid_kinect" cwd="node" output="screen">
-          <param name="image" value="/camera/color/image_raw" type="string"/>
-          <param name="detected_persons" value="/detected_persons/yolo_with_warp" type="string"/>
-          <param name="embed_detectedpersons" value="/detected_persons/yolo_with_warp_reid" type="string"/>
-          <param name="queue_size" value="1" type="int"/>
+          <param name="image" value="$(arg pano_image_rear)" type="string"/>
+          <param name="detected_persons" value="$(arg detected_persons_yolo)" type="string"/>
+          <param name="queue_size" value="$(arg queue_size_small)" type="int"/>
           <param name="model_path" value="./model_v1.pth"/>
+          <param name="embed_detectedpersons" value="$(arg detected_persons_yolo)_id" type="string"/>
       </node>
-      <!-- Detection Fusion -->
-      <node pkg="detection_fusion" type="node.py" name="detection_fusion" output="screen">
-        <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/detection_fusion/detection_fusion.yaml"/>
-        <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/detection_fusion/topics.yaml"/>
-        <remap from="/detected_persons/yolo"   to="/detected_persons/yolo_with_warp_reid"/>
-      </node>
-    </group>
-
-    <!-- With optical flow, no ReID -->
-    <group unless="$(arg reid)">
-      <!-- Detection Fusion -->
-      <node pkg="detection_fusion" type="node.py" name="detection_fusion" output="screen">
-        <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/detection_fusion/detection_fusion.yaml"/>
-        <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/detection_fusion/topics.yaml"/>
-        <remap from="/detected_persons/yolo"   to="/detected_persons/yolo_with_warp"/>
-      </node>
-    </group>
   </group>
 
-  <group unless="$(arg optical_flow)">
-    <!-- No optical flow, with ReID -->
-    <group if="$(arg reid)">
-      <!-- ReID -->
-      <node pkg="reid" type="reid_ros.py" name="reid_kinect" cwd="node" output="screen">
-          <param name="image" value="/camera/color/image_raw" type="string"/>
-          <param name="detected_persons" value="/detected_persons/yolo" type="string"/>
-          <param name="embed_detectedpersons" value="/detected_persons/yolo_reid" type="string"/>
-          <param name="queue_size" value="1" type="int"/>
-          <param name="model_path" value="./model_v1.pth"/>
-      </node>
-      <!-- Detection Fusion -->
-      <node pkg="detection_fusion" type="node.py" name="detection_fusion" output="screen">
-        <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/detection_fusion/detection_fusion.yaml"/>
-        <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/detection_fusion/topics.yaml"/>
-        <remap from="/detected_persons/yolo"   to="/detected_persons/yolo_reid"/>
-      </node>
-    </group>
-
-    <!-- No optical flow, no ReID -->
-    <group unless="$(arg reid)">
-      <!-- Detection Fusion -->
-      <node pkg="detection_fusion" type="node.py" name="detection_fusion" output="screen">
-        <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/detection_fusion/detection_fusion.yaml"/>
-        <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/detection_fusion/topics.yaml"/>
-      </node>
-    </group>
-  </group>
+  <!-- Addwarp -->
+  <node pkg="addwarp" type="addwarp" name="addwarp" output="screen">
+    <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/addwarp/addwarp.yaml"/>
+    <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/addwarp/topics.yaml"/>
+  </node>
 
   <!-- Pedestrian Tracking -->
   <arg name="camera_namespace" default="/camera"/>

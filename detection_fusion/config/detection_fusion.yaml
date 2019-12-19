@@ -1,0 +1,22 @@
+# Fuse detections once there are certain number of detections received, or
+# the time between earliest and latest detections exceeds threshold.
+number_of_detections: 3
+time_span_between_detections: 0.2
+# How many detection source are there? This is only in initialization for
+# creating subscribers.
+number_of_detection_source: 3
+# Detections are transformed into and fused in robot frame.
+robot_frame: "base_footprint"
+# The fused detections are transformed into and published in fixed frame.
+fixed_frame: "odom"
+# Voting grid configuration.
+voting_grid_x_min: -15.0
+voting_grid_x_max: 15.0
+voting_grid_y_min: -15.0
+voting_grid_y_max: 15.0
+voting_grid_bin_size: 0.25
+# Detections are converted into a voting grid. Peaks in the voting grid are
+# used as the fused detections.
+voting_blur_size: 3
+voting_nms_size: 3
+voting_dist_threshold: 0.5
