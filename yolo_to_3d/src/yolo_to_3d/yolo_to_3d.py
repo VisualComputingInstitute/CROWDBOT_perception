@@ -128,9 +128,7 @@ class YoloTo3D():
             self._image_lock = Lock()
             self._image = None
 
-        # Increment this value by 20 after each detection, and RViz marker will
-        # have same color.
-        self._det_id = 3   # @TODO
+        self._det_id = 0   # @TODO
 
         self._init()
 
@@ -392,7 +390,7 @@ class YoloTo3D():
                             fontFace=cv2.FONT_HERSHEY_SIMPLEX,
                             fontScale=0.5,
                             color=color)
-            self._det_id += 20
+            self._det_id += 1
 
         return dps, image
 
