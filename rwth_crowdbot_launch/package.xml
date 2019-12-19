@@ -25,4 +25,6 @@
   <run_depend>spencer_tracking_rviz_plugin</run_depend>
   <run_depend>trtyolo</run_depend>
   <run_depend>rwth_ground_plane</run_depend>
+  <run_depend>addwarp</run_depend>
+  <run_depend>pwc_net_ros</run_depend>
 </package>

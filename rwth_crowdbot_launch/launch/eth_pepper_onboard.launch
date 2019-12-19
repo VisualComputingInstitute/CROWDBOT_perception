@@ -58,6 +58,9 @@
   </node>
 
   <group if="$(arg optical_flow)">
+    <!-- PWC net -->
+    <node pkg="rwth_crowdbot_launch" type="run_pwc_net_ros.sh" name="pwc_net_ros" />
+
     <!-- Add warp -->
     <node pkg="addwarp" type="addwarp" name="addwarp" output="screen">
       <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/addwarp/addwarp.yaml"/>
