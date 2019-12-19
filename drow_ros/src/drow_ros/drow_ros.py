@@ -23,7 +23,7 @@ class DrowRos():
     """ROS node to detect pedestrian using DROW."""
 
     def __init__(self):
-        self._detection_id = 10000
+        self._detection_id = 0
         self._read_params()
         self._net = Detector(self.weight_file)
         self._init()
@@ -89,7 +89,7 @@ class DrowRos():
             dp.bbox_x, dp.bbox_y = 0.0, 0.0
             dp.bbox_w, dp.bbox_h = 0.0, 0.0
             dp.detection_id = self._detection_id
-            self._detection_id += 20  # @TODO
+            self._detection_id += 1  # @TODO
             dp.height = 1.85  # @TODO
             dp.warp_loss = 0.0
             dps.detections.append(dp)
