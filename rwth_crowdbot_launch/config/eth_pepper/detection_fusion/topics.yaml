@@ -1,0 +1,24 @@
+publisher:
+    detections:
+        topic: /detected_persons_synchronized
+        queue_size: 1
+        latch: false
+
+    detection_votes_image:
+        topic: /detection_votes_image
+        queue_size: 1
+        latch: false
+
+subscriber:
+    detections0:
+        topic: /drow_detected_persons_front
+        queue_size: 1
+
+    detections1:
+        topic: /drow_detected_persons_rear
+        queue_size: 1
+
+    detections2:
+        topic: /detected_persons/yolo
+        queue_size: 1
+

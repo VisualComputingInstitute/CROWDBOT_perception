@@ -1,0 +1,15 @@
+publisher:
+    visual_marker:
+        topic: /visualization_marker_rear
+        queue_size: 1
+        latch: false
+
+    detections:
+        topic: /drow_detected_persons_rear
+        queue_size: 1
+        latch: false
+
+subscriber:
+    scan:
+        topic: /sick_laser_rear/scan
+        queue_size: 1

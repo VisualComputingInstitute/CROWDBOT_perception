@@ -1,0 +1,18 @@
+# If we want to use depth measurement when converting 2D detection to 3D.
+use_measured_depth: true
+# Maximum time difference between depth and image (in seconds).
+depth_time_threshold: 1.0
+# Depth of all pixels in the bbox central region is used. This threshold defines
+# the minimum ratio of pixels whose depth measurement is not inf or nan.
+depth_min_valid_ratio: 0.75
+# Scale depth measurement. Resulting depth value should be in meter.
+depth_scale: 0.001
+# Median of the depth in bbox central region is used as the depth of 3D
+# detection. These two values defines the range of this median value. If the
+# median falls out of this range, the depth will not be used.
+depth_min_median: 0.0
+depth_max_median: 15.0
+# Re-publish camera image overlaid with 2D bounding boxes. This is helpful for
+# debugging.
+publish_bounding_box_image: true
+
