@@ -2,28 +2,46 @@
 <package>
   <name>detection_fusion</name>
   <version>0.0.0</version>
-  <description>This is an example roscpp package.</description>
+  <description>convert 2d yolo detection to 3d detection, also supporting panorama cameras and fusing multiple cameras</description>
 
-  <maintainer email="todo@todo.com">TODO</maintainer>
+  <maintainer email="breuers@vision.rwth-aachen.de">Stefan Breuers</maintainer>
 
   <license>TODO</license>
 
-  <author email="todo@todo.com">TODO</author>
+  <url type="website">http://www.vision.rwth-aachen.de/</url>
 
-  <!-- One license tag required, multiple allowed, one license per tag -->
-  <!-- Commonly used license strings: -->
-  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>TODO</license>
+  <author email="neng.qian@rwth-aachen.de">Neng Qian</author>
+  <author email="breuers@vision.rwth-aachen.de">Stefan Breuers</author>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <run_depend>cv2</run_depend>
+
+  <build_depend>rospy</build_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>rwth_perception_people_msgs</build_depend>
+  <build_depend>message_filters</build_depend>
+  <build_depend>frame_msgs</build_depend>
+  <build_depend>darknet_ros_msgs</build_depend>
+  <build_depend>image_transport</build_depend>
+  <build_depend>cv_bridge</build_depend>
+  <build_depend>libqt4-dev</build_depend>
+  <build_depend>tf</build_depend>
+
+
   <run_depend>rospy</run_depend>
+  <run_depend>roscpp</run_depend>
   <run_depend>std_msgs</run_depend>
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>visualization_msgs</run_depend>
-  <run_depend>cv_bridge</run_depend>
-  <run_depend>frame_msgs</run_depend>
+  <run_depend>nav_msgs</run_depend>
   <run_depend>rwth_perception_people_msgs</run_depend>
+  <run_depend>message_filters</run_depend>
+  <run_depend>frame_msgs</run_depend>
   <run_depend>darknet_ros_msgs</run_depend>
+  <run_depend>cv_bridge</run_depend>
+  <run_depend>libqt4-dev</run_depend>
+  <run_depend>tf</run_depend>
+
+
+
+  <export/>
 </package>
