@@ -5,7 +5,7 @@ fusion_rate: 20
 enforce_all: false
 # How many detection source are there? This is only in initialization for
 # creating subscribers.
-number_of_detection_source: 3
+number_of_detection_source: 2
 # The fused detections are transformed into, fused, and published in fixed frame.
 world_frame: "map"
 # Detections (from different sensor) with distance lower than this value are

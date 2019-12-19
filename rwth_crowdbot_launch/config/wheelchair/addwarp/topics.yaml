@@ -1,0 +1,14 @@
+publisher:
+    detected_persons_with_warp:
+        topic: /detected_persons/yolo_with_warp
+        queue_size: 1
+        latch: false
+
+subscriber:
+    detected_persons:
+        topic: /detected_persons/yolo
+        queue_size: 1
+
+    image_warp:
+        topic: /optical_flow_image_diff_out
+        queue_size: 1
