@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>addwarp</name>
+  <version>0.0.0</version>
+  <description>This is an example roscpp package.</description>
+
+  <maintainer email="todo@todo.com">TODO</maintainer>
+
+  <license>TODO</license>
+
+  <author email="todo@todo.com">TODO</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>roscpp</depend>
+  <depend>image_transport</depend>
+  <depend>cv_bridge</depend>
+  <depend>std_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>frame_msgs</depend>
+</package>

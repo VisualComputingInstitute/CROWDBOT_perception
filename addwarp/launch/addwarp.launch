@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+
+  <node pkg="addwarp" type="addwarp" name="addwarp" output="screen">
+    <rosparam command="load" file="$(find addwarp)/config/addwarp.yaml"/>
+    <rosparam command="load" file="$(find addwarp)/config/topics.yaml"/>
+  </node>
+
+</launch>
