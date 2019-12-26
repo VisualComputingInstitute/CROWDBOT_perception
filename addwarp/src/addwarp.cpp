@@ -1,4 +1,5 @@
 #include <string>
+export DOCKER_HOST=unix:///run/user/1000/docker.sock
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
@@ -104,7 +105,7 @@ bool AddWarp::readPublisherParam(const std::string &name, std::string &topic,
 
 float AddWarp::imageDifference(const cv_bridge::CvImagePtr image_ptr,
                                const frame_msgs::DetectedPerson &detection) {
-  double warp_loss = 0.0;
+  double warp_loss;
   ROS_DEBUG("Start computing image difference");
   try {
     cv::Mat &crop_image_ptr_ = (image_ptr->image);
@@ -117,10 +118,10 @@ float AddWarp::imageDifference(const cv_bridge::CvImagePtr image_ptr,
 
     cv::Scalar result_of_sum = cv::sum(crop_image_ptr_);
     warp_loss = result_of_sum[0] + result_of_sum[1] + result_of_sum[2];
+    warp_loss /= (3 * 255 * detection.bbox_w * detection.bbox_h);
   } catch (cv::Exception &e) {
     ROS_ERROR("CV error: %s", e.what());
   }
-  warp_loss /= (3 * 255 * detection.bbox_w * detection.bbox_h);
   ROS_DEBUG_STREAM("Warp loss = " << warp_loss);
   return warp_loss;
 }
@@ -137,18 +138,17 @@ void AddWarp::detectionsCallback(
     const frame_msgs::DetectedPersonsConstPtr &detections_msg) {
   ROS_DEBUG("In detections callback");
 
-  double warp_loss = 0.0;
+  double warp_loss = 0.5;
   frame_msgs::DetectedPersons detections_msg_out;
   detections_msg_out = *detections_msg;
 
   for (frame_msgs::DetectedPerson& detection : detections_msg_out.detections)
   {
-    detection.warp_loss = 0.0;
+    detection.warp_loss = warp_loss;
   }
 
   if (img_msg_array_.empty()) {
-    ROS_DEBUG("No images yet");
-    return;
+    ROS_DEBUG("No optical flow information");
   }
 
   for (auto it = img_msg_array_.rbegin(); it != img_msg_array_.rend(); ++it) {
