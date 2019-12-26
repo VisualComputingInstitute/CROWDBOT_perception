@@ -1,5 +1,4 @@
 #include <string>
-export DOCKER_HOST = unix : /// run/user/1000/docker.sock
 
 #include <cv_bridge/cv_bridge.h>
 #include <opencv2/opencv.hpp>
