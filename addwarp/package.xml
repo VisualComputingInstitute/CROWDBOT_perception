@@ -1,14 +1,12 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>addwarp</name>
-  <version>0.0.0</version>
-  <description>This is an example roscpp package.</description>
+  <version>0.1.0</version>
+  <description>Adding optical flow information to detections.</description>
 
-  <maintainer email="todo@todo.com">TODO</maintainer>
+  <license>MIT</license>
 
-  <license>TODO</license>
-
-  <author email="todo@todo.com">TODO</author>
+  <author email="alexey.nekrasov@rwht-aachen.de">TODO</author>
 
   <buildtool_depend>catkin</buildtool_depend>
 
