@@ -3,10 +3,11 @@
   <name>addwarp</name>
   <version>0.1.0</version>
   <description>Adding optical flow information to detections.</description>
+  <maintainer email="alexey.nekrasov@rwht-aachen.de"/>
 
   <license>MIT</license>
 
-  <author email="alexey.nekrasov@rwht-aachen.de">TODO</author>
+  <author email="alexey.nekrasov@rwht-aachen.de"/>
 
   <buildtool_depend>catkin</buildtool_depend>
 
