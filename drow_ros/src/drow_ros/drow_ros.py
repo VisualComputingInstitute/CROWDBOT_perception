@@ -91,7 +91,7 @@ class DrowRos():
             dp.detection_id = self._detection_id
             self._detection_id += 1  # @TODO
             dp.height = 1.85  # @TODO
-            dp.warp_loss = 0.0
+            dp.warp_loss = 0.5
             dps.detections.append(dp)
 
         self._dets_pub.publish(dps)
