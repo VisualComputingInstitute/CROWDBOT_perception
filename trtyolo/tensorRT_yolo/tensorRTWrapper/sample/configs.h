@@ -6,8 +6,10 @@ namespace Tn
 {
     //src input image size
     static const int INPUT_CHANNEL = 3;
-    static const int INPUT_WIDTH = 416;//608;
-    static const int INPUT_HEIGHT = 416;//608; 
+    // static const int INPUT_WIDTH = 416;//608;
+    // static const int INPUT_HEIGHT = 416;//608;
+    static const int INPUT_WIDTH = 608;
+    static const int INPUT_HEIGHT = 608;
     static const int RESIZE_H = 256;
     static const int RESIZE_W = 256;
     static const float SCALE = 0.017f;
