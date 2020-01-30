@@ -1,3 +1,4 @@
 # Path to pre-trained weight. Download from:
 # https://drive.google.com/open?id=16TjqFCJ5vT10dYPw6tpIFwsdQMZzMRbK
 weight_file: '/fastwork/jia/dumps/DROW/final-WNet3xLF2p-T5-N48-odomFalse-repeatFalse-49ep.pth.tar'
+conf_thresh: 0.2

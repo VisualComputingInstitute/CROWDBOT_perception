@@ -1,9 +1,4 @@
 publisher:
-    visual_marker:
-        topic: /visualization_marker
-        queue_size: 1
-        latch: false
-
     detections:
         topic: /drow_detected_persons
         queue_size: 1
