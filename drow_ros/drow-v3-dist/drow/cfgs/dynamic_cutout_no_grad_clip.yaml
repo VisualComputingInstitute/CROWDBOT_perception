@@ -1,0 +1,22 @@
+epochs: 50
+batch_size: 16
+grad_norm_clip: -1.0
+num_workers: 8
+num_scans: 5
+use_data_augumentation: False
+train_with_val: False
+use_polar_grid: False
+
+cutout_kwargs:
+    center_on_latest: True
+    cutout_on_latest: True
+    window_width: 1.66
+    window_depth: 1.0
+    num_cutout_pts: 48
+    padding_val: 29.99
+
+polar_grid_kwargs:
+    min_range: 0.0
+    max_range: 30.0
+    range_bin_size: 0.1
+    tsdf_clip: 1.0
