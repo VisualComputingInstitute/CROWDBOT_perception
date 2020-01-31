@@ -61,8 +61,12 @@ class DROWRos():
             self._drow.set_laser_spec(angle_inc=msg.angle_increment,
                                       num_pts=len(msg.ranges))
 
-        # t = time.time()
         scan = np.array(msg.ranges)
+        scan[scan == 0.0] = 29.99
+        scan[np.isinf(scan)] = 29.99
+        scan[np.isnan(scan)] = 29.99
+
+        # t = time.time()
         dets_xs, dets_ys, dets_cls = self._drow(scan)
         # print(t - time.time())
 
