@@ -1,22 +1,12 @@
-import setuptools
+## ! DO NOT MANUALLY INVOKE THIS setup.py, USE CATKIN INSTEAD
 
-with open("README.md", "r") as fh:
-    long_description = fh.read()
+from distutils.core import setup
+from catkin_pkg.python_setup import generate_distutils_setup
 
-setuptools.setup(
-    name="drow",
-    version="0.0.1",
-    author="Example Author",
-    author_email="author@example.com",
-    description="A small example package",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
-    url="https://github.com/pypa/sampleproject",
-    packages=setuptools.find_packages(),
-    classifiers=[
-        "Programming Language :: Python :: 3",
-        "License :: OSI Approved :: MIT License",
-        "Operating System :: OS Independent",
-    ],
-    python_requires='>=3.6',
-)
+# fetch values from package.xml
+setup_args = generate_distutils_setup(
+    packages=['drow'],
+    package_dir={'': 'src'}
+    )
+
+setup(**setup_args)
