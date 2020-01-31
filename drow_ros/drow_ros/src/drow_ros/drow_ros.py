@@ -76,14 +76,15 @@ class DROWRos():
 
         # confidence threshold
         conf_mask = dets_cls_conf >= self.conf_thresh
-        dets_xs = dets_xs[conf_mask]
-        dets_ys = dets_ys[conf_mask]
-        dets_cls_conf = dets_cls_conf[conf_mask]
+        if np.sum(conf_mask) > 0:
+            dets_xs = dets_xs[conf_mask]
+            dets_ys = dets_ys[conf_mask]
+            dets_cls_conf = dets_cls_conf[conf_mask]
 
-        # convert and publish ros msg
-        dps_msg = self._detections_to_ros_msg(dets_xs, dets_ys, dets_cls_conf)
-        dps_msg.header = msg.header
-        self._dets_pub.publish(dps_msg)
+            # convert and publish ros msg
+            dps_msg = self._detections_to_ros_msg(dets_xs, dets_ys, dets_cls_conf)
+            dps_msg.header = msg.header
+            self._dets_pub.publish(dps_msg)
 
 
     def _detections_to_ros_msg(self, dets_xs, dets_ys, dets_conf):
@@ -113,3 +114,5 @@ class DROWRos():
             dp.detection_id = self._detection_id
             dps.detections.append(dp)
             self._detection_id += 1
+
+        return dps

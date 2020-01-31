@@ -23,7 +23,7 @@ class DROWDetector(object):
         # generate network input
         scan = scan[None, ...]  # Expand one dimension for sequential scans
         angle_incre = self._laser_angle[1] - self._laser_angle[0]
-        cutout = u.scans_to_cutout(scan=scan,
+        cutout = u.scans_to_cutout(scans=scan,
                                    angle_incre=angle_incre,
                                    num_cutout_pts=self._num_cutout_pts)
         cutout = cutout[None, ...]  # Expend one dimension for batch
@@ -34,12 +34,12 @@ class DROWDetector(object):
         # inference
         with torch.no_grad():
             pred_cls, pred_reg = self._model(cutout)
-            pred_cls = F.softmax(pred_cls, dim=-1).data.cpu().numpy()
-            pred_reg = pred_reg.data.cpu().numpy()
+            pred_cls = F.softmax(pred_cls, dim=-1).data.cpu().numpy()[0]
+            pred_reg = pred_reg.data.cpu().numpy()[0]
 
         # post processing
         dets_xs, dets_ys, dets_cls = u.group_predicted_center(
-                scan, self._laser_angle, pred_cls, pred_reg)
+                scan[0], self._laser_angle, pred_cls, pred_reg)
 
         return dets_xs, dets_ys, dets_cls
 
