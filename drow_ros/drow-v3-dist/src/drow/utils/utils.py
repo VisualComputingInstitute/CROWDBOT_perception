@@ -109,7 +109,7 @@ def closest_detection(scan, dets, radii):
     return np.argmin(dists, axis=1)
 
 
-def scans_to_cutout(scans, angle_incre, fixed=True, centered=True, pt_inds=None,
+def scans_to_cutout(scans, angle_incre, fixed=False, centered=False, pt_inds=None,
                     window_width=1.66, window_depth=1.0, num_cutout_pts=48,
                     padding_val=29.99):
     """ TODO: Probably we can still try to clean this up more.
@@ -134,7 +134,7 @@ def scans_to_cutout(scans, angle_incre, fixed=True, centered=True, pt_inds=None,
             # Compute the size (width) of the window
             pt_r = scans[scan_idx, pt_idx] if fixed else scans[-1, pt_idx]
 
-            half_alpha = float(np.arctan(0.5 * window_width / np.max(pt_r, 0.01)))
+            half_alpha = float(np.arctan(0.5 * window_width / max(pt_r, 0.01)))
 
             # Compute the start and end indices of cutout
             start_idx = int(round(pt_idx - half_alpha / angle_incre))

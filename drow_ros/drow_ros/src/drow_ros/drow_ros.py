@@ -29,7 +29,7 @@ class DROWRos():
     def __init__(self):
         self._detection_id = 0
         self._read_params()
-        self._drow = DROWDetector(self.weight_file)
+        self._drow = DROWDetector(self.weight_file, sequential_inference=True)
         self._init()
 
     def _read_params(self):
@@ -67,40 +67,38 @@ class DROWRos():
         scan[np.isnan(scan)] = 29.99
 
         # t = time.time()
-        dets_xs, dets_ys, dets_cls = self._drow(scan)
+        dets_xy, dets_cls = self._drow(scan)
         # print(t - time.time())
 
         # only keep pedestrian
         dets_cls_label = np.argmax(dets_cls[:, 1:], axis=1) + 1
         dets_cls_conf = np.max(dets_cls[:, 1:], axis=1)
         pedestrian_mask = dets_cls_label == 3  # 1 - wheelchair, 2 - people with walking aids, 3 - people
-        dets_xs = dets_xs[pedestrian_mask]
-        dets_ys = dets_ys[pedestrian_mask]
+        dets_xy = dets_xy[pedestrian_mask]
         dets_cls_conf = dets_cls_conf[pedestrian_mask]
 
         # confidence threshold
         conf_mask = dets_cls_conf >= self.conf_thresh
         if np.sum(conf_mask) > 0:
-            dets_xs = dets_xs[conf_mask]
-            dets_ys = dets_ys[conf_mask]
+            dets_xy = dets_xy[conf_mask]
             dets_cls_conf = dets_cls_conf[conf_mask]
 
             # convert and publish ros msg
-            dps_msg = self._detections_to_ros_msg(dets_xs, dets_ys, dets_cls_conf)
+            dps_msg = self._detections_to_ros_msg(dets_xy, dets_cls_conf)
             dps_msg.header = msg.header
             self._dets_pub.publish(dps_msg)
 
 
-    def _detections_to_ros_msg(self, dets_xs, dets_ys, dets_conf):
+    def _detections_to_ros_msg(self, dets_xy, dets_conf):
         dps = DetectedPersons()
-        for x, y, conf in zip(dets_xs, dets_ys, dets_conf):
+        for (x, y), conf in zip(dets_xy, dets_conf):
             dp = DetectedPerson()
             dp.modality = DetectedPerson.MODALITY_GENERIC_LASER_2D
             dp.confidence = conf
             # If laser is facing front, DROW's y-axis aligns with the laser
             # center ray, x-axis points to right
             dp.pose.pose.position.x = y
-            dp.pose.pose.position.y = -x
+            dp.pose.pose.position.y = x
             dp.pose.pose.position.z = 1.0
             dp.pose.pose.orientation.w = 1.0
             # These covariance values are not used for the moment, just

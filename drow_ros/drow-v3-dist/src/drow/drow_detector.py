@@ -2,7 +2,6 @@ import torch
 import torch.nn.functional as F
 
 from model.drow import FastDROWNet3LF2p
-from utils.train_utils import load_checkpoint
 import utils.utils as u
 
 
@@ -15,8 +14,9 @@ class DROWDetector(object):
         # net
         model = FastDROWNet3LF2p(num_scans=num_scans,
                                  sequential_inference=sequential_inference)
+        ckpt = torch.load(ckpt_file)
+        model.load_state_dict(ckpt['model'])
         model.eval()
-        load_checkpoint(model=model, filename=ckpt_file)
         self._model = model.cuda() if self._gpu is not None else model
 
     def __call__(self, scan):
@@ -25,7 +25,7 @@ class DROWDetector(object):
         # generate network input
         scan = scan[None, ...]  # Expand one dimension for sequential scans
         angle_incre = self._laser_angle[1] - self._laser_angle[0]
-        cutout = u.scans_to_cutout(scan=scan,
+        cutout = u.scans_to_cutout(scans=scan,
                                    angle_incre=angle_incre,
                                    num_cutout_pts=self._num_cutout_pts)
         cutout = cutout[None, ...]  # Expend one dimension for batch
@@ -41,7 +41,7 @@ class DROWDetector(object):
 
         # post processing
         dets_xy, dets_cls = u.group_predicted_center(
-                scan, self._laser_angle, pred_cls, pred_reg)
+                scan[0], self._laser_angle, pred_cls[0], pred_reg[0])
 
         return dets_xy, dets_cls
 
