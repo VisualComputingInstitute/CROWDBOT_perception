@@ -25,7 +25,7 @@ test_loader = create_test_dataloader(data_path="../data/DROWv2-data",
                                      use_polar_grid=cfg['use_polar_grid'],
                                      cutout_kwargs=cfg['cutout_kwargs'],
                                      polar_grid_kwargs=cfg['polar_grid_kwargs'])
-model = eu.create_model(cfg['num_scans'], args.ckpt)
+model = eu.create_model(args.ckpt, num_scans=cfg['num_scans'])
 model.eval()
 model = model.cuda()
 

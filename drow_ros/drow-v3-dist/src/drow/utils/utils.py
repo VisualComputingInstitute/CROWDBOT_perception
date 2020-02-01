@@ -56,8 +56,7 @@ def data_augmentation(sample_dict):
         scans = scans[:, ::-1]
         target_reg[:, 0] = -target_reg[:, 0]
 
-    sample_dict.update({'target_reg': target_reg,
-                       'scans': scans})
+    sample_dict.update({'target_reg': target_reg, 'scans': scans})
 
     return sample_dict
 
@@ -110,9 +109,9 @@ def closest_detection(scan, dets, radii):
     return np.argmin(dists, axis=1)
 
 
-def scans_to_cutout(scans, angle_incre, pt_inds=None, window_width=1.66,
-                    window_depth=1.0, num_cutout_pts=48, padding_val=29.99,
-                    center_on_latest=False, cutout_on_latest=False):
+def scans_to_cutout(scans, angle_incre, fixed=True, centered=True, pt_inds=None,
+                    window_width=1.66, window_depth=1.0, num_cutout_pts=48,
+                    padding_val=29.99):
     """ TODO: Probably we can still try to clean this up more.
     This function here only creates a single cut-out; for training,
     we'd want to get a batch of cutouts from each seq (can vectorize) and for testing
@@ -133,9 +132,9 @@ def scans_to_cutout(scans, angle_incre, pt_inds=None, window_width=1.66,
     for scan_idx in range(num_scans):
         for pt_idx in pt_inds:
             # Compute the size (width) of the window
-            pt_r = scans[-1, pt_idx] if cutout_on_latest else scans[scan_idx, pt_idx]
+            pt_r = scans[scan_idx, pt_idx] if fixed else scans[-1, pt_idx]
 
-            half_alpha = float(np.arctan(0.5 * window_width / pt_r))
+            half_alpha = float(np.arctan(0.5 * window_width / np.max(pt_r, 0.01)))
 
             # Compute the start and end indices of cutout
             start_idx = int(round(pt_idx - half_alpha / angle_incre))
@@ -153,17 +152,20 @@ def scans_to_cutout(scans, angle_incre, pt_inds=None, window_width=1.66,
                                        interpolation=interp).squeeze()
 
             # center cutout and clip depth to avoid strong depth discontinuity
-            mid_r = scans[-1, pt_idx] if center_on_latest else scans[scan_idx, pt_idx]
-            min_window_depth, max_window_depth = mid_r - window_depth, mid_r + window_depth
-            cutout_sampled -= mid_r  # center
-            scans_cutout[pt_idx, scan_idx, :] = cutout_sampled.clip(min_window_depth, max_window_depth)  # clip
+            cutout_sampled = cutout_sampled.clip(pt_r - window_depth,
+                                                 pt_r + window_depth)  # clip
+            if centered:
+                cutout_sampled -= pt_r  # center
+            scans_cutout[pt_idx, scan_idx, :] = cutout_sampled
 
     return scans_cutout
 
 
-def scans_to_polar_grid(scans, min_range=0.0, max_range=30.0, range_bin_size=0.1, tsdf_clip=1.0):
+def scans_to_polar_grid(scans, min_range=0.0, max_range=30.0, range_bin_size=0.1,
+                        tsdf_clip=1.0, normalize=True):
     num_scans, num_pts = scans.shape
     num_range = int((max_range - min_range) / range_bin_size)
+    mag_range, mid_range = max_range - min_range, 0.5 * (max_range - min_range)
 
     polar_grid = np.empty((num_scans, num_range, num_pts), dtype=np.float32)
 
@@ -177,7 +179,11 @@ def scans_to_polar_grid(scans, min_range=0.0, max_range=30.0, range_bin_size=0.1
             min_dist, max_dist = 0 - range_grid_ind, num_range - range_grid_ind
             tsdf = np.arange(min_dist, max_dist, step=1).astype(np.float32)
             tsdf = np.clip(tsdf * range_bin_size, -tsdf_clip, tsdf_clip)
-            tsdf[range_grid_ind] = scans[i_scan, i_pt]
+            scan_val = scans[i_scan, i_pt]
+            if normalize:
+                scan_val = (scan_val - mid_range) / mag_range * 2.0
+                tsdf = tsdf / mag_range * 2.0
+            tsdf[range_grid_ind] = scan_val
             polar_grid[i_scan, :, i_pt] = tsdf
 
     return polar_grid
@@ -224,7 +230,7 @@ def group_predicted_center(scan, laser_angle, pred_cls, pred_reg, min_thresh=1e-
     voters_inds = np.where(np.sum(pred_cls[:,1:], axis=-1) > min_thresh)[0]
 
     if len(voters_inds) == 0:
-        return
+        return [], []
 
     pred_xs, pred_ys = pred_xs[voters_inds], pred_ys[voters_inds]
     pred_cls = pred_cls[voters_inds]
@@ -251,7 +257,7 @@ def group_predicted_center(scan, laser_angle, pred_cls, pred_reg, min_thresh=1e-
     nms_xs, nms_ys = np.where(grid_nms_inds)
 
     if len(nms_xs) == 0:
-        return
+        return [], []
 
     # Back from grid-bins to real-world locations.
     nms_xs = nms_xs * bin_size + x_min + bin_size / 2
@@ -282,4 +288,4 @@ def group_predicted_center(scan, laser_angle, pred_cls, pred_reg, min_thresh=1e-
             dets_ys.append(np.mean(support_ys))
             dets_cls.append(np.mean(support_cls, axis=0))
 
-    return np.array(dets_xs), np.array(dets_ys), np.array(dets_cls)
+    return np.array([dets_xs, dets_ys]).T, np.array(dets_cls)

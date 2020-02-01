@@ -72,10 +72,9 @@ def lbt_init(mod, init_=None, bias=0):
 
 
 class FastDROWNet3LF2p(nn.Module):
-    def __init__(self, num_scans, dropout=0.5, sequential_inference=False, *args, **kwargs):
+    def __init__(self, dropout=0.5, sequential_inference=False, num_scans=5, *args, **kwargs):
         super(FastDROWNet3LF2p, self).__init__(*args, **kwargs)
         self._sequential_inference = sequential_inference
-        self.num_scans = num_scans
 
         # In case of sequential input, save previous intermediate features to
         # imporve inference speed (not used in training)

@@ -557,7 +557,7 @@ def votes_to_detections2(xs, ys, probas, weighted_avg=False, min_thresh=1e-5,
 
         # Vote into the grid, including the agnostic vote as sum of class-votes!
         #TODO Do we need the class grids?
-        np.add.at(grid, [x_idx, y_idx], np.concatenate([np.sum(probs[:,1:], axis=-1, keepdims=True), probs[:,1:]], axis=-1))
+        np.add.at(grid, (x_idx, y_idx), np.concatenate([np.sum(probs[:,1:], axis=-1, keepdims=True), probs[:,1:]], axis=-1))
 
         # Find the maxima (NMS) only in the "common" voting grid.
         grid_all = grid[:,:,0]
