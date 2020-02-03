@@ -109,7 +109,7 @@ def closest_detection(scan, dets, radii):
     return np.argmin(dists, axis=1)
 
 
-def scans_to_cutout(scans, angle_incre, fixed=False, centered=False, pt_inds=None,
+def scans_to_cutout(scans, angle_incre, fixed=True, centered=True, pt_inds=None,
                     window_width=1.66, window_depth=1.0, num_cutout_pts=48,
                     padding_val=29.99):
     """ TODO: Probably we can still try to clean this up more.
@@ -161,7 +161,7 @@ def scans_to_cutout(scans, angle_incre, fixed=False, centered=False, pt_inds=Non
     return scans_cutout
 
 
-def scans_to_polar_grid(scans, min_range=0.0, max_range=30.0, range_bin_size=0.1,
+def scans_to_polar_grid(scans, min_range=0.0, max_range=30.0, range_bin_size=1.0,
                         tsdf_clip=1.0, normalize=True):
     num_scans, num_pts = scans.shape
     num_range = int((max_range - min_range) / range_bin_size)
@@ -176,13 +176,19 @@ def scans_to_polar_grid(scans, min_range=0.0, max_range=30.0, range_bin_size=0.1
     for i_scan in range(num_scans):
         for i_pt in range(num_pts):
             range_grid_ind = scans_grid_inds[i_scan, i_pt]
-            min_dist, max_dist = 0 - range_grid_ind, num_range - range_grid_ind
-            tsdf = np.arange(min_dist, max_dist, step=1).astype(np.float32)
-            tsdf = np.clip(tsdf * range_bin_size, -tsdf_clip, tsdf_clip)
             scan_val = scans[i_scan, i_pt]
+
+            if tsdf_clip > 0.0:
+                min_dist, max_dist = 0 - range_grid_ind, num_range - range_grid_ind
+                tsdf = np.arange(min_dist, max_dist, step=1).astype(np.float32) * range_bin_size
+                tsdf = np.clip(tsdf, -tsdf_clip, tsdf_clip)
+            else:
+                tsdf = np.zeros(num_range, dtype=np.float32)
+
             if normalize:
                 scan_val = (scan_val - mid_range) / mag_range * 2.0
                 tsdf = tsdf / mag_range * 2.0
+
             tsdf[range_grid_ind] = scan_val
             polar_grid[i_scan, :, i_pt] = tsdf
 

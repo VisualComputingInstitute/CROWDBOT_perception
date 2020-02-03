@@ -15,7 +15,7 @@ class DROWDetector(object):
         model = FastDROWNet3LF2p(num_scans=num_scans,
                                  sequential_inference=sequential_inference)
         ckpt = torch.load(ckpt_file)
-        model.load_state_dict(ckpt['model'])
+        model.load_state_dict(ckpt['model_state'])
         model.eval()
         self._model = model.cuda() if self._gpu is not None else model
 
