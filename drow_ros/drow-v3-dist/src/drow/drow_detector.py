@@ -1,19 +1,21 @@
 import torch
 import torch.nn.functional as F
 
-from model.drow import FastDROWNet3LF2p
+from model.drow import DROW
 import utils.utils as u
 
 
 class DROWDetector(object):
-    def __init__(self, ckpt_file, num_scans=5, num_cutout_pts=48, gpu=0,
+    def __init__(self, ckpt_file, num_scans=1, num_cutout_pts=48, gpu=0,
                  sequential_inference=True):
         self._gpu, self._num_cutout_pts = gpu, num_cutout_pts
         self._laser_angle = None
 
         # net
-        model = FastDROWNet3LF2p(num_scans=num_scans,
-                                 sequential_inference=sequential_inference)
+        model = DROW(num_scans=num_scans,
+                     num_pts=num_cutout_pts,
+                     sequential_inference=sequential_inference,
+                     temporal_gating=False)
         ckpt = torch.load(ckpt_file)
         model.load_state_dict(ckpt['model_state'])
         model.eval()

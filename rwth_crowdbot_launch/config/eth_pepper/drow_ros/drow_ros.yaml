@@ -1,5 +1,5 @@
 # Path to pre-trained weight. Download from:
 # https://drive.google.com/open?id=16TjqFCJ5vT10dYPw6tpIFwsdQMZzMRbK
 # weight_file: '/home/jia/git_lidar/3d_obj_det/drow-v2/v3/output/fixed_cutout/ckpts/ckpt_e50.pth'
-weight_file: '/home/jia/Desktop/DROW_center_fix_e90.pth'
-conf_thresh: 0.5
+weight_file: '/home/jia/Desktop/ckpt_e200.pth'
+conf_thresh: 0.4

@@ -1,79 +1,62 @@
 from collections import deque
+from math import ceil
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-
-def model_fn(model, data):
-    tb_dict, disp_dict = {}, {}
-
-    cutout_input = data['cutout']
-    cutout_input = torch.from_numpy(cutout_input).cuda(non_blocking=True).float()
-
-    # Forward pass
-    pred_cls, pred_reg = model(cutout_input)
-
-    target_cls, target_reg = data['target_cls'], data['target_reg']
-    target_cls = torch.from_numpy(target_cls).cuda(non_blocking=True).long()
-    target_reg = torch.from_numpy(target_reg).cuda(non_blocking=True).float()
-
-    n_batch, n_cutout = target_cls.shape[:2]
-
-    # cls loss
-    target_cls = target_cls.view(n_batch*n_cutout)
-    pred_cls = pred_cls.view(n_batch*n_cutout, -1)
-    cls_loss = F.cross_entropy(pred_cls, target_cls, reduction='mean')
-    total_loss = cls_loss
-
-    # number fg points
-    fg_mask = target_cls.ne(0)
-    fg_ratio = torch.sum(fg_mask).item() / (n_batch * n_cutout)
-
-    # reg loss
-    if fg_ratio > 0.0:
-        target_reg = target_reg.view(n_batch*n_cutout, -1)
-        pred_reg = pred_reg.view(n_batch*n_cutout, -1)
-        reg_loss = F.mse_loss(pred_reg[fg_mask], target_reg[fg_mask],
-                              reduction='none')
-        reg_loss = torch.sqrt(torch.sum(reg_loss, dim=1)).mean()
-        total_loss = reg_loss + cls_loss
-    else:
-        reg_loss = 0
-
-    disp_dict['loss'] = total_loss
-
-    tb_dict['cls_loss'] = cls_loss
-    tb_dict['reg_loss'] = reg_loss
-    tb_dict['fg_ratio'] = fg_ratio
-
-    return total_loss, tb_dict, disp_dict
+from loss_utils import FocalLoss
 
 
-def model_fn_eval(model, data):
-    total_loss, tb_dict, disp_dict = model_fn(model, data)
-    if tb_dict['fg_ratio'] == 0.0:
-        del tb_dict['reg_loss']  # So that it's not summed in caucluating epoch average
-
-    return total_loss, tb_dict, disp_dict
-
-
-def lbt_init(mod, init_=None, bias=0):
-    # Copy paste from lbtoolbox.pytorch.lbt
-    """ Initializes `mod` with `init` and returns it.
-    Also sets the bias to the given constant value, if available.
-
-    Useful for the `Sequential` constructor and friends.
-    """
-    if init_ is not None and getattr(mod, 'weight', None) is not None:
-        init_(mod.weight)
-    if getattr(mod, 'bias', None) is not None:
-        torch.nn.init.constant_(mod.bias, bias)
-    return mod
+def _conv(in_channel, out_channel, kernel_size, padding):
+    return nn.Sequential(nn.Conv1d(in_channel, out_channel,
+                                   kernel_size=kernel_size, padding=padding),
+                         nn.BatchNorm1d(out_channel),
+                         nn.LeakyReLU(negative_slope=0.1, inplace=True))
 
 
-class FastDROWNet3LF2p(nn.Module):
-    def __init__(self, dropout=0.5, sequential_inference=False, num_scans=5, *args, **kwargs):
-        super(FastDROWNet3LF2p, self).__init__(*args, **kwargs)
+def _conv3x3(in_channel, out_channel):
+    return _conv(in_channel, out_channel, kernel_size=3, padding=1)
+
+
+def _conv1x1(in_channel, out_channel):
+    return _conv(in_channel, out_channel, kernel_size=1, padding=1)
+
+
+class _TemporalGate(nn.Module):
+    def __init__(self, n_scans, n_pts, n_channel):
+        super(_TemporalGate, self).__init__()
+        self.conv1 = nn.Conv1d(n_channel, 128, kernel_size=n_pts, padding=0)
+        self.bn1 = nn.BatchNorm1d(128)
+        self.conv2 = nn.Conv1d(128, 64, kernel_size=n_scans, padding=0)
+        self.bn2 = nn.BatchNorm1d(64)
+        self.fc = nn.Linear(64, n_scans)
+        self.relu = nn.LeakyReLU(negative_slope=0.1, inplace=True)
+
+
+    def forward(self, x):
+        n_batch, n_scans, n_channel, n_pts = x.shape
+
+        out = x.view(n_batch * n_scans, n_channel, n_pts)
+        out = self.conv1(out)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = out.view(n_batch, n_scans, 128).permute(0, 2, 1)  # (batch, feature, scans)
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.relu(out).view(n_batch, 64)  # (batch, feature)
+
+        out = self.fc(out)
+        out = F.softmax(out, dim=1)  # (batch, scans)
+
+        return out
+
+
+class DROW(nn.Module):
+    def __init__(self, dropout=0.5, num_scans=5, num_pts=48, temporal_gating=True,
+                 sequential_inference=False, focal_loss_gamma=0.0):
+        super(DROW, self).__init__()
         self._sequential_inference = sequential_inference
 
         # In case of sequential input, save previous intermediate features to
@@ -82,103 +65,73 @@ class FastDROWNet3LF2p(nn.Module):
             self._hx_deque = deque(maxlen=num_scans)
 
         self.dropout = dropout
-        self.conv1a = nn.Conv1d(1, 64, kernel_size=3, padding=1)
-        self.bn1a = nn.BatchNorm1d(64)
-        self.conv1b = nn.Conv1d(64, 64, kernel_size=3, padding=1)
-        self.bn1b = nn.BatchNorm1d(64)
-        self.conv1c = nn.Conv1d(64, 128, kernel_size=3, padding=1)
-        self.bn1c = nn.BatchNorm1d(128)
-        self.conv2a = nn.Conv1d(128, 128, kernel_size=3, padding=1)
-        self.bn2a = nn.BatchNorm1d(128)
-        self.conv2b = nn.Conv1d(128, 128, kernel_size=3, padding=1)
-        self.bn2b = nn.BatchNorm1d(128)
-        self.conv2c = nn.Conv1d(128, 256, kernel_size=3, padding=1)
-        self.bn2c = nn.BatchNorm1d(256)
-        self.conv3a = nn.Conv1d(256, 256, kernel_size=3, padding=1)
-        self.bn3a = nn.BatchNorm1d(256)
-        self.conv3b = nn.Conv1d(256, 256, kernel_size=3, padding=1)
-        self.bn3b = nn.BatchNorm1d(256)
-        self.conv3c = nn.Conv1d(256, 512, kernel_size=3, padding=1)
-        self.bn3c = nn.BatchNorm1d(512)
-        self.conv4a = nn.Conv1d(512, 256, kernel_size=3, padding=1)
-        self.bn4a = nn.BatchNorm1d(256)
-        self.conv4b = nn.Conv1d(256, 128, kernel_size=3, padding=1)
-        self.bn4b = nn.BatchNorm1d(128)
-        self.conv4p = nn.Conv1d(128, 4, kernel_size=1)  # probs
-        self.conv4v = nn.Conv1d(128, 2, kernel_size=1)  # vote
 
-        self.reset_parameters()
+        self.conv_block_1 = nn.Sequential(_conv3x3(1, 64),
+                                          _conv3x3(64, 64),
+                                          _conv3x3(64, 128))
+        self.conv_block_2 = nn.Sequential(_conv3x3(128, 128),
+                                          _conv3x3(128, 128),
+                                          _conv3x3(128, 256))
+        self.conv_block_3 = nn.Sequential(_conv3x3(256, 256),
+                                          _conv3x3(256, 256),
+                                          _conv3x3(256, 512))
+        self.conv_block_4 = nn.Sequential(_conv3x3(512, 256),
+                                          _conv3x3(256, 128))
+
+        if temporal_gating:
+            self.gate = _TemporalGate(num_scans, int(ceil(num_pts / 4)), 256)
+        else:
+            self.gate = None
+
+        self.conv_cls = nn.Conv1d(128, 4, kernel_size=1)  # probs
+        self.conv_reg = nn.Conv1d(128, 2, kernel_size=1)  # vote
+
+        if focal_loss_gamma > 0.0:
+            self.cls_loss = FocalLoss(gamma=focal_loss_gamma)
+        else:
+            self.cls_loss = None
+
+        for m in self.modules():
+            if isinstance(m, (nn.Conv1d, nn.Conv2d)):
+                nn.init.kaiming_normal_(m.weight, a=0.1, nonlinearity='leaky_relu')
+            elif isinstance(m, (nn.BatchNorm1d, nn.BatchNorm2d)):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+
+
+    def _forward_conv(self, x, conv_block):
+        out = conv_block(x)
+        out = F.max_pool1d(out, kernel_size=2)
+        if self.dropout > 0:
+            out = F.dropout(out, p=self.dropout, training=self.training)
+
+        return out
 
     def forward(self, x):
-        n_batch, n_cutout, n_scan, n_points = x.shape
+        n_batch, n_cutout, n_scan, n_pts = x.shape
 
-        def trunk_forward(x):
-            x = F.leaky_relu(self.bn1a(self.conv1a(x)), 0.1)
-            x = F.leaky_relu(self.bn1b(self.conv1b(x)), 0.1)
-            x = F.leaky_relu(self.bn1c(self.conv1c(x)), 0.1)
-            x = F.max_pool1d(x, 2)  # 24
-            x = F.dropout(x, p=self.dropout, training=self.training)
+        out = x.view(n_batch * n_cutout * n_scan, 1, n_pts)
 
-            x = F.leaky_relu(self.bn2a(self.conv2a(x)), 0.1)
-            x = F.leaky_relu(self.bn2b(self.conv2b(x)), 0.1)
-            x = F.leaky_relu(self.bn2c(self.conv2c(x)), 0.1)
-            x = F.max_pool1d(x, 2)  # 12
-            x = F.dropout(x, p=self.dropout, training=self.training)
-            return x
+        # feature for each cutout
+        out = self._forward_conv(out, self.conv_block_1)  # 24
+        out = self._forward_conv(out, self.conv_block_2)  # 12
 
-        if not self.training and self._sequential_inference:
-            assert n_batch == n_scan == 1
-            x = torch.squeeze(x, dim=0)
-            hx = trunk_forward(x)
-            self._hx_deque.append(hx)
-            while len(self._hx_deque) < self._hx_deque.maxlen:
-                self._hx_deque.append(hx)
-            x = torch.stack(list(self._hx_deque), dim=0).sum(dim=0)
-            x = torch.unsqueeze(x, dim=0)
+        out = out.view(n_batch * n_cutout, n_scan, *out.shape[-2:])
+
+        if self.gate is not None:
+            # temporal gating
+            gate = self.gate(out)
+            out = out * gate.view(gate.shape[0], gate.shape[1], 1, 1)
+            out = torch.sum(out, dim=1)    # (batch*cutout, channel, pts)
         else:
-            x = x.view(n_batch*n_cutout*n_scan, 1, n_points)
-            x = trunk_forward(x)
-            x = x.view(n_batch, n_cutout, n_scan, -1, x.shape[-1])
-            x = torch.sum(x, dim=2)  # batch, cutout, feature, points
+            out = torch.sum(out, dim=1)
 
-        x = x.view(n_batch*n_cutout, -1, x.shape[-1])
+        # feature for fused cutout
+        out = self._forward_conv(out, self.conv_block_3)  # 6
+        out = self.conv_block_4(out)
+        out = F.avg_pool1d(out, kernel_size=out.shape[-1])  # (batch*cutout, channel, 1)
 
-        x = F.leaky_relu(self.bn3a(self.conv3a(x)), 0.1)
-        x = F.leaky_relu(self.bn3b(self.conv3b(x)), 0.1)
-        x = F.leaky_relu(self.bn3c(self.conv3c(x)), 0.1)
-        x = F.max_pool1d(x, 2)  # 6
-        x = F.dropout(x, p=self.dropout, training=self.training)
+        pred_cls = self.conv_cls(out).view(n_batch, n_cutout, 4)
+        pred_reg = self.conv_reg(out).view(n_batch, n_cutout, 2)
 
-        x = F.leaky_relu(self.bn4a(self.conv4a(x)), 0.1)
-        x = F.leaky_relu(self.bn4b(self.conv4b(x)), 0.1)
-        x = F.avg_pool1d(x, 6)  # Due to the arch, output has spatial size 1
-        logits = self.conv4p(x).view(n_batch, n_cutout, 4)
-        votes = self.conv4v(x).view(n_batch, n_cutout, 2)
-
-        return logits, votes
-
-    def reset_parameters(self):
-        lbt_init(self.conv1a, lambda t: nn.init.kaiming_normal_(t, a=0.1), 0)
-        lbt_init(self.conv1b, lambda t: nn.init.kaiming_normal_(t, a=0.1), 0)
-        lbt_init(self.conv1c, lambda t: nn.init.kaiming_normal_(t, a=0.1), 0)
-        lbt_init(self.conv2a, lambda t: nn.init.kaiming_normal_(t, a=0.1), 0)
-        lbt_init(self.conv2b, lambda t: nn.init.kaiming_normal_(t, a=0.1), 0)
-        lbt_init(self.conv2c, lambda t: nn.init.kaiming_normal_(t, a=0.1), 0)
-        lbt_init(self.conv3a, lambda t: nn.init.kaiming_normal_(t, a=0.1), 0)
-        lbt_init(self.conv3b, lambda t: nn.init.kaiming_normal_(t, a=0.1), 0)
-        lbt_init(self.conv3c, lambda t: nn.init.kaiming_normal_(t, a=0.1), 0)
-        lbt_init(self.conv4a, lambda t: nn.init.kaiming_normal_(t, a=0.1), 0)
-        lbt_init(self.conv4b, lambda t: nn.init.kaiming_normal_(t, a=0.1), 0)
-        lbt_init(self.conv4p, lambda t: nn.init.constant_(t, 0), 0)
-        lbt_init(self.conv4v, lambda t: nn.init.constant_(t, 0), 0)
-        nn.init.constant_(self.bn1a.weight, 1)
-        nn.init.constant_(self.bn1b.weight, 1)
-        nn.init.constant_(self.bn1c.weight, 1)
-        nn.init.constant_(self.bn2a.weight, 1)
-        nn.init.constant_(self.bn2b.weight, 1)
-        nn.init.constant_(self.bn2c.weight, 1)
-        nn.init.constant_(self.bn3a.weight, 1)
-        nn.init.constant_(self.bn3b.weight, 1)
-        nn.init.constant_(self.bn3c.weight, 1)
-        nn.init.constant_(self.bn4a.weight, 1)
-        nn.init.constant_(self.bn4b.weight, 1)
+        return pred_cls, pred_reg

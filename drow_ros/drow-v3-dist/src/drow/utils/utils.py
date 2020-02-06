@@ -47,9 +47,10 @@ def canonical_to_global(scan_r, scan_phi, dx, dy):
 def data_augmentation(sample_dict):
     scans, target_reg = sample_dict['scans'], sample_dict['target_reg']
 
-    # Target noise
-    target_noise = np.exp(np.random.randn(*target_reg.shape).astype(np.float32) / 20)
-    target_reg = target_reg * target_noise
+    # Random scaling
+    s = np.random.uniform(low=0.95, high=1.05)
+    scans = s * scans
+    target_reg = s * target_reg
 
     # Random left-right flip. Of whole batch for convenience, but should be the same as individuals.
     if np.random.rand() < 0.5:
@@ -164,14 +165,13 @@ def scans_to_cutout(scans, angle_incre, fixed=True, centered=True, pt_inds=None,
 def scans_to_polar_grid(scans, min_range=0.0, max_range=30.0, range_bin_size=1.0,
                         tsdf_clip=1.0, normalize=True):
     num_scans, num_pts = scans.shape
-    num_range = int((max_range - min_range) / range_bin_size)
+    num_range = int((max_range - min_range) / range_bin_size) + 1
     mag_range, mid_range = max_range - min_range, 0.5 * (max_range - min_range)
 
     polar_grid = np.empty((num_scans, num_range, num_pts), dtype=np.float32)
 
     scans = np.clip(scans, min_range, max_range)
-    scans_grid_inds = (scans - min_range) / range_bin_size
-    scans_grid_inds = scans_grid_inds.astype(np.int32)
+    scans_grid_inds = ((scans - min_range) / range_bin_size).astype(np.int32)
 
     for i_scan in range(num_scans):
         for i_pt in range(num_pts):
