@@ -1,8 +1,17 @@
+from joblib import Parallel, delayed
 import numpy as np
 from scipy.ndimage import maximum_filter
 from scipy.spatial.distance import cdist
 import cv2
 
+# In numpy >= 1.17, np.clip is slow, use core.umath.clip instead
+# https://github.com/numpy/numpy/issues/14281
+if "core.umath.clip" in dir(np):
+    _clip = np.core.umath.clip
+    # print("use np.core.umath.clip")
+else:
+    _clip = np.clip
+    # print("use np.clip")
 
 def get_laser_phi(angle_inc=np.radians(0.5), num_pts=450):
     # Default setting of DROW, which use SICK S300 laser, with 225 deg fov
@@ -47,10 +56,10 @@ def canonical_to_global(scan_r, scan_phi, dx, dy):
 def data_augmentation(sample_dict):
     scans, target_reg = sample_dict['scans'], sample_dict['target_reg']
 
-    # Random scaling
-    s = np.random.uniform(low=0.95, high=1.05)
-    scans = s * scans
-    target_reg = s * target_reg
+    # # Random scaling
+    # s = np.random.uniform(low=0.95, high=1.05)
+    # scans = s * scans
+    # target_reg = s * target_reg
 
     # Random left-right flip. Of whole batch for convenience, but should be the same as individuals.
     if np.random.rand() < 0.5:
@@ -62,20 +71,26 @@ def data_augmentation(sample_dict):
     return sample_dict
 
 
-def get_regression_target(scan, wcs, was, wps,
-                          radius_wc=0.6, radius_wa=0.4, radisu_wp=0.35,
-                          label_wc=1, label_wa=2, label_wp=3):
+def get_regression_target(scan, scan_phi, wcs, was, wps,
+                          radius_wc=0.6, radius_wa=0.4, radius_wp=0.35,
+                          label_wc=1, label_wa=2, label_wp=3,
+                          pedestrian_only=False):
     num_pts = len(scan)
     target_cls = np.zeros(num_pts, dtype=np.int64)
     target_reg = np.zeros((num_pts, 2), dtype=np.float32)
 
-    all_dets = list(wcs) + list(was) + list(wps)
-    all_radius = [radius_wc]*len(wcs) + [radius_wa]*len(was) + [radisu_wp]*len(wps)
+    if pedestrian_only:
+        all_dets = list(wps)
+        all_radius = [radius_wp] * len(wps)
+        labels = [0] + [1] * len(wps)
+    else:
+        all_dets = list(wcs) + list(was) + list(wps)
+        all_radius = [radius_wc]*len(wcs) + [radius_wa]*len(was) + [radius_wp]*len(wps)
+        labels = [0] + [label_wc] * len(wcs) + [label_wa] * len(was) + [label_wp] * len(wps)
 
-    dets = closest_detection(scan, all_dets, all_radius)
-    labels = [0] + [label_wc] * len(wcs) + [label_wa] * len(was) + [label_wp] * len(wps)
+    dets = closest_detection(scan, scan_phi, all_dets, all_radius)
 
-    for i, (r, phi) in enumerate(zip(scan, get_laser_phi())):
+    for i, (r, phi) in enumerate(zip(scan, scan_phi)):
         if 0 < dets[i]:
             target_cls[i] = labels[dets[i]]
             target_reg[i,:] = global_to_canonical(r, phi, *all_dets[dets[i]-1])
@@ -83,7 +98,7 @@ def get_regression_target(scan, wcs, was, wps,
     return target_cls, target_reg
 
 
-def closest_detection(scan, dets, radii):
+def closest_detection(scan, scan_phi, dets, radii):
     """
     Given a single `scan` (450 floats), a list of r,phi detections `dets` (Nx2),
     and a list of N `radii` for those detections, return a mapping from each
@@ -97,7 +112,7 @@ def closest_detection(scan, dets, radii):
     assert len(dets) == len(radii), "Need to give a radius for each detection!"
 
     # Distance (in x,y space) of each laser-point with each detection.
-    scan_xy = np.array(scan_to_xy(scan)).T  # (N, 2)
+    scan_xy = np.array(rphi_to_xy(scan, scan_phi)).T  # (N, 2)
     dists = cdist(scan_xy, np.array([rphi_to_xy(r, phi) for r, phi in dets]))
 
     # Subtract the radius from the distances, such that they are < 0 if inside, > 0 if outside.
@@ -108,6 +123,62 @@ def closest_detection(scan, dets, radii):
 
     # And find out who's closest, including the threshold!
     return np.argmin(dists, axis=1)
+
+
+def scans_to_cutout_vectorize(scans, angle_incre, fixed=True, centered=True, pt_inds=None,
+                              window_width=1.66, window_depth=1.0, num_cutout_pts=48,
+                              padding_val=29.99):
+    """ TODO: Probably we can still try to clean this up more.
+    This function here only creates a single cut-out; for training,
+    we'd want to get a batch of cutouts from each seq (can vectorize) and for testing
+    we'd want all cutouts for one scan, which we can vectorize too.
+    But ain't got time for this shit!
+
+    Args:
+    - scans: (T,N) the T scans (of scansize N) to cut out from, `T=0` being the "current time".
+    - out: None or a (T,nsamp) buffer where to store the cutouts.
+    """
+    # Don't use this version, slow and has bug
+    raise NotImplementedError
+
+    num_scans, num_pts = scans.shape
+    if pt_inds is None:
+        pt_inds = np.arange(num_pts)
+
+    # size (width) of the window
+    pt_r = scans[:, pt_inds] if fixed else np.tile(scans[-1, pt_inds], num_scans).reshape(num_scans, -1)
+    half_alpha = np.arctan(0.5 * window_width / pt_r.clip(min=1e-2))
+    half_win_inds = np.ceil(half_alpha / angle_incre)
+
+    # start and end indices of cutout
+    scans_padded = np.pad(scans, ((0, 0), (1, 1)), mode='constant', constant_values=padding_val)  # pad boarder
+    start_inds = (pt_inds - half_win_inds + 1).clip(min=0).astype(np.int)  # (num_scan, len(pt_inds)), +1 for padding
+    end_inds = (pt_inds + half_win_inds + 2).clip(max=num_pts+1).astype(np.int)
+
+    # do cutout
+    scans_cutout = np.empty((len(pt_inds), num_scans, num_cutout_pts), dtype=np.float32)
+    for idx_pt, (inds_0, inds_1) in enumerate(zip(start_inds.T, end_inds.T)):
+        for idx_scan, (idx_0, idx_1) in enumerate(zip(inds_0, inds_1)):
+            # neighbor points
+            ct_pts = scans_padded[idx_scan, idx_0:idx_1]
+
+            # resampling
+            interp = cv2.INTER_AREA if num_cutout_pts < len(ct_pts) else cv2.INTER_LINEAR
+            ct_sampled = cv2.resize(ct_pts,
+                                    (1, num_cutout_pts),
+                                    interpolation=interp).squeeze()
+
+            scans_cutout[idx_pt, idx_scan, :] = ct_sampled
+
+    # clip depth to avoid strong depth discontinuity
+    scans_cutout = scans_cutout.clip(min=pt_r.T - window_depth, max=pt_r.T + window_depth)  # clip
+
+    # normalize
+    if centered:
+        scans_cutout -= pt_r.T  # center
+        scans_cutout = scans_cutout / window_depth  # normalize
+
+    return scans_cutout
 
 
 def scans_to_cutout(scans, angle_incre, fixed=True, centered=True, pt_inds=None,
@@ -141,6 +212,66 @@ def scans_to_cutout(scans, angle_incre, fixed=True, centered=True, pt_inds=None,
             start_idx = int(round(pt_idx - half_alpha / angle_incre))
             end_idx = int(round(pt_idx + half_alpha / angle_incre))
             cutout_pts_inds = np.arange(start_idx, end_idx + 1)
+            cutout_pts_inds = _clip(cutout_pts_inds, -1, num_pts)
+            # cutout_pts_inds = cutout_pts_inds.clip(-1, num_pts)
+
+            # cutout points
+            cutout_pts = scans_padded[scan_idx, cutout_pts_inds]
+
+            # resampling/interpolation
+            interp = cv2.INTER_AREA if num_cutout_pts < len(cutout_pts_inds) else cv2.INTER_LINEAR
+            cutout_sampled = cv2.resize(cutout_pts,
+                                       (1, num_cutout_pts),
+                                       interpolation=interp).squeeze()
+
+            # center cutout and clip depth to avoid strong depth discontinuity
+            cutout_sampled = _clip(cutout_sampled,
+                                   pt_r - window_depth, pt_r + window_depth)
+#            cutout_sampled = cutout_sampled.clip(pt_r - window_depth,
+#                                                 pt_r + window_depth)
+
+            if centered:
+                cutout_sampled -= pt_r  # center
+                cutout_sampled = cutout_sampled / window_depth  # normalize
+            scans_cutout[pt_idx, scan_idx, :] = cutout_sampled
+
+    return scans_cutout
+
+
+def scans_to_cutout_new(scans, scan_phi, output_phi, fixed=True, centered=True,
+                        window_width=1.66, window_depth=1.0, num_cutout_pts=48,
+                        padding_val=29.99):
+    """
+    Args:
+        scans: np.array (T, N), T scans with N number of points, temporal order
+               should be ascending, i.e. scans[-1] should be the latest scan
+        scan_phi: np.array (N,)
+    """
+    num_scans, num_pts = scans.shape
+    num_output_pts = len(output_phi)
+
+    scans_padded = np.pad(scans, ((0, 0), (0, 1)), mode='constant', constant_values=padding_val)  # pad boarder
+    scans_cutout = np.empty((num_output_pts, num_scans, num_cutout_pts), dtype=np.float32)
+    output_scan = np.empty(num_output_pts, dtype=np.float32)
+    angle_incre = scan_phi[1] - scan_phi[0]
+
+    for o_pt_idx in range(num_output_pts):
+        o_phi = output_phi[o_pt_idx]
+        pt_idx = int(round((o_phi - scan_phi[0]) / angle_incre))
+        pt_idx = max(min(pt_idx, num_pts - 1), 0)
+        output_scan[o_pt_idx] = scans[-1, pt_idx]
+        for scan_idx in range(num_scans):
+            # angular size (width) of the window
+            pt_r = scans[scan_idx, pt_idx] if fixed else scans[-1, pt_idx]
+            half_alpha = float(np.arctan(0.5 * window_width / max(pt_r, 0.01)))
+
+            # start and end indices of cutout
+            s_angle, e_angle = o_phi - half_alpha, o_phi + half_alpha
+            s_idx = int(round((s_angle - scan_phi[0]) / angle_incre))
+            e_idx = int(round((e_angle - scan_phi[0]) / angle_incre))
+            # s_idx = int(round(pt_idx - half_alpha / angle_incre))
+            # e_idx = int(round(pt_idx + half_alpha / angle_incre))
+            cutout_pts_inds = np.arange(s_idx, e_idx + 1)
             cutout_pts_inds = cutout_pts_inds.clip(-1, num_pts)
 
             # cutout points
@@ -157,7 +288,65 @@ def scans_to_cutout(scans, angle_incre, fixed=True, centered=True, pt_inds=None,
                                                  pt_r + window_depth)  # clip
             if centered:
                 cutout_sampled -= pt_r  # center
+                cutout_sampled = cutout_sampled / window_depth  # normalize
+
+            # output
+            scans_cutout[o_pt_idx, scan_idx, :] = cutout_sampled
+
+    return scans_cutout, output_scan
+
+
+def scans_to_cutout_parallel(scans, angle_incre, fixed=True, centered=True, pt_inds=None,
+                             window_width=1.66, window_depth=1.0, num_cutout_pts=48,
+                             padding_val=29.99):
+    """ TODO: Probably we can still try to clean this up more.
+    This function here only creates a single cut-out; for training,
+    we'd want to get a batch of cutouts from each seq (can vectorize) and for testing
+    we'd want all cutouts for one scan, which we can vectorize too.
+    But ain't got time for this shit!
+
+    Args:
+    - scans: (T,N) the T scans (of scansize N) to cut out from, `T=0` being the "current time".
+    - out: None or a (T,nsamp) buffer where to store the cutouts.
+    """
+    num_scans, num_pts = scans.shape
+    if pt_inds is None:
+        pt_inds = range(num_pts)
+
+    scans_padded = np.pad(scans, ((0, 0), (0, 1)), mode='constant', constant_values=padding_val)  # pad boarder
+    scans_cutout = np.empty((num_pts, num_scans, num_cutout_pts), dtype=np.float32)
+
+    # do cutout
+    def _ct_pt(pt_idx):
+        for scan_idx in range(num_scans):
+            # Compute the size (width) of the window
+            pt_r = scans[scan_idx, pt_idx] if fixed else scans[-1, pt_idx]
+            half_alpha = float(np.arctan(0.5 * window_width / max(pt_r, 1e-2)))
+
+            # Compute the start and end indices of cutout
+            start_idx = int(round(pt_idx - half_alpha / angle_incre))
+            end_idx = int(round(pt_idx + half_alpha / angle_incre))
+            cutout_pts_inds = np.arange(start_idx, end_idx + 1)
+            cutout_pts_inds = cutout_pts_inds.clip(-1, num_pts)
+
+            # cutout points
+            cutout_pts = scans_padded[scan_idx, cutout_pts_inds]
+
+            # resampling/interpolation
+            interp = cv2.INTER_AREA if num_cutout_pts < len(cutout_pts_inds) else cv2.INTER_LINEAR
+            cutout_sampled = cv2.resize(cutout_pts,
+                                       (1, num_cutout_pts),
+                                       interpolation=interp).squeeze()
+
+            # center cutout and clip depth to avoid strong depth discontinuity
+            cutout_sampled = cutout_sampled.clip(pt_r - window_depth,
+                                                 pt_r + window_depth)  # clip
+            if centered:
+                cutout_sampled -= pt_r  # center
+                cutout_sampled = cutout_sampled / window_depth  # normalize
             scans_cutout[pt_idx, scan_idx, :] = cutout_sampled
+
+    Parallel(n_jobs=2)(delayed(_ct_pt)(pt_idx) for pt_idx in pt_inds)
 
     return scans_cutout
 
@@ -195,8 +384,8 @@ def scans_to_polar_grid(scans, min_range=0.0, max_range=30.0, range_bin_size=1.0
     return polar_grid
 
 
-def group_predicted_center(scan, laser_angle, pred_cls, pred_reg, min_thresh=1e-5,
-                           class_weights=None, bin_size=0.1, blur_win=5, blur_sigma=1.0,
+def group_predicted_center(scan_grid, phi_grid, pred_cls, pred_reg, min_thresh=1e-5,
+                           class_weights=None, bin_size=0.1, blur_sigma=0.5,
                            x_min=-15.0, x_max=15.0, y_min=-5.0, y_max=15.0,
                            vote_collect_radius=0.3, cls_agnostic_vote=False):
     '''
@@ -216,10 +405,16 @@ def group_predicted_center(scan, laser_angle, pred_cls, pred_reg, min_thresh=1e-
     Returns a list of tuples (x,y,probs) where `probs` has the same layout as
     `probas`.
     '''
-    pred_r, pred_phi = canonical_to_global(scan, laser_angle, pred_reg[:,0], pred_reg[:, 1])
+    pred_r, pred_phi = canonical_to_global(scan_grid, phi_grid,
+                                           pred_reg[:,0], pred_reg[:, 1])
     pred_xs, pred_ys = rphi_to_xy(pred_r, pred_phi)
 
-    if class_weights is not None:
+    instance_mask = np.zeros(len(scan_grid), dtype=np.int32)
+    scan_array_inds = np.arange(len(scan_grid))
+
+    single_cls = pred_cls.shape[1] == 1
+
+    if class_weights is not None and not single_cls:
         pred_cls = np.copy(pred_cls)
         pred_cls[:, 1:] *= class_weights
 
@@ -233,13 +428,15 @@ def group_predicted_center(scan, laser_angle, pred_cls, pred_reg, min_thresh=1e-
     y_max = y_min + y_range * bin_size
 
     # filter out all the weak votes
-    voters_inds = np.where(np.sum(pred_cls[:,1:], axis=-1) > min_thresh)[0]
+    pred_cls_agn = pred_cls[:, 0] if single_cls else np.sum(pred_cls[:, 1:], axis=-1)
+    voters_inds = np.where(pred_cls_agn > min_thresh)[0]
 
     if len(voters_inds) == 0:
-        return [], []
+        return [], [], instance_mask
 
     pred_xs, pred_ys = pred_xs[voters_inds], pred_ys[voters_inds]
     pred_cls = pred_cls[voters_inds]
+    scan_array_inds = scan_array_inds[voters_inds]
     pred_x_inds = np.int64((pred_xs - x_min) / bin_size)
     pred_y_inds = np.int64((pred_ys - y_min) / bin_size)
 
@@ -248,22 +445,29 @@ def group_predicted_center(scan, laser_angle, pred_cls, pred_reg, min_thresh=1e-
     pred_x_inds, pred_xs = pred_x_inds[mask], pred_xs[mask]
     pred_y_inds, pred_ys = pred_y_inds[mask], pred_ys[mask]
     pred_cls = pred_cls[mask]
+    scan_array_inds = scan_array_inds[mask]
 
     # vote into the grid, including the agnostic vote as sum of class-votes!
     # @TODO Do we need the class grids?
-    np.add.at(grid, (pred_x_inds, pred_y_inds),
-              np.concatenate([np.sum(pred_cls[:, 1:], axis=1, keepdims=True), pred_cls[:, 1:]], axis=1))
+    if single_cls:
+        np.add.at(grid, (pred_x_inds, pred_y_inds), pred_cls)
+    else:
+        np.add.at(grid, (pred_x_inds, pred_y_inds),
+                  np.concatenate([np.sum(pred_cls[:, 1:], axis=1, keepdims=True),
+                                 pred_cls[:, 1:]],
+                                 axis=1))
 
     # NMS, only in the "common" voting grid
     grid_all_cls = grid[:, :, 0]
-    if blur_win is not None and blur_sigma is not None:
+    if blur_sigma > 0:
+        blur_win = int(2 * ((blur_sigma*5) // 2) + 1)
         grid_all_cls = cv2.GaussianBlur(grid_all_cls, (blur_win, blur_win), blur_sigma)
     grid_nms_val = maximum_filter(grid_all_cls, size=3)
     grid_nms_inds = (grid_all_cls == grid_nms_val) & (grid_all_cls > 0)
     nms_xs, nms_ys = np.where(grid_nms_inds)
 
     if len(nms_xs) == 0:
-        return [], []
+        return [], [], instance_mask
 
     # Back from grid-bins to real-world locations.
     nms_xs = nms_xs * bin_size + x_min + bin_size / 2
@@ -283,7 +487,10 @@ def group_predicted_center(scan, laser_angle, pred_cls, pred_reg, min_thresh=1e-
         support_xs, support_ys = pred_xs[voter_inds], pred_ys[voter_inds]
         support_cls = pred_cls[voter_inds]
 
-        if cls_agnostic_vote:
+        # mark instance, 0 is the background
+        instance_mask[scan_array_inds[voter_inds]] = ipeak + 1
+
+        if cls_agnostic_vote and not single_cls:
             weights = np.sum(support_cls[:, 1:], axis=1)
             norm = 1.0 / np.sum(weights)
             dets_xs.append(norm * np.sum(weights * support_xs))
@@ -294,4 +501,4 @@ def group_predicted_center(scan, laser_angle, pred_cls, pred_reg, min_thresh=1e-
             dets_ys.append(np.mean(support_ys))
             dets_cls.append(np.mean(support_cls, axis=0))
 
-    return np.array([dets_xs, dets_ys]).T, np.array(dets_cls)
+    return np.array([dets_xs, dets_ys]).T, np.array(dets_cls), instance_mask

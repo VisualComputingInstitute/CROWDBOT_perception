@@ -4,15 +4,14 @@ import torch.nn.functional as F
 
 class FocalLoss(nn.Module):
 # From https://github.com/mbsariyildiz/focal-loss.pytorch/blob/master/focalloss.py
-    def __init__(self, gamma=0, alpha=None, size_average=True):
+    def __init__(self, gamma=0, alpha=None):
         super(FocalLoss, self).__init__()
         self.gamma = gamma
         self.alpha = alpha
         if isinstance(alpha, (float, int)): self.alpha = torch.Tensor([alpha, 1 - alpha])
         if isinstance(alpha, list): self.alpha = torch.Tensor(alpha)
-        self.size_average = size_average
 
-    def forward(self, input, target):
+    def forward(self, input, target, reduction='mean'):
         if input.dim()>2:
             input = input.view(input.size(0), input.size(1), -1)  # N,C,H,W => N,C,H*W
             input = input.transpose(1, 2)                         # N,C,H*W => N,H*W,C
@@ -31,61 +30,41 @@ class FocalLoss(nn.Module):
             logpt = logpt * at
 
         loss = -1 * (1 - pt)**self.gamma * logpt
-        if self.size_average: return loss.mean()
-        else: return loss.sum()
+
+        if reduction == 'mean':
+            return loss.mean()
+        elif reduction == 'sum':
+            return loss.sum()
+        elif reduction == 'none':
+            return loss
+        else:
+            raise RuntimeError
 
 
-def model_fn(model, data):
-    tb_dict, disp_dict = {}, {}
+class BinaryFocalLoss(nn.Module):
+    def __init__(self, gamma=2.0, alpha=-1):
+        super(BinaryFocalLoss, self).__init__()
+        self.gamma, self.alpha = gamma, alpha
 
-    net_input = data['input']
-    net_input = torch.from_numpy(net_input).cuda(non_blocking=True).float()
+    def forward(self, pred, target, reduction='mean'):
+        return binary_focal_loss(pred, target, self.gamma, self.alpha, reduction)
 
-    # Forward pass
-    pred_cls, pred_reg = model(net_input)
 
-    target_cls, target_reg = data['target_cls'], data['target_reg']
-    target_cls = torch.from_numpy(target_cls).cuda(non_blocking=True).long()
-    target_reg = torch.from_numpy(target_reg).cuda(non_blocking=True).float()
+def binary_focal_loss(pred, target, gamma=2.0, alpha=-1, reduction='mean'):
+    loss_pos = - target * (1.0 - pred)**gamma * torch.log(pred)
+    loss_neg = - (1.0 - target) * pred**gamma * torch.log(1.0 - pred)
 
-    n_batch, n_pts = target_cls.shape[:2]
+    if alpha >= 0.0 and alpha <= 1.0:
+        loss_pos = loss_pos * alpha
+        loss_neg = loss_neg * (1.0 - alpha)
 
-    # cls loss
-    target_cls = target_cls.view(n_batch * n_pts)
-    pred_cls = pred_cls.view(n_batch * n_pts, -1)
-    if model.cls_loss is not None:
-        cls_loss = model.cls_loss(pred_cls, target_cls)
+    loss = loss_pos + loss_neg
+
+    if reduction == 'mean':
+        return loss.mean()
+    elif reduction == 'sum':
+        return loss.sum()
+    elif reduction == 'none':
+        return loss
     else:
-        cls_loss = F.cross_entropy(pred_cls, target_cls, reduction='mean')
-    total_loss = cls_loss
-
-    # number fg points
-    fg_mask = target_cls.ne(0)
-    fg_ratio = torch.sum(fg_mask).item() / (n_batch * n_pts)
-
-    # reg loss
-    if fg_ratio > 0.0:
-        target_reg = target_reg.view(n_batch * n_pts, -1)
-        pred_reg = pred_reg.view(n_batch * n_pts, -1)
-        reg_loss = F.mse_loss(pred_reg[fg_mask], target_reg[fg_mask],
-                              reduction='none')
-        reg_loss = torch.sqrt(torch.sum(reg_loss, dim=1)).mean()
-        total_loss = reg_loss + cls_loss
-    else:
-        reg_loss = 0
-
-    disp_dict['loss'] = total_loss
-
-    tb_dict['cls_loss'] = cls_loss
-    tb_dict['reg_loss'] = reg_loss
-    tb_dict['fg_ratio'] = fg_ratio
-
-    return total_loss, tb_dict, disp_dict
-
-
-def model_fn_eval(model, data):
-    total_loss, tb_dict, disp_dict = model_fn(model, data)
-    if tb_dict['fg_ratio'] == 0.0:
-        del tb_dict['reg_loss']  # So that it's not summed in caucluating epoch average
-
-    return total_loss, tb_dict, disp_dict
+        raise RuntimeError

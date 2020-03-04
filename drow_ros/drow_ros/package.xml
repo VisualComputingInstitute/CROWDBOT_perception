@@ -2,7 +2,7 @@
 <package>
   <name>drow_ros</name>
   <version>0.0.0</version>
-  <description>ROS interface for DROW.</description>
+  <description>ROS interface for DROW detector</description>
 
   <maintainer email="dan@todo.todo">dan</maintainer>
 

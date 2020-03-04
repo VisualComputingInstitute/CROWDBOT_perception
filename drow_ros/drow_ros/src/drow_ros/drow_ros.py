@@ -29,7 +29,7 @@ class DROWRos():
     def __init__(self):
         self._detection_id = 0
         self._read_params()
-        self._drow = DROWDetector(self.weight_file, sequential_inference=True)
+        self._drow = DROWDetector(self.weight_file, use_spaam=False)
         self._init()
 
     def _read_params(self):
@@ -70,23 +70,18 @@ class DROWRos():
         dets_xy, dets_cls = self._drow(scan)
         # print(t - time.time())
 
-        # only keep pedestrian
-        dets_cls_label = np.argmax(dets_cls[:, 1:], axis=1) + 1
-        dets_cls_conf = np.max(dets_cls[:, 1:], axis=1)
-        pedestrian_mask = dets_cls_label == 3  # 1 - wheelchair, 2 - people with walking aids, 3 - people
-        dets_xy = dets_xy[pedestrian_mask]
-        dets_cls_conf = dets_cls_conf[pedestrian_mask]
-
         # confidence threshold
-        conf_mask = dets_cls_conf >= self.conf_thresh
-        if np.sum(conf_mask) > 0:
-            dets_xy = dets_xy[conf_mask]
-            dets_cls_conf = dets_cls_conf[conf_mask]
+        conf_mask = (dets_cls >= self.conf_thresh).reshape(-1)
+        if not np.sum(conf_mask) > 0:
+            return
 
-            # convert and publish ros msg
-            dps_msg = self._detections_to_ros_msg(dets_xy, dets_cls_conf)
-            dps_msg.header = msg.header
-            self._dets_pub.publish(dps_msg)
+        dets_xy = dets_xy[conf_mask]
+        dets_cls = dets_cls[conf_mask]
+
+        # convert and publish ros msg
+        dps_msg = self._detections_to_ros_msg(dets_xy, dets_cls)
+        dps_msg.header = msg.header
+        self._dets_pub.publish(dps_msg)
 
 
     def _detections_to_ros_msg(self, dets_xy, dets_conf):

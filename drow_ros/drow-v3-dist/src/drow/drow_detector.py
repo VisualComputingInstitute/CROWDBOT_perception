@@ -1,49 +1,96 @@
+import os
+import yaml
 import torch
-import torch.nn.functional as F
-
-from model.drow import DROW
 import utils.utils as u
+
+import rospkg
+
+
+def cfg_to_model(cfg):
+    if cfg['network'] == 'cutout':
+        from model.drow import DROW
+        model = DROW(num_scans=cfg['num_scans'],
+                     num_pts=cfg['cutout_kwargs']['num_cutout_pts'],
+                     focal_loss_gamma=cfg['focal_loss_gamma'],
+                     pedestrian_only=cfg['pedestrian_only'])
+
+    elif cfg['network'] == 'cutout_gating':
+        from model.drow import TemporalDROW
+        model = TemporalDROW(num_scans=cfg['num_scans'],
+                             num_pts=cfg['cutout_kwargs']['num_cutout_pts'],
+                             focal_loss_gamma=cfg['focal_loss_gamma'],
+                             pedestrian_only=cfg['pedestrian_only'])
+
+    elif cfg['network'] == 'cutout_spatial':
+        from model.drow import SpatialDROW
+        model = SpatialDROW(num_scans=cfg['num_scans'],
+                            num_pts=cfg['cutout_kwargs']['num_cutout_pts'],
+                            focal_loss_gamma=cfg['focal_loss_gamma'],
+                            alpha=cfg['similarity_kwargs']['alpha'],
+                            window_size=cfg['similarity_kwargs']['window_size'],
+                            pedestrian_only=cfg['pedestrian_only'])
+
+    elif cfg['network'] == 'fc2d':
+        from model.polar_drow import PolarDROW
+        model = PolarDROW(in_channel=1)
+
+    elif cfg['network'] == 'fc2d_fea':
+        raise NotImplementedError
+        from model.polar_drow import PolarDROW
+        model = PolarDROW(in_channel=cfg['cutout_kwargs']['num_cutout_pts'])
+
+    elif cfg['network'] == 'fc1d':
+        from model.fconv_drow import FConvDROW
+        model = FConvDROW(in_channel=1)
+
+    elif cfg['network'] == 'fc1d_fea':
+        from model.fconv_drow import FConvDROW
+        model = FConvDROW(in_channel=cfg['cutout_kwargs']['num_cutout_pts'])
+
+    else:
+        raise RuntimeError
+
+    return model
 
 
 class DROWDetector(object):
-    def __init__(self, ckpt_file, num_scans=1, num_cutout_pts=48, gpu=0,
-                 sequential_inference=True):
-        self._gpu, self._num_cutout_pts = gpu, num_cutout_pts
+    def __init__(self, ckpt_file, use_spaam=False):
         self._laser_angle = None
 
-        # net
-        model = DROW(num_scans=num_scans,
-                     num_pts=num_cutout_pts,
-                     sequential_inference=sequential_inference,
-                     temporal_gating=False)
+        rospack = rospkg.RosPack()
+        cfg_dir = os.path.join(rospack.get_path('drow'), 'src/drow/cfgs')
+        cfg = os.path.join(cfg_dir, 'SPA_11_5.yaml') if use_spaam \
+                else os.path.join(cfg_dir, 'PSG_small_width_depth_56.yaml')
+
+        with open(cfg, 'r') as f:
+            self._cfg = yaml.safe_load(f)
+
+        self._model = cfg_to_model(self._cfg)
+        self._model.cuda()
+
         ckpt = torch.load(ckpt_file)
-        model.load_state_dict(ckpt['model_state'])
-        model.eval()
-        self._model = model.cuda() if self._gpu is not None else model
+        self._model.load_state_dict(ckpt['model_state'])
+        self._model.eval()
 
     def __call__(self, scan):
         assert self._laser_angle is not None
 
-        # generate network input
-        scan = scan[None, ...]  # Expand one dimension for sequential scans
         angle_incre = self._laser_angle[1] - self._laser_angle[0]
-        cutout = u.scans_to_cutout(scans=scan,
+        cutout = u.scans_to_cutout(scans=scan[None, ...],
                                    angle_incre=angle_incre,
-                                   num_cutout_pts=self._num_cutout_pts)
-        cutout = cutout[None, ...]  # Expend one dimension for batch
+                                   **self._cfg['cutout_kwargs'])
 
-        if self._gpu is not None:
-            cutout = torch.from_numpy(cutout).cuda(non_blocking=True).float()
+        cutout = torch.from_numpy(cutout[None, ...]).cuda(non_blocking=True).float()
 
         # inference
         with torch.no_grad():
             pred_cls, pred_reg = self._model(cutout)
-            pred_cls = F.softmax(pred_cls, dim=-1).data.cpu().numpy()
-            pred_reg = pred_reg.data.cpu().numpy()
+            pred_cls = torch.sigmoid(pred_cls[0]).data.cpu().numpy()
+            pred_reg = pred_reg[0].data.cpu().numpy()
 
         # post processing
-        dets_xy, dets_cls = u.group_predicted_center(
-                scan[0], self._laser_angle, pred_cls[0], pred_reg[0])
+        dets_xy, dets_cls, _ = u.group_predicted_center(
+                scan, self._laser_angle, pred_cls, pred_reg)
 
         return dets_xy, dets_cls
 
@@ -52,3 +99,7 @@ class DROWDetector(object):
 
     def laser_spec_set(self):
         return self._laser_angle is not None
+
+
+
+
