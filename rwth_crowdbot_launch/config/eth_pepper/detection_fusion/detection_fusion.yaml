@@ -1,5 +1,5 @@
 # Rate to perform fusion.
-fusion_rate: 30
+fusion_rate: 10
 # True will only perform fusion if all sensors have acquired new reading. As a
 # result the fused detection will have rate lower than the slowest sensor.
 enforce_all: false

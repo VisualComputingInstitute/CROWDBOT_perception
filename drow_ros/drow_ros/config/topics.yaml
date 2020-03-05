@@ -6,5 +6,5 @@ publisher:
 
 subscriber:
     scan:
-        topic: /laserscan
+        topic: /sick_laser_front/scan
         queue_size: 1
