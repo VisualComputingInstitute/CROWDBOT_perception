@@ -6,7 +6,7 @@ import cv2
 
 # In numpy >= 1.17, np.clip is slow, use core.umath.clip instead
 # https://github.com/numpy/numpy/issues/14281
-if "core.umath.clip" in dir(np):
+if "clip" in dir(np.core.umath):
     _clip = np.core.umath.clip
     # print("use np.core.umath.clip")
 else:
@@ -213,6 +213,7 @@ def scans_to_cutout(scans, angle_incre, fixed=True, centered=True, pt_inds=None,
             end_idx = int(round(pt_idx + half_alpha / angle_incre))
             cutout_pts_inds = np.arange(start_idx, end_idx + 1)
             cutout_pts_inds = _clip(cutout_pts_inds, -1, num_pts)
+            # cutout_pts_inds = np.core.umath.clip(cutout_pts_inds, -1, num_pts)
             # cutout_pts_inds = cutout_pts_inds.clip(-1, num_pts)
 
             # cutout points
@@ -225,10 +226,13 @@ def scans_to_cutout(scans, angle_incre, fixed=True, centered=True, pt_inds=None,
                                        interpolation=interp).squeeze()
 
             # center cutout and clip depth to avoid strong depth discontinuity
-            cutout_sampled = _clip(cutout_sampled,
-                                   pt_r - window_depth, pt_r + window_depth)
-#            cutout_sampled = cutout_sampled.clip(pt_r - window_depth,
-#                                                 pt_r + window_depth)
+            cutout_sampled = _clip(cutout_sampled, pt_r - window_depth, pt_r + window_depth)
+            # cutout_sampled = np.core.umath.clip(
+            #         cutout_sampled,
+            #         pt_r - window_depth, 
+            #         pt_r + window_depth)
+            # cutout_sampled = cutout_sampled.clip(pt_r - window_depth,
+            #                                      pt_r + window_depth)
 
             if centered:
                 cutout_sampled -= pt_r  # center
