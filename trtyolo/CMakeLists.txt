@@ -202,10 +202,10 @@ install(DIRECTORY launch/
   PATTERN ".svn" EXCLUDE
 )
 
-install(FILES
-  tensorRT_yolo/yolov3_fp16.engine
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/tensorRT_yolo
-)
+# install(FILES
+#   tensorRT_yolo/yolov3_fp16.engine
+#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/tensorRT_yolo
+# )
 
 #############
 ## Testing ##

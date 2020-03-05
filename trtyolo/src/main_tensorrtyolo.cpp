@@ -42,8 +42,8 @@ float g_nms_threshold;
 // yolo network parameter, should be fixed with the given engine file?
 // int g_net_h = 416;//608;
 // int g_net_w = 416;//608;
-int g_net_h = 608;
-int g_net_w = 608;
+int g_net_h = 416;
+int g_net_w = 416;
 int g_net_c = 3;
 
 vector<float> prepareImage(cv::Mat& img)
