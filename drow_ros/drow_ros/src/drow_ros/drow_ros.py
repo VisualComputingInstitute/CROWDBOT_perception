@@ -57,11 +57,14 @@ class DROWRos():
         if self._dets_pub.get_num_connections() == 0:
             return
 
+        stride = 2
+
         if not self._drow.laser_spec_set():
             self._drow.set_laser_spec(angle_inc=msg.angle_increment,
-                                      num_pts=len(msg.ranges))
+                                      num_pts=len(msg.ranges),
+                                      stride=stride)
 
-        scan = np.array(msg.ranges)
+        scan = np.array(msg.ranges)[::stride]
         scan[scan == 0.0] = 29.99
         scan[np.isinf(scan)] = 29.99
         scan[np.isnan(scan)] = 29.99
