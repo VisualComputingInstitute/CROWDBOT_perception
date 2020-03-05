@@ -94,8 +94,8 @@ class DROWDetector(object):
 
         return dets_xy, dets_cls
 
-    def set_laser_spec(self, angle_inc, num_pts):
-        self._laser_angle = u.get_laser_phi(angle_inc, num_pts)
+    def set_laser_spec(self, angle_inc, num_pts, stride=1):
+        self._laser_angle = u.get_laser_phi(angle_inc, num_pts)[::stride]
 
     def laser_spec_set(self):
         return self._laser_angle is not None
