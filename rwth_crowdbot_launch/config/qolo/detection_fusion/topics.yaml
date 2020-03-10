@@ -1,0 +1,16 @@
+publisher:
+    detections:
+        topic: /detected_persons_synchronized
+        queue_size: 1
+        latch: false
+
+subscriber:
+    # Put detection sources with richer information in front (e.g. camera first, then lidar). When
+    # two detections are considered as duplicate, the one in front will be kept.
+    detections0:
+        topic: /detected_persons/yolo
+        queue_size: 1
+
+    detections1:
+        topic: /drow_detected_persons
+        queue_size: 1

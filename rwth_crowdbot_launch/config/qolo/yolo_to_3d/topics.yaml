@@ -1,0 +1,36 @@
+publisher:
+    detected_persons:
+        topic: /detected_persons/yolo
+        queue_size: 1
+        latch: false
+
+    visual_marker:
+        topic: /ground_plane_visual_marker
+        queue_size: 1
+        latch: false
+
+    image:
+        topic: /image_with_bounding_boxes
+        queue_size: 1
+        latch: false
+
+subscriber:
+    ground_plane:
+        topic: /ground_plane
+        queue_size: 1
+
+    camera_info:
+        topic: /camera/color/camera_info
+        queue_size: 1
+
+    yolo_bounding_boxes:
+        topic: /darknet_ros/bounding_boxes
+        queue_size: 1
+
+    image:
+        topic: /camera/color/image_raw
+        queue_size: 1
+
+    depth:
+        topic: /camera/aligned_depth_to_color/image_raw
+        queue_size: 1

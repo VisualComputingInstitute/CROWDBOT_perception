@@ -1,0 +1,13 @@
+# Rate to perform fusion.
+fusion_rate: 20
+# True will only perform fusion if all sensors have acquired new reading. As a
+# result the fused detection will have rate lower than the slowest sensor.
+enforce_all: false
+# How many detection source are there? This is only in initialization for
+# creating subscribers.
+number_of_detection_source: 2
+# The fused detections are transformed into, fused, and published in fixed frame.
+world_frame: "robot"
+# Detections (from different sensor) with distance lower than this value are
+# considered as duplicate.
+overlap_thresh: 0.5
