@@ -1,0 +1,15 @@
+subscriber:
+    image:
+        topic: /camera/color/image_raw
+        queue_size: 1
+
+publisher:
+    bounding_boxes:
+        topic: /darknet_ros/bounding_boxes
+        queue_size: 10
+        latch: false
+
+    image:
+        topic: /trt_yolo_ros/detection_image
+        queue_size: 1
+        latch: false

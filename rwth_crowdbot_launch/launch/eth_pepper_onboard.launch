@@ -16,6 +16,7 @@
 
   <!-- YOLO (with TensorRT) -->
   <group if="$(arg trt)">
+    <?ignore
     <node pkg="trtyolo" type="tensorrt_yolo" name= "trt_yolo_kinect" output="screen">
         <param name="engine_path" value="$(find trtyolo)/engines/yolov3_416_fp16.engine" type="string"/>
         <param name="detect_threshold" value="0.7"/>
@@ -23,6 +24,11 @@
         <param name="bounding_boxes" value="/darknet_ros/bounding_boxes" type="string"/>
         <param name="image" value="/camera/color/image_raw" type="string"/>
         <param name="tensorRT_yolo_out_image" value="/darknet_ros/detection_image" type="string"/>
+    </node>
+    ?>
+    <node pkg="trt_yolo_ros" type="trt_yolo_ros" name="trt_yolo_ros" output="screen">
+      <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/trt_yolo_ros/detector.yaml"/>
+      <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/eth_pepper/trt_yolo_ros/topics.yaml"/>
     </node>
   </group>
 
