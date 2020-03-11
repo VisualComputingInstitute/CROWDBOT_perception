@@ -1,6 +1,6 @@
 [submodule "pwc_net_ros"]
 	path = pwc_net_ros
 	url = git@git.rwth-aachen.de:sabarinath.mahadevan/pwc_net_ros.git
-[submodule "detector"]
-	path = detector
-	url = https://github.com/kumuji/detector.git
+[submodule "trt_yolo_ros"]
+        path = trt_yolo_ros
+        url = https://github.com/kumuji/trt_yolo_ros.git
