@@ -17,7 +17,7 @@
   <!-- YOLO (with TensorRT) -->
   <group if="$(arg trt)">
     <node pkg="trtyolo" type="tensorrt_yolo" name= "trt_yolo_kinect" output="screen">
-        <param name="engine_path" value="$(find trtyolo)/tensorRT_yolo/yolov3_fp16.engine" type="string"/>
+        <param name="engine_path" value="/ssd_nvidia/Tracker_RWTH/TensorRT-Yolov3/yolov3_fp16.engine" type="string"/>
         <param name="detect_threshold" value="0.7"/>
         <param name="nms_threshold" value="0.45"/>
         <param name="bounding_boxes" value="/darknet_ros/bounding_boxes" type="string"/>

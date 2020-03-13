@@ -62,6 +62,14 @@ namespace Tn
         return iou;
     }
 
+    float fabs(float x)
+    {
+    if (x < 0.f)
+        return -x;
+    else
+        return x;
+    }
+
     float evalMAPResult(const list<vector<Bbox>>& bboxesList,const list<vector<Bbox>>& truthboxesList,int classNum,float iouThresh)
     {
         assert(bboxesList.size() == truthboxesList.size());
@@ -146,7 +154,7 @@ namespace Tn
             }
 
             //recall:         
-            recall[i] = (abs(TP + FN) < 1e-5) ? 1 : TP / (TP + FN);
+            recall[i] = (fabs(TP + FN) < 1e-5) ? 1 : TP / (TP + FN);
             //precision
             precision[i] = TP / total;
 
