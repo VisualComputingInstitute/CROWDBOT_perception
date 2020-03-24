@@ -18,7 +18,7 @@ The setup works with CUDA 10.
 	1. Download ``yolov3_416.caffemodel`` and ``yolov3_416_trt.prototxt`` from the Google drive linked by the repo's README.
 	1. Download any picture (e.g. showing cars and people), place it in the repo and name it ``pic_test.jpeg``.
 	1. Create the engine file by executing ``./install/runYolov3 --caffemodel=./yolov3_416.caffemodel --prototxt=./yolov3_416_trt.prototxt --input=./pic_test.jpeg --W=416 --H=416 --class=80 --mode=fp16``
-	1. The engine file is created as ``yolov3_fp16.engine``.
+	1. The engine file is created as ``yolov3_fp16.engine`` (it will be used in the last step).
 1. Create somewhere the catkin workspace for building the tracker using ``mkdir -p tracker_ws/src``
 1. Clone darknet_ros and keep only the message package
 	1. ``cd tracker_ws/src``
@@ -28,3 +28,7 @@ The setup works with CUDA 10.
 	1. ``git clone --branch qolo https://git.rwth-aachen.de/sabarinath.mahadevan/frame_soft.git``
 	1. ``cd ..``
 	1. ``catkin build -c rwth_crowdbot_launch``
+1. Set up the network weights for DROW (the tracker's laserscan-based person detector)
+	1. From [here](https://drive.google.com/drive/u/0/folders/1jHisLdOQ8bMnYWE-Dwji60ngIpK_seX8), download the weigths file ``single_ckpt_e40.pth``.
+	1. Set the path to this file in the config file ``config/qolo/drow_ros/drow_ros.yaml``
+1. Set the path to the TensorRT engine file (created previously) in the launch file ``qolo_onboard.launch`` under ``<!-- YOLO (with TensorRT) -->``.
