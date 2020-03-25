@@ -4,9 +4,9 @@
   <arg name="reid" default="false" />
 
   <!-- Ground Plane -->
-  <arg name="base_footprint" default="/robot" />
-  <arg name="world_frame" default="/robot" />
-  <arg name="ground_plane" default="/ground_plane" />
+  <arg name="base_footprint" default="tf_qolo" />
+  <arg name="world_frame" default="tf_qolo" />
+  <arg name="ground_plane" default="tf_qolo" />
   <include file="$(find rwth_ground_plane)/launch/ground_plane_tf_based_fixed.launch">
     <arg name="base_footprint" value="$(arg base_footprint)" />
     <arg name="camera_frame" value="$(arg world_frame)" />
@@ -21,7 +21,7 @@
         <param name="detect_threshold" value="0.7"/>
         <param name="nms_threshold" value="0.45"/>
         <param name="bounding_boxes" value="/darknet_ros/bounding_boxes" type="string"/>
-        <param name="image" value="/camera/color/image_raw" type="string"/>
+        <param name="image" value="/camera_front/color/image_raw" type="string"/>
         <param name="tensorRT_yolo_out_image" value="/darknet_ros/detection_image" type="string"/>
     </node>
   </group>
@@ -121,7 +121,7 @@
   </group>
 
   <!-- Pedestrian Tracking -->
-  <arg name="camera_namespace" default="/camera"/>
+  <arg name="camera_namespace" default="/camera_front"/>
   <arg name="fused_detections" default="/detected_persons_synchronized"/>
   <arg name="tracked_persons" default="/rwth_tracker/tracked_persons" />
   <include file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking.launch">
@@ -136,7 +136,7 @@
 
   <!-- Person Trajectories -->
 <!--   <arg name="person_trajectories" default="/rwth_tracker/person_trajectories" />
-  <arg name="camera_frame" default="/camera_color_optical_frame" />
+  <arg name="camera_frame" default="/camera_front_color_optical_frame" />
   <include file="$(find rwth_pedestrian_trajectories)/launch/pedestrian_trajectories.launch">
     <arg name="tracked_persons" value="$(arg tracked_persons)" />
     <arg name="person_trajectories" value="$(arg person_trajectories)" />
