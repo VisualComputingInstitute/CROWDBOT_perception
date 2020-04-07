@@ -12,6 +12,18 @@ find_package(catkin REQUIRED COMPONENTS roscpp rospy std_msgs sensor_msgs messag
 find_package(OpenCV)
 include_directories(${OpenCV_INCLUDE_DIRS})
 
+ADD_LIBRARY(opencv_dep_cudart STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppial STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppicc STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppicom STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppidei STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppif STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppig STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppim STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppist STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppisu STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppitc STATIC dummy_lib.cpp)
+
 set(CMAKE_BUILD_TYPE Release)
 
 if(CMAKE_COMPILER_IS_GNUCXX)

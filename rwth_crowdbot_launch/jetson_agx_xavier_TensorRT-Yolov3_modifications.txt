@@ -1,0 +1,38 @@
+(venv_sensing) qolo@QoloNvidia:/ssd_nvidia/Tracker_RWTH/TensorRT-Yolov3$ git diff
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 62d9cdd..469ff99 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -18,6 +18,18 @@ FIND_PACKAGE(OpenCV REQUIRED)
+ include_directories(${OpenCV_INCLUDE_DIRS})
+ link_directories(${OpenCV_LIBRARIES_DIRS})
+ 
++ADD_LIBRARY(opencv_dep_cudart STATIC dummy_lib.cpp)
++ADD_LIBRARY(opencv_dep_nppial STATIC dummy_lib.cpp)
++ADD_LIBRARY(opencv_dep_nppicc STATIC dummy_lib.cpp)
++ADD_LIBRARY(opencv_dep_nppicom STATIC dummy_lib.cpp)
++ADD_LIBRARY(opencv_dep_nppidei STATIC dummy_lib.cpp)
++ADD_LIBRARY(opencv_dep_nppif STATIC dummy_lib.cpp)
++ADD_LIBRARY(opencv_dep_nppig STATIC dummy_lib.cpp)
++ADD_LIBRARY(opencv_dep_nppim STATIC dummy_lib.cpp)
++ADD_LIBRARY(opencv_dep_nppist STATIC dummy_lib.cpp)
++ADD_LIBRARY(opencv_dep_nppisu STATIC dummy_lib.cpp)
++ADD_LIBRARY(opencv_dep_nppitc STATIC dummy_lib.cpp)
++
+ #build runYolov3
+ add_executable(runYolov3 main.cpp eval.cpp dataReader.cpp)
+ target_link_libraries(runYolov3 TrtNet ${OpenCV_LIBS})
+diff --git a/main.cpp b/main.cpp
+index c05849e..1ee9584 100644
+--- a/main.cpp
++++ b/main.cpp
+@@ -24,7 +24,7 @@ vector<float> prepareImage(cv::Mat& img)
+     auto scaleSize = cv::Size(img.cols * scale,img.rows * scale);
+ 
+     cv::Mat rgb ;
+-    cv::cvtColor(img, rgb, CV_BGR2RGB);
++    cv::cvtColor(img, rgb, cv::COLOR_BGR2RGB);
+     cv::Mat resized;
+     cv::resize(rgb, resized,scaleSize,0,0,INTER_CUBIC);
+ 
+
