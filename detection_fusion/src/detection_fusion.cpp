@@ -131,7 +131,8 @@ void fuseDetections(DP& dp_fused)
         }
         catch (tf::TransformException ex)
         {
-            ROS_WARN_THROTTLE(20.0, "Failed transform lookup in camera frame to world frame, ignore detections.", ex.what());
+            ROS_WARN("[DetectionFusion] Failed transform lookup from %s to %s, ignore detections. %s", 
+                     dp_frame.c_str(), world_frame_.c_str(), ex.what());
             continue;
         }
 
