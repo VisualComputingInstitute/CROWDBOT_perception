@@ -6,7 +6,7 @@
   <!-- Ground Plane -->
   <arg name="base_footprint" default="tf_qolo" />
   <arg name="world_frame" default="tf_qolo" />
-  <arg name="ground_plane" default="tf_qolo" />
+  <arg name="ground_plane" default="/ground_plane" />
   <include file="$(find rwth_ground_plane)/launch/ground_plane_tf_based_fixed.launch">
     <arg name="base_footprint" value="$(arg base_footprint)" />
     <arg name="camera_frame" value="$(arg world_frame)" />
