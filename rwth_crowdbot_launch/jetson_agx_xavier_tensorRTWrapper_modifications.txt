@@ -1,0 +1,58 @@
+(venv_sensing) qolo@QoloNvidia:/ssd_nvidia/Tracker_RWTH/TensorRT-Yolov3/tensorRTWrapper$ git diff
+diff --git a/code/include/YoloConfigs.h b/code/include/YoloConfigs.h
+index 189d3a2..3a80ce7 100644
+--- a/code/include/YoloConfigs.h
++++ b/code/include/YoloConfigs.h
+@@ -16,7 +16,7 @@ namespace Yolo
+     };
+ 
+     //YOLO 608
+-    YoloKernel yolo1 = {
++    /*YoloKernel yolo1 = {
+         19,
+         19,
+         {116,90,  156,198,  373,326}
+@@ -30,24 +30,24 @@ namespace Yolo
+         76,
+         76,
+         {10,13,  16,30,  33,23}
+-    };
++    };*/
+ 
+     //YOLO 416
+-    // YoloKernel yolo1 = {
+-    //     13,
+-    //     13,
+-    //     {116,90,  156,198,  373,326}
+-    // };
+-    // YoloKernel yolo2 = {
+-    //     26,
+-    //     26,
+-    //     {30,61,  62,45,  59,119}
+-    // };
+-    // YoloKernel yolo3 = {
+-    //     52,
+-    //     52,
+-    //     {10,13,  16,30,  33,23}
+-    // };
++     YoloKernel yolo1 = {
++         13,
++         13,
++         {116,90,  156,198,  373,326}
++     };
++     YoloKernel yolo2 = {
++         26,
++         26,
++         {30,61,  62,45,  59,119}
++     };
++     YoloKernel yolo3 = {
++         52,
++        52,
++        {10,13,  16,30,  33,23}
++     };
+ }
+ 
+-#endif
+\ No newline at end of file
++#endif
+

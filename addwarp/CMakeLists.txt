@@ -16,6 +16,18 @@ find_package(catkin REQUIRED
 # find_package(Boost REQUIRED COMPONENTS thread)
 find_package(OpenCV REQUIRED)
 
+ADD_LIBRARY(opencv_dep_cudart STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppial STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppicc STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppicom STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppidei STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppif STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppig STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppim STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppist STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppisu STATIC dummy_lib.cpp)
+ADD_LIBRARY(opencv_dep_nppitc STATIC dummy_lib.cpp)
+
 ###################################
 ## catkin specific configuration ##
 ###################################

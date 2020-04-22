@@ -1,0 +1,159 @@
+<launch>
+  <arg name="trt" default="false" />
+  <arg name="optical_flow" default="false" />
+  <arg name="reid" default="false" />
+
+  <!-- Ground Plane -->
+  <arg name="base_footprint" default="tf_qolo" />
+  <arg name="world_frame" default="tf_qolo" />
+  <arg name="ground_plane" default="/ground_plane" />
+  <include file="$(find rwth_ground_plane)/launch/ground_plane_tf_based_fixed.launch">
+    <arg name="base_footprint" value="$(arg base_footprint)" />
+    <arg name="camera_frame" value="$(arg world_frame)" />
+    <arg name="ground_plane" value="$(arg ground_plane)" />
+    <arg name="rate" value="10.0" />
+  </include>
+
+  <!-- YOLO (with TensorRT) -->
+  <group if="$(arg trt)">
+    <node pkg="trtyolo" type="tensorrt_yolo" name= "trt_yolo_kinect" output="screen">
+        <param name="engine_path" value="/ssd_nvidia/Tracker_RWTH/TensorRT-Yolov3/yolov3_fp16.engine" type="string"/>
+        <param name="detect_threshold" value="0.7"/>
+        <param name="nms_threshold" value="0.45"/>
+        <param name="bounding_boxes" value="/darknet_ros/bounding_boxes" type="string"/>
+        <param name="image" value="/camera_front/color/image_raw" type="string"/>
+        <param name="tensorRT_yolo_out_image" value="/darknet_ros/detection_image" type="string"/>
+    </node>
+  </group>
+
+  <!-- YOLO (without TensorRT) -->
+  <group unless="$(arg trt)">
+    <arg name="yolo_version" default="v3"/>
+    <arg name="yolo_weights_path" default="$(find darknet_ros)/yolo_network_config/weights"/>
+    <arg name="yolo_config_path" default="$(find darknet_ros)/yolo_network_config/cfg"/>
+    <node pkg="darknet_ros" type="darknet_ros" name="darknet_ros" output="screen" launch-prefix="" respawn="true">
+      <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/darknet_ros/darknet_ros.yaml"/>
+      <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/darknet_ros/topics.yaml"/>
+      <rosparam command="load" file="$(find darknet_ros)/config/yolo$(arg yolo_version).yaml"/>
+      <param name="weights_path"          value="$(arg yolo_weights_path)" />
+      <param name="config_path"           value="$(arg yolo_config_path)" />
+    </node>
+  </group>
+
+  <!-- Camera Detection -->
+  <node pkg="yolo_to_3d" type="node.py" name="yolo_to_3d" output="screen">
+    <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/yolo_to_3d/yolo_to_3d.yaml"/>
+    <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/yolo_to_3d/topics.yaml"/>
+  </node>
+
+  <!-- Lidar Detection -->
+  <node pkg="drow_ros" type="node.py" name="drow_ros" output="screen">
+    <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/drow_ros/drow_ros.yaml"/>
+    <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/drow_ros/topics.yaml"/>
+  </node>
+
+  <group if="$(arg optical_flow)">
+    <!-- PWC net -->
+    <node pkg="rwth_crowdbot_launch" type="run_pwc_net_ros.sh" name="pwc_net_ros" />
+
+    <!-- Add warp -->
+    <node pkg="addwarp" type="addwarp" name="addwarp" output="screen">
+      <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/addwarp/addwarp.yaml"/>
+      <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/addwarp/topics.yaml"/>
+    </node>
+
+    <!-- With optical flow, with ReID -->
+    <group if="$(arg reid)">
+      <!-- ReID -->
+      <node pkg="reid" type="reid_ros.py" name="reid_kinect" cwd="node" output="screen">
+          <param name="image" value="/camera/color/image_raw" type="string"/>
+          <param name="detected_persons" value="/detected_persons/yolo_with_warp" type="string"/>
+          <param name="embed_detectedpersons" value="/detected_persons/yolo_with_warp_reid" type="string"/>
+          <param name="queue_size" value="1" type="int"/>
+          <param name="model_path" value="./model_v1.pth"/>
+      </node>
+      <!-- Detection Fusion -->
+      <node pkg="detection_fusion" type="detection_fusion" name="detection_fusion" output="screen">
+        <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/detection_fusion/detection_fusion.yaml"/>
+        <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/detection_fusion/topics.yaml"/>
+        <remap from="/detected_persons/yolo"   to="/detected_persons/yolo_with_warp_reid"/>
+      </node>
+    </group>
+
+    <!-- With optical flow, no ReID -->
+    <group unless="$(arg reid)">
+      <!-- Detection Fusion -->
+      <node pkg="detection_fusion" type="detection_fusion" name="detection_fusion" output="screen">
+        <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/detection_fusion/detection_fusion.yaml"/>
+        <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/detection_fusion/topics.yaml"/>
+        <remap from="/detected_persons/yolo"   to="/detected_persons/yolo_with_warp"/>
+      </node>
+    </group>
+  </group>
+
+  <group unless="$(arg optical_flow)">
+    <!-- No optical flow, with ReID -->
+    <group if="$(arg reid)">
+      <!-- ReID -->
+      <node pkg="reid" type="reid_ros.py" name="reid_kinect" cwd="node" output="screen">
+          <param name="image" value="/camera/color/image_raw" type="string"/>
+          <param name="detected_persons" value="/detected_persons/yolo" type="string"/>
+          <param name="embed_detectedpersons" value="/detected_persons/yolo_reid" type="string"/>
+          <param name="queue_size" value="1" type="int"/>
+          <param name="model_path" value="./model_v1.pth"/>
+      </node>
+      <!-- Detection Fusion -->
+      <node pkg="detection_fusion" type="detection_fusion" name="detection_fusion" output="screen">
+        <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/detection_fusion/detection_fusion.yaml"/>
+        <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/detection_fusion/topics.yaml"/>
+        <remap from="/detected_persons/yolo"   to="/detected_persons/yolo_reid"/>
+      </node>
+    </group>
+
+    <!-- No optical flow, no ReID -->
+    <group unless="$(arg reid)">
+      <!-- Detection Fusion -->
+      <node pkg="detection_fusion" type="detection_fusion" name="detection_fusion" output="screen">
+        <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/detection_fusion/detection_fusion.yaml"/>
+        <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/detection_fusion/topics.yaml"/>
+      </node>
+    </group>
+  </group>
+
+  <!-- Pedestrian Tracking -->
+  <arg name="camera_namespace" default="/camera_front"/>
+  <arg name="fused_detections" default="/detected_persons_synchronized"/>
+  <arg name="tracked_persons" default="/rwth_tracker/tracked_persons" />
+  <include file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking.launch">
+    <arg name="camera_namespace" value="$(arg camera_namespace)" />
+    <arg name="ground_plane" value="$(arg ground_plane)" />
+    <arg name="detections" value="$(arg fused_detections)" />
+    <arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
+    <arg name="pedestrian_image" value="/rwth_tracker/image" />
+    <arg name="tracked_persons" value="$(arg tracked_persons)" />
+    <arg name="queue_size" value="10" />
+  </include>
+
+  <!-- Person Trajectories -->
+<!--   <arg name="person_trajectories" default="/rwth_tracker/person_trajectories" />
+  <arg name="camera_frame" default="/camera_front_color_optical_frame" />
+  <include file="$(find rwth_pedestrian_trajectories)/launch/pedestrian_trajectories.launch">
+    <arg name="tracked_persons" value="$(arg tracked_persons)" />
+    <arg name="person_trajectories" value="$(arg person_trajectories)" />
+    <arg name="queue_size" value="10" />
+    <arg name="camera_frame" value="$(arg camera_frame)" />
+  </include>
+ -->
+
+  <!-- Back projection -->
+<!--   <arg name="max_frame" default="20" />
+  <arg name="backproject_visual_image" default="/backproject_visual_image" />
+  <node pkg="yoloconvertor" type="backprojection_pinhole" name= "backproject_pinhole" output="screen">
+    <param name="tracked_persons" value="$(arg tracked_persons)" type="string"/>
+    <param name="world_frame" value="$(arg world_frame)" type="string"/>
+    <param name="backproject_visual_image" value="$(arg backproject_visual_image)" type="string"/>
+    <param name="person_trajectories" value="$(arg person_trajectories)" />
+    <param name="max_frame" value="$(arg max_frame)" type="int"/>
+  </node>
+ -->
+</launch>
