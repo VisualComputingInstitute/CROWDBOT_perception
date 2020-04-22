@@ -11,5 +11,5 @@ publisher:
 
 subscriber:
     scan:
-        topic: /front_lidar/laserscan
+        topic: /front_lidar/scan
         queue_size: 1
