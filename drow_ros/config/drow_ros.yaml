@@ -1,0 +1,3 @@
+weight_file: '/home/jia/git/3d/3d_obj_det/drow-v2/v3/dr_spaam/ckpts/dr_spaam_e40.pth'
+conf_thresh: 0.1
+stride: 1

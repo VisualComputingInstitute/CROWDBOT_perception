@@ -2,8 +2,9 @@ import numpy as np
 import rospy
 from sensor_msgs.msg import LaserScan
 from frame_msgs.msg import DetectedPerson, DetectedPersons
-from drow.drow_detector import DROWDetector
-# import time
+
+from dr_spaam.detector import Detector
+
 
 def read_subscriber_param(name):
     """
@@ -29,7 +30,9 @@ class DROWRos():
     def __init__(self):
         self._detection_id = 0
         self._read_params()
-        self._drow = DROWDetector(self.weight_file, use_spaam=False)
+        self._detector = Detector(
+            self.weight_file, original_drow=False,
+            gpu=True, stride=self.stride)
         self._init()
 
     def _read_params(self):
@@ -38,6 +41,7 @@ class DROWRos():
         """
         self.weight_file = rospy.get_param("~weight_file")
         self.conf_thresh = rospy.get_param("~conf_thresh")
+        self.stride = rospy.get_param("~stride")
 
     def _init(self):
         """
@@ -57,35 +61,30 @@ class DROWRos():
         if self._dets_pub.get_num_connections() == 0:
             return
 
-        stride = 2
+        if not self._detector.laser_spec_set():
+            self._detector.set_laser_spec(angle_inc=msg.angle_increment,
+                                          num_pts=len(msg.ranges))
 
-        if not self._drow.laser_spec_set():
-            self._drow.set_laser_spec(angle_inc=msg.angle_increment,
-                                      num_pts=len(msg.ranges),
-                                      stride=stride)
-
-        scan = np.array(msg.ranges)[::stride]
+        scan = np.array(msg.ranges)
         scan[scan == 0.0] = 29.99
         scan[np.isinf(scan)] = 29.99
         scan[np.isnan(scan)] = 29.99
 
         # t = time.time()
-        dets_xy, dets_cls = self._drow(scan)
-        # print(t - time.time())
+        dets_xy, dets_cls, _ = self._detector(scan)
+        # print("[DrSpaamROS] End-to-end inference time: %f" % (t - time.time()))
 
         # confidence threshold
         conf_mask = (dets_cls >= self.conf_thresh).reshape(-1)
-        if not np.sum(conf_mask) > 0:
-            return
-
+        # if not np.sum(conf_mask) > 0:
+        #     return
         dets_xy = dets_xy[conf_mask]
         dets_cls = dets_cls[conf_mask]
 
         # convert and publish ros msg
-        dps_msg = self._detections_to_ros_msg(dets_xy, dets_cls)
-        dps_msg.header = msg.header
-        self._dets_pub.publish(dps_msg)
-
+        dets_msg = self._detections_to_ros_msg(dets_xy, dets_cls)
+        dets_msg.header = msg.header
+        self._dets_pub.publish(dets_msg)
 
     def _detections_to_ros_msg(self, dets_xy, dets_conf):
         dps = DetectedPersons()
