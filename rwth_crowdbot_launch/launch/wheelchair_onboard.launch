@@ -1,5 +1,5 @@
 <launch>
-  <arg name="trt" default="false" />
+  <arg name="trt" default="true" />
   <arg name="optical_flow" default="false" />
   <arg name="reid" default="false" />
 
