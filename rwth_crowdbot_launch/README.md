@@ -42,9 +42,21 @@ git clone --branch crowdbot_master --recursive https://git.rwth-aachen.de/sabari
 catkin build -cs rwth_crowdbot_launch
 ```
 
-10. Set up the network weights for DROW (the tracker's laser scan based person detector)
-	1. From [google drive](https://drive.google.com/open?id=1_GQHN45QCj5pat44qbtfX-4lCOVyY97d), download the weigths file `dr_spaam_e40.pth` or `drow_e40.pth`.
-	1. Set the path to this file in the config file `rwth_crowdbot_launch/config/PLATFORM/drow_ros/drow_ros.yaml` (`PLATFORM` is the robotic platform, `qolo` for example).
+10. Set up the network for DR-SPAAM (the tracker's laser scan based person detector)
+
+Clone and install the detector package to your python virtual environment
+```
+git clone https://github.com/VisualComputingInstitute/DR-SPAAM-Detector.git
+cd dr_spaam
+python setup.py install
+```
+
+(Ignore the `dr_spaam_ros` directory in the cloned repo. 
+We only need to install the `dr_spaam` python package.)
+
+Download the network weigths `dr_spaam_e40.pth` from [here](https://github.com/VisualComputingInstitute/DR-SPAAM-Detector/releases).
+
+Set the path to this file in the config file `rwth_crowdbot_launch/config/PLATFORM/drow_ros/drow_ros.yaml` (`PLATFORM` is the robotic platform, `qolo` for example).
 
 11. Download and set the path to the TensorRT engine file in the launch file `rwth_crowdbot_launch/launch/PLATFORM_onboard.launch` (under `<!-- YOLO (with TensorRT) -->`).
 
