@@ -1,11 +1,11 @@
 <launch>
-  <arg name="trt" default="true" />
+  <arg name="trt" default="false" />
   <arg name="optical_flow" default="false" />
   <arg name="reid" default="false" />
 
   <!-- Ground Plane -->
-  <arg name="base_footprint" default="tf_qolo" />
-  <arg name="world_frame" default="tf_qolo" />
+  <arg name="base_footprint" default="tf_qolo_world" />
+  <arg name="world_frame" default="tf_qolo_world" />
   <arg name="ground_plane" default="/ground_plane" />
   <include file="$(find rwth_ground_plane)/launch/ground_plane_tf_based_fixed.launch">
     <arg name="base_footprint" value="$(arg base_footprint)" />
@@ -21,7 +21,7 @@
         <param name="detect_threshold" value="0.7"/>
         <param name="nms_threshold" value="0.45"/>
         <param name="bounding_boxes" value="/darknet_ros/bounding_boxes" type="string"/>
-        <param name="image" value="/camera_front/color/image_raw" type="string"/>
+        <param name="image" value="/camera_left/color/image_raw" type="string"/>
         <param name="tensorRT_yolo_out_image" value="/darknet_ros/detection_image" type="string"/>
     </node>
   </group>
@@ -47,9 +47,14 @@
   </node>
 
   <!-- Lidar Detection -->
-  <node pkg="drow_ros" type="node.py" name="drow_ros" output="screen">
+  <node pkg="drow_ros" type="node.py" name="drow_ros_front" output="screen">
     <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/drow_ros/drow_ros.yaml"/>
-    <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/drow_ros/topics.yaml"/>
+    <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/drow_ros/topics_front.yaml"/>
+  </node>
+
+  <node pkg="drow_ros" type="node.py" name="drow_ros_rear" output="screen">
+    <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/drow_ros/drow_ros.yaml"/>
+    <rosparam command="load" file="$(find rwth_crowdbot_launch)/config/qolo/drow_ros/topics_rear.yaml"/>
   </node>
 
   <group if="$(arg optical_flow)">
@@ -66,7 +71,7 @@
     <group if="$(arg reid)">
       <!-- ReID -->
       <node pkg="reid" type="reid_ros.py" name="reid_kinect" cwd="node" output="screen">
-          <param name="image" value="/camera/color/image_raw" type="string"/>
+          <param name="image" value="/camera_left/color/image_raw" type="string"/>
           <param name="detected_persons" value="/detected_persons/yolo_with_warp" type="string"/>
           <param name="embed_detectedpersons" value="/detected_persons/yolo_with_warp_reid" type="string"/>
           <param name="queue_size" value="1" type="int"/>
@@ -96,7 +101,7 @@
     <group if="$(arg reid)">
       <!-- ReID -->
       <node pkg="reid" type="reid_ros.py" name="reid_kinect" cwd="node" output="screen">
-          <param name="image" value="/camera/color/image_raw" type="string"/>
+          <param name="image" value="/camera_left/color/image_raw" type="string"/>
           <param name="detected_persons" value="/detected_persons/yolo" type="string"/>
           <param name="embed_detectedpersons" value="/detected_persons/yolo_reid" type="string"/>
           <param name="queue_size" value="1" type="int"/>
@@ -121,7 +126,7 @@
   </group>
 
   <!-- Pedestrian Tracking -->
-  <arg name="camera_namespace" default="/camera_front"/>
+  <arg name="camera_namespace" default="/camera_left"/>
   <arg name="fused_detections" default="/detected_persons_synchronized"/>
   <arg name="tracked_persons" default="/rwth_tracker/tracked_persons" />
   <include file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking.launch">
@@ -136,7 +141,7 @@
 
   <!-- Person Trajectories -->
 <!--   <arg name="person_trajectories" default="/rwth_tracker/person_trajectories" />
-  <arg name="camera_frame" default="/camera_front_color_optical_frame" />
+  <arg name="camera_frame" default="/camera_left_color_optical_frame" />
   <include file="$(find rwth_pedestrian_trajectories)/launch/pedestrian_trajectories.launch">
     <arg name="tracked_persons" value="$(arg tracked_persons)" />
     <arg name="person_trajectories" value="$(arg person_trajectories)" />

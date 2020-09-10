@@ -7,7 +7,7 @@ enforce_all: false
 # creating subscribers.
 number_of_detection_source: 2
 # The fused detections are transformed into, fused, and published in fixed frame.
-world_frame: "tf_qolo"
+world_frame: "tf_qolo_world"
 # Detections (from different sensor) with distance lower than this value are
 # considered as duplicate.
 overlap_thresh: 0.5

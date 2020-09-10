@@ -1,0 +1,15 @@
+publisher:
+    visual_marker:
+        topic: /lidar_visualization_marker_front
+        queue_size: 1
+        latch: false
+
+    detections:
+        topic: /drow_detected_persons_front
+        queue_size: 1
+        latch: false
+
+subscriber:
+    scan:
+        topic: /front_lidar/scan
+        queue_size: 1

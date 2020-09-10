@@ -20,7 +20,7 @@ subscriber:
         queue_size: 1
 
     camera_info:
-        topic: /camera_front/color/camera_info
+        topic: /camera_left/color/camera_info
         queue_size: 1
 
     yolo_bounding_boxes:
@@ -28,9 +28,9 @@ subscriber:
         queue_size: 1
 
     image:
-        topic: /camera_front/color/image_raw
+        topic: /camera_left/color/image_raw
         queue_size: 1
 
     depth:
-        topic: /camera_front/aligned_depth_to_color/image_raw
+        topic: /camera_left/aligned_depth_to_color/image_raw
         queue_size: 1

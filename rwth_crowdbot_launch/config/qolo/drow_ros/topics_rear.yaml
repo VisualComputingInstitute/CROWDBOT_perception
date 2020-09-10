@@ -1,15 +1,15 @@
 publisher:
     visual_marker:
-        topic: /lidar_visualization_marker
+        topic: /lidar_visualization_marker_rear
         queue_size: 1
         latch: false
 
     detections:
-        topic: /drow_detected_persons
+        topic: /drow_detected_persons_rear
         queue_size: 1
         latch: false
 
 subscriber:
     scan:
-        topic: /front_lidar/scan
+        topic: /rear_lidar/scan
         queue_size: 1
