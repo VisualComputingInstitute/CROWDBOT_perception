@@ -11,7 +11,7 @@
     <arg name="base_footprint" value="$(arg base_footprint)" />
     <arg name="camera_frame" value="$(arg world_frame)" />
     <arg name="ground_plane" value="$(arg ground_plane)" />
-    <arg name="rate" value="10.0" />
+    <arg name="rate" value="5.0" />
   </include>
 
   <!-- YOLO (with TensorRT) -->
@@ -136,7 +136,7 @@
     <arg name="pedestrian_array" value="/rwth_tracker/pedestrian_array" />
     <arg name="pedestrian_image" value="/rwth_tracker/image" />
     <arg name="tracked_persons" value="$(arg tracked_persons)" />
-    <arg name="queue_size" value="10" />
+    <arg name="queue_size" value="2" />
   </include>
 
   <!-- Person Trajectories -->

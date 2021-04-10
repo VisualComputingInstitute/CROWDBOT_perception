@@ -16,7 +16,7 @@ publisher:
 
 subscriber:
     ground_plane:
-        topic: /tf_qolo
+        topic: /ground_plane
         queue_size: 1
 
     camera_info:

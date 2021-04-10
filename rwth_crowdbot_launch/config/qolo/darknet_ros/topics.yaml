@@ -1,6 +1,6 @@
 subscribers:
   camera_reading:
-    topic: /camera_front/color/image_raw
+    topic: /camera_left/color/image_raw
     queue_size: 1
 
 actions:

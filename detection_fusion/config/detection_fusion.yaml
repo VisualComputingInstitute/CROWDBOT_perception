@@ -1,5 +1,5 @@
 # Rate to perform fusion.
-fusion_rate: 10
+fusion_rate: 20
 # True will only perform fusion if all sensors have acquired new reading. As a
 # result the fused detection will have rate lower than the slowest sensor.
 enforce_all: false
@@ -7,4 +7,4 @@ enforce_all: false
 # creating subscribers.
 number_of_detection_source: 3
 # The fused detections are transformed into, fused, and published in fixed frame.
-world_frame: "odom"
+world_frame: "tf_qolo_world"

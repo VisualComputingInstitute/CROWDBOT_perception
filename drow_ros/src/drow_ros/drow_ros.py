@@ -31,7 +31,8 @@ class DROWRos():
         self._detection_id = 0
         self._read_params()
         self._detector = Detector(
-            self.weight_file, original_drow=False,
+            model_name="DR-SPAAM",
+            ckpt_file=self.weight_file,
             gpu=True, stride=self.stride)
         self._init()
 

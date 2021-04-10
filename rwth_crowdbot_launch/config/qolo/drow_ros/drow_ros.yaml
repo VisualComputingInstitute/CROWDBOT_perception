@@ -2,3 +2,5 @@
 # https://drive.google.com/open?id=16TjqFCJ5vT10dYPw6tpIFwsdQMZzMRbK
 weight_file: '/ssd_nvidia/Tracker_RWTH/dr_spaam_e40.pth'
 conf_thresh: 0.3
+stride: 1  # use this to skip laser points
+
