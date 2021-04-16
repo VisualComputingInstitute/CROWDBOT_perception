@@ -1,6 +1,6 @@
 <launch>
     <arg name="config_file" default="$(find rwth_pedestrian_tracking)/config/config_Asus.inp" />
-    <arg name="queue_size" default="10" />
+    <arg name="queue_size" default="2" />
     <arg name="camera_namespace" default="/spencer/sensors/rgbd_front_top" />
     <arg name="ground_plane" default="/spencer/sensors/rgbd_front_top/ground_plane" />
     <arg name="detections" default="/spencer/perception_internal/people_detection/rgbd_front_top/upper_body_detector/detections" />

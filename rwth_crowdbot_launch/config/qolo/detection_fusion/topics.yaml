@@ -18,4 +18,3 @@ subscriber:
     detections2:
         topic: /drow_detected_persons_rear
         queue_size: 1
-

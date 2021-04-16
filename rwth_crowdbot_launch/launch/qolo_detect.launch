@@ -126,7 +126,8 @@
   </group>
 
   <!-- Pedestrian Tracking -->
-  <arg name="camera_namespace" default="/camera_left"/>
+<!-- 
+ <arg name="camera_namespace" default="/camera_left"/>
   <arg name="fused_detections" default="/detected_persons_synchronized"/>
   <arg name="tracked_persons" default="/rwth_tracker/tracked_persons" />
   <include file="$(find rwth_pedestrian_tracking)/launch/pedestrian_tracking.launch">
@@ -138,6 +139,7 @@
     <arg name="tracked_persons" value="$(arg tracked_persons)" />
     <arg name="queue_size" value="1" />
   </include>
+-->
 
   <!-- Person Trajectories -->
 <!--   <arg name="person_trajectories" default="/rwth_tracker/person_trajectories" />
