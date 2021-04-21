@@ -34,9 +34,129 @@ ros::Publisher detected_persons_pub_;
 typedef frame_msgs::DetectedPersons DP;
 typedef message_filters::Subscriber<DP> DPSub;
 
-std::vector<DP::ConstPtr> dp_queue_;  // Keep only the latest detection msg for each sensor
-std::vector<std::shared_ptr<DPSub> > dp_sub_queue_;  // Holder for all subscriber
-std::vector<bool> dp_new_queue_;  // Keep track of new detections from each sensor
+/* ------------------
+
+Helper func
+
+------------------ */
+
+float getBEVDist(const float x0, const float y0, const float x1, const float y1)
+{
+    const float x = x1 - x0;
+    const float y = y1 - y0;
+
+    return sqrt(x * x + y * y);
+}
+
+float getBEVDist(const frame_msgs::DetectedPerson& d0, 
+                 const frame_msgs::DetectedPerson& d1)
+{
+    return getBEVDist(d0.pose.pose.position.x,
+                      d0.pose.pose.position.y,
+                      d1.pose.pose.position.x,
+                      d1.pose.pose.position.y);
+}
+
+float getBEVDist(const frame_msgs::DetectedPerson& d)
+{
+    return getBEVDist(d.pose.pose.position.x,
+                      d.pose.pose.position.y,
+                      0.0,
+                      0.0);
+}
+
+void detectedPersonsCallback(const DP::ConstPtr& msg, const int subscriber_id);
+
+class DetectionSource {
+  public:
+    DetectionSource(ros::NodeHandle& nh,
+                    const std::string topic, 
+                    const int id, 
+                    const float range_min, 
+                    const float range_max) 
+    {
+        id_ = id;
+        topic_ = topic;
+
+        ros_sub_ = std::make_shared<DPSub>(nh, topic.c_str(), 1);
+        range_min_ = range_min;
+        range_max_ = range_max;
+
+        ros_sub_->unsubscribe();
+        updated_ = false;
+        dets_ptr_ = nullptr;
+
+        std::cout << "[DetectionFusion] Add sensor source"
+                  << " id: " << id_
+                  << " topic: " << topic_ 
+                  << " range_min: " << range_min_
+                  << " range_max: " << range_max_
+                  << std::endl;
+    };
+
+    void subscribe() {
+        ros_sub_->subscribe();
+    };
+
+    void unsubscribe() {
+        ros_sub_->unsubscribe();
+    };
+
+    void registerCallback() {
+        ros_sub_->registerCallback(boost::bind(&detectedPersonsCallback, _1, id_));
+    };
+
+
+    void update(const DP::ConstPtr& msg)
+    {
+        DP::Ptr msg_new;
+        msg_new->header = msg->header;
+
+        for (const frame_msgs::DetectedPerson& d : msg->detections)
+        {
+            const float bev_dist = getBEVDist(d);
+            if (bev_dist < range_max_ and bev_dist >= range_min_)
+            {
+                msg_new->detections.push_back(d);
+            }
+        }
+
+        dets_ptr_ = msg_new;
+        updated_ = true;
+    }
+
+    void outdate() { updated_ = false; };
+
+    bool isUpdated() const { return updated_; };
+
+    int getSize() const
+    {
+        if (dets_ptr_) {
+            return dets_ptr_->detections.size();
+        } else {
+            return 0;
+        }
+    };
+
+    DP::ConstPtr getDetections() const { return dets_ptr_; };
+  
+  private:
+    int id_;
+    std::string topic_;
+    DP::ConstPtr dets_ptr_;
+    std::shared_ptr<DPSub> ros_sub_;
+    float range_min_;
+    float range_max_;
+    bool updated_;
+} ;
+
+// // TODO these should be organized into a struct
+// std::vector<DP::ConstPtr> dp_queue_;  // Keep only the latest detection msg for each sensor
+// std::vector<std::shared_ptr<DPSub> > dp_sub_queue_;  // Holder for all subscriber
+// std::vector<bool> dp_new_queue_;  // Keep track of new detections from each sensor
+// std::vector<float> range_min_queue_, range_max_queue_;
+
+std::vector<DetectionSource> ds_queue_;
 
 // Keep track if there has been new detection since last fusion. If no, don't publish.
 // Should be set to true after receiving new detection (in detection callback).
@@ -51,6 +171,8 @@ publish:
     1 detection person
   */
 
+
+
 int findDuplicate(const frame_msgs::DetectedPerson& det_query,
                   const DP& dets,
                   const int latest)
@@ -61,22 +183,8 @@ int findDuplicate(const frame_msgs::DetectedPerson& det_query,
         const frame_msgs::DetectedPerson& det = dets.detections.at(i);
 
         // Check position
-        const Vector<double> p1(det_query.pose.pose.position.x,
-                                det_query.pose.pose.position.y,
-                                det_query.pose.pose.position.z);
-        const Vector<double> p2(det.pose.pose.position.x,
-                                det.pose.pose.position.y,
-                                det.pose.pose.position.z);
-        // Vector<double> p1, p2;
-        // p1.setSize(3);
-        // p2.setSize(3);
-        // p1[0] = det_query.pose.pose.position.x;
-        // p1[1] = det_query.pose.pose.position.y;
-        // p1[2] = det_query.pose.pose.position.z;
-        // p2[0] = det.pose.pose.position.x;
-        // p2[1] = det.pose.pose.position.y;
-        // p2[2] = det.pose.pose.position.z;
-        if ((p1 - p2).norm() < overlap_thresh_)
+        const float dist = getBEVDist(det_query, det);
+        if (dist < overlap_thresh_)
         {
             return i;
         }
@@ -94,13 +202,55 @@ int findDuplicate(const frame_msgs::DetectedPerson& det_query,
 }
 
 
+// int findDuplicate(const frame_msgs::DetectedPerson& det_query,
+//                   const DP& dets,
+//                   const int latest)
+
+// {
+//     for (int i = 0; i < latest; ++i)
+//     {
+//         const frame_msgs::DetectedPerson& det = dets.detections.at(i);
+
+//         // Check position
+//         const Vector<double> p1(det_query.pose.pose.position.x,
+//                                 det_query.pose.pose.position.y,
+//                                 det_query.pose.pose.position.z);
+//         const Vector<double> p2(det.pose.pose.position.x,
+//                                 det.pose.pose.position.y,
+//                                 det.pose.pose.position.z);
+//         // Vector<double> p1, p2;
+//         // p1.setSize(3);
+//         // p2.setSize(3);
+//         // p1[0] = det_query.pose.pose.position.x;
+//         // p1[1] = det_query.pose.pose.position.y;
+//         // p1[2] = det_query.pose.pose.position.z;
+//         // p2[0] = det.pose.pose.position.x;
+//         // p2[1] = det.pose.pose.position.y;
+//         // p2[2] = det.pose.pose.position.z;
+//         if ((p1 - p2).norm() < overlap_thresh_)
+//         {
+//             return i;
+//         }
+
+//         // // Check appearance
+//         // const Vector<float> a1(det_query.embed_vector);
+//         // const Vector<float> a2(det.embed_vector);
+//         // if ((a1 - a2).norm() < 40)
+//         // {
+//         //     return i;
+//         // }
+//     }
+
+//     return -1;
+// }
+
+
 void fuseDetections(DP& dp_fused)
 {
     int detection_count = 0;
-    for (const DP::ConstPtr& dp : dp_queue_)
+    for (const auto& ds : ds_queue_)
     {
-        if (dp)
-            detection_count += dp->detections.size();
+        detection_count += ds.getSize();
     }
 
     dp_fused.detections.reserve(detection_count);
@@ -113,9 +263,9 @@ void fuseDetections(DP& dp_fused)
     int number_fused_detections = 0;
 
     // Iterate over detections from each sensor
-    for (auto it = dp_queue_.begin(); it != dp_queue_.end(); it++)
+    for (auto it = ds_queue_.begin(); it != ds_queue_.end(); it++)
     {
-        const DP::ConstPtr& dp = *it;
+        const DP::ConstPtr& dp = it->getDetections();
 
         if (!dp)
             continue;
@@ -210,15 +360,16 @@ void fuseDetections(DP& dp_fused)
         }  // for (const frame_msgs::DetectedPerson& d : dp->detections)
 
         number_fused_detections = dp_fused.detections.size();
-        dp_new_queue_.at(it - dp_queue_.begin()) = false;
-    }  // for (auto it = dp_queue_.rbegin(); it != dp_queue_.rend(); it++)
+        it->outdate();
+    }  // for (auto it = ds_queue_.rbegin(); it != ds_queue_.rend(); it++)
 }
 
 
 void detectedPersonsCallback(const DP::ConstPtr& msg, const int subscriber_id)
 {
-    dp_queue_.at(subscriber_id) = msg;
-    dp_new_queue_.at(subscriber_id) = true;
+    ds_queue_.at(subscriber_id).update(msg);
+    // dp_queue_.at(subscriber_id) = msg;
+    // dp_new_queue_.at(subscriber_id) = true;
     // Detection may not arrive sequentially
     if (msg->header.stamp.toSec() > latest_detection_stamp_.toSec())
         latest_detection_stamp_ = msg->header.stamp;
@@ -226,24 +377,23 @@ void detectedPersonsCallback(const DP::ConstPtr& msg, const int subscriber_id)
 
 
 // Connection callback that unsubscribes from the tracker if no one is subscribed.
-void connectCallback(ros::Subscriber& connect_sub,
-                     std::vector<std::shared_ptr<DPSub> >& sub_queue)
+void connectCallback(ros::Subscriber& connect_sub)
 {
     if (!detected_persons_pub_.getNumSubscribers())
     {
-        ROS_DEBUG("yoloconvertor: No subscribers. Unsubscribing.");
+        ROS_DEBUG("[DetectionFusion] No subscribers. Unsubscribing.");
         connect_sub.shutdown();
-        for (auto& sub : dp_sub_queue_)
+        for (auto& sub : ds_queue_)
         {
-            sub->unsubscribe();
+            sub.unsubscribe();
         }
     }
     else
     {
-        ROS_DEBUG("yoloconvertor: New subscribers. Subscribing.");
-        for (auto& sub : dp_sub_queue_)
+        ROS_DEBUG("[DetectionFusion] New subscribers. Subscribing.");
+        for (auto& sub : ds_queue_)
         {
-            sub->subscribe();
+            sub.subscribe();
         }
     }
 }
@@ -279,31 +429,40 @@ int main(int argc, char **argv)
     int num_detection_source;
     private_node_handle_.getParam("number_of_detection_source", num_detection_source);
 
-    dp_sub_queue_.reserve(num_detection_source);
+    ds_queue_.reserve(num_detection_source);
     for (int idx = 0; idx < num_detection_source; ++idx)
     {
-        const std::string sub_name = "detections" + std::to_string(idx);
+        const std::string sub_name = "subscriber/detections" + std::to_string(idx);
         std::string sub_topic;
-        private_node_handle_.getParam("subscriber/" + sub_name + "/topic", sub_topic);
+        private_node_handle_.getParam(sub_name + "/topic", sub_topic);
 
-        dp_sub_queue_.push_back(std::make_shared<DPSub>(n, sub_topic.c_str(), 1));
-        std::cout << "[main_fusion_async] Add sensor source "
-                  << "id: " << idx
-                  << " topic: " << sub_topic << std::endl;
-        dp_sub_queue_.back()->unsubscribe();
-        dp_queue_.push_back(nullptr);
-        dp_new_queue_.push_back(false);
+        float range_min, range_max;
+        private_node_handle_.param<float>(sub_name + "/range_min", range_min, 0.0);
+        private_node_handle_.param<float>(sub_name + "/range_max", range_max, 1000.0);
+
+        ds_queue_.push_back(DetectionSource(n, sub_topic, idx, range_min, range_max));
+
+        // dp_sub_queue_.push_back(std::make_shared<DPSub>(n, sub_topic.c_str(), 1));
+        // range_min_queue_.push_back(range_min);
+        // range_max_queue_.push_back(range_max);
+        // std::cout << "[main_fusion_async] Add sensor source"
+        //           << " id: " << idx
+        //           << " topic: " << sub_topic 
+        //           << " range_min: " << range_min
+        //           << " range_max: " << range_max
+        //           << std::endl;
+        // dp_sub_queue_.back()->unsubscribe();
+        // dp_queue_.push_back(nullptr);
+        // dp_new_queue_.push_back(false);
     }
 
     ros::Subscriber connect_sub;
     ros::SubscriberStatusCallback connect_cb = boost::bind(&connectCallback,
-                                                           boost::ref(connect_sub),
-                                                           boost::ref(dp_sub_queue_));
+                                                           boost::ref(connect_sub));
 
-    for (int idx = 0; idx < dp_sub_queue_.size(); ++idx)
+    for (int idx = 0; idx < ds_queue_.size(); ++idx)
     {
-        dp_sub_queue_.at(idx)->registerCallback(
-                boost::bind(&detectedPersonsCallback, _1, idx));
+        ds_queue_.at(idx).registerCallback();
     }
 
     // Publisher
@@ -337,8 +496,10 @@ int main(int argc, char **argv)
         if (enforce_all_)
         {
             bool all_detections_are_new = true;
-            for (const bool dp_is_new : dp_new_queue_)
-                all_detections_are_new = all_detections_are_new && dp_is_new;
+            for (const auto& ds : ds_queue_)
+            {
+                all_detections_are_new = all_detections_are_new && ds.isUpdated();
+            }
 
             if (!all_detections_are_new)
             {
