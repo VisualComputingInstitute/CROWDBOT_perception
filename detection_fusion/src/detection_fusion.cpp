@@ -130,9 +130,11 @@ class DetectionSource {
         {
             // std::cout << "[DetectionFusion] compute " << std::endl;
             const float bev_dist = getDist(d);
+            // std::cout << bev_dist << std::endl;
             if (bev_dist < range_max_ and bev_dist >= range_min_)
             {
                 msg_new.detections.push_back(d);
+                // std::cout << "added" << std::endl;
             }
         }
 
@@ -272,6 +274,7 @@ void fuseDetections(DP& dp_fused)
     {
         detection_count += ds.getSize();
     }
+    // std::cout << "detection_count: " << detection_count << std::endl;
 
     dp_fused.detections.reserve(detection_count);
     dp_fused.header.stamp = latest_detection_stamp_;  // use stamp from latest detection
@@ -287,11 +290,17 @@ void fuseDetections(DP& dp_fused)
     {
         const std::shared_ptr<DP>& dp = it->getDetections();
 
-        if (!dp)
+        if (it->getSize() <= 0)
+        {
+            // std::cout << "No detections, continue" << std::endl;
             continue;
+        }
 
         const ros::Time dp_time = dp->header.stamp;
         const string dp_frame = dp->header.frame_id;
+
+        // std::cout << dp_time << std::endl;
+        // std::cout << dp_frame << std::endl;
 
         tf::StampedTransform transform;
         try
@@ -320,7 +329,11 @@ void fuseDetections(DP& dp_fused)
             d_w.pose.pose.position.z = pos_in_world.getZ();
 
             if (findDuplicate(d_w, dp_fused, number_fused_detections) >= 0)
+            {
+                // std::cout << "Duplicate" << std::endl;
                 continue;
+            }
+
 
             Matrix<double> rotation;
             Matrix<double> covariance;
