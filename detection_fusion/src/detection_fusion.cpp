@@ -40,29 +40,35 @@ Helper func
 
 ------------------ */
 
-float getBEVDist(const float x0, const float y0, const float x1, const float y1)
+float getDist(const float x0, const float y0, const float z0,
+              const float x1, const float y1, const float z1)
 {
     const float x = x1 - x0;
     const float y = y1 - y0;
+    const float z = z1 - z0;
 
-    return sqrt(x * x + y * y);
+    return sqrt(x * x + y * y + z * z);
 }
 
-float getBEVDist(const frame_msgs::DetectedPerson& d0, 
+float getDist(const frame_msgs::DetectedPerson& d0, 
                  const frame_msgs::DetectedPerson& d1)
 {
-    return getBEVDist(d0.pose.pose.position.x,
-                      d0.pose.pose.position.y,
-                      d1.pose.pose.position.x,
-                      d1.pose.pose.position.y);
+    return getDist(d0.pose.pose.position.x,
+                   d0.pose.pose.position.y,
+                   d0.pose.pose.position.z,
+                   d1.pose.pose.position.x,
+                   d1.pose.pose.position.y,
+                   d1.pose.pose.position.z);
 }
 
-float getBEVDist(const frame_msgs::DetectedPerson& d)
+float getDist(const frame_msgs::DetectedPerson& d)
 {
-    return getBEVDist(d.pose.pose.position.x,
-                      d.pose.pose.position.y,
-                      0.0,
-                      0.0);
+    return getDist(d.pose.pose.position.x,
+                   d.pose.pose.position.y,
+                   d.pose.pose.position.z,
+                   0.0,
+                   0.0,
+                   0.0);
 }
 
 void detectedPersonsCallback(const DP::ConstPtr& msg, const int subscriber_id);
@@ -107,22 +113,34 @@ class DetectionSource {
     };
 
 
-    void update(const DP::ConstPtr& msg)
+    void update(const DP& msg)
     {
-        DP::Ptr msg_new;
-        msg_new->header = msg->header;
+        // std::cout << "[DetectionFusion] DetectionSource " << id_ 
+        //           << " update triggered" << std::endl;
 
-        for (const frame_msgs::DetectedPerson& d : msg->detections)
+        DP msg_new;
+
+        // std::cout << "[DetectionFusion] access message header " << std::endl;
+
+        msg_new.header = msg.header;
+
+        // std::cout << "[DetectionFusion] ready to start for loop " << std::endl;
+
+        for (const frame_msgs::DetectedPerson& d : msg.detections)
         {
-            const float bev_dist = getBEVDist(d);
+            // std::cout << "[DetectionFusion] compute " << std::endl;
+            const float bev_dist = getDist(d);
             if (bev_dist < range_max_ and bev_dist >= range_min_)
             {
-                msg_new->detections.push_back(d);
+                msg_new.detections.push_back(d);
             }
         }
 
-        dets_ptr_ = msg_new;
+        dets_ptr_ = std::make_shared<DP>(msg_new);
         updated_ = true;
+
+        // std::cout << "[DetectionFusion] DetectionSource (id: " << id_ 
+        //           << ") update finished" << std::endl;
     }
 
     void outdate() { updated_ = false; };
@@ -138,12 +156,12 @@ class DetectionSource {
         }
     };
 
-    DP::ConstPtr getDetections() const { return dets_ptr_; };
+    std::shared_ptr<DP> getDetections() const { return dets_ptr_; };
   
   private:
     int id_;
     std::string topic_;
-    DP::ConstPtr dets_ptr_;
+    std::shared_ptr<DP> dets_ptr_;
     std::shared_ptr<DPSub> ros_sub_;
     float range_min_;
     float range_max_;
@@ -183,7 +201,7 @@ int findDuplicate(const frame_msgs::DetectedPerson& det_query,
         const frame_msgs::DetectedPerson& det = dets.detections.at(i);
 
         // Check position
-        const float dist = getBEVDist(det_query, det);
+        const float dist = getDist(det_query, det);
         if (dist < overlap_thresh_)
         {
             return i;
@@ -247,6 +265,8 @@ int findDuplicate(const frame_msgs::DetectedPerson& det_query,
 
 void fuseDetections(DP& dp_fused)
 {
+    // std::cout << "[DetectionFusion] fuseDetections triggered" << std::endl;
+
     int detection_count = 0;
     for (const auto& ds : ds_queue_)
     {
@@ -265,7 +285,7 @@ void fuseDetections(DP& dp_fused)
     // Iterate over detections from each sensor
     for (auto it = ds_queue_.begin(); it != ds_queue_.end(); it++)
     {
-        const DP::ConstPtr& dp = it->getDetections();
+        const std::shared_ptr<DP>& dp = it->getDetections();
 
         if (!dp)
             continue;
@@ -367,7 +387,12 @@ void fuseDetections(DP& dp_fused)
 
 void detectedPersonsCallback(const DP::ConstPtr& msg, const int subscriber_id)
 {
-    ds_queue_.at(subscriber_id).update(msg);
+    // std::cout << "[DetectionFusion] detectedPersonsCallback triggered, id:" 
+    //           << subscriber_id << std::endl;
+
+    // std::shared_ptr<DP> msg_ptr = std::make_shared<DP>(*msg);
+
+    ds_queue_.at(subscriber_id).update(*msg);
     // dp_queue_.at(subscriber_id) = msg;
     // dp_new_queue_.at(subscriber_id) = true;
     // Detection may not arrive sequentially
@@ -379,9 +404,11 @@ void detectedPersonsCallback(const DP::ConstPtr& msg, const int subscriber_id)
 // Connection callback that unsubscribes from the tracker if no one is subscribed.
 void connectCallback(ros::Subscriber& connect_sub)
 {
+    // std::cout << "[DetectionFusion] connectCallback triggered" << std::endl;
+
     if (!detected_persons_pub_.getNumSubscribers())
     {
-        ROS_DEBUG("[DetectionFusion] No subscribers. Unsubscribing.");
+        ROS_INFO("[DetectionFusion] No subscribers. Unsubscribing.");
         connect_sub.shutdown();
         for (auto& sub : ds_queue_)
         {
@@ -390,7 +417,7 @@ void connectCallback(ros::Subscriber& connect_sub)
     }
     else
     {
-        ROS_DEBUG("[DetectionFusion] New subscribers. Subscribing.");
+        ROS_INFO("[DetectionFusion] New subscribers. Subscribing.");
         for (auto& sub : ds_queue_)
         {
             sub.subscribe();
