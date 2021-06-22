@@ -10,11 +10,17 @@ subscriber:
     detections0:
         topic: /detected_persons/yolo
         queue_size: 1
+        range_min: 0
+        range_max: 500
 
     detections1:
         topic: /drow_detected_persons_front
         queue_size: 1
+        range_min: 1
+        range_max: 500
 
     detections2:
         topic: /drow_detected_persons_rear
         queue_size: 1
+        range_min: 1
+        range_max: 500
