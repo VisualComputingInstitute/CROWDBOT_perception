@@ -589,11 +589,12 @@ void callback(const DetectedPersons::ConstPtr &detections)
 
     auto t1_cb_debug = std::chrono::high_resolution_clock::now();
     
-    auto dt_cb_debug = std::chrono::duration_cast<std::chrono::microseconds>(t1_cb_debug - t0_cb_debug);
-    auto dt_tracker_debug = std::chrono::duration_cast<std::chrono::microseconds>(t1_tracker_debug - t0_tracker_debug);
+    auto dt_cb_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_cb_debug - t0_cb_debug);
+    auto dt_tracker_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_tracker_debug - t0_tracker_debug);
 
-    std::cout << "Tracking callback time: "<< dt_cb_debug.count() << "ms\n";
-    std::cout << "Tracking core time: "<< dt_tracker_debug.count() << "ms\n";
+    std::cout << "Tracking callback time: "<< dt_cb_debug.count() << "ms, ";
+    std::cout << "core time: "<< dt_tracker_debug.count() << "ms ";
+    std::cout << "(" << double(dt_tracker_debug.count()) / double(dt_cb_debug.count()) << ")\n";
 }
 
 // Connection callback that unsubscribes from the tracker if no one is subscribed.
