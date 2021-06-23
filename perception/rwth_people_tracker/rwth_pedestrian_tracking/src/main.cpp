@@ -10,7 +10,7 @@
 #include <sensor_msgs/CameraInfo.h>
 
 #include <tf/tf.h>
-#include <tf/transform_listener.h>
+// #include <tf/transform_listener.h>
 
 #include <string.h>
 #include <boost/thread.hpp>
@@ -63,7 +63,7 @@ ros::Publisher pub_tracked_persons;
 Vector< Hypo > HyposAll;
 Detections *det_comb;
 Tracker tracker;
-tf::TransformListener* listener;
+// tf::TransformListener* listener;
 int cnt = 0;
 unsigned long track_seq = 0;
 int numAllDets = 0;
@@ -430,7 +430,8 @@ void callback(const DetectedPersons::ConstPtr &detections)
 
     // also prepare tracks
     frame_msgs::TrackedPersons trackedPersons;
-    trackedPersons.header.stamp = ros::Time::now();//detections->header.stamp;
+    // trackedPersons.header.stamp = ros::Time::now();//detections->header.stamp;
+    trackedPersons.header.stamp = detections->header.stamp;
     trackedPersons.header.seq = ++track_seq;
     trackedPersons.header.frame_id = detections->header.frame_id; //FIXME: world frame, maybe should not be hardcoded
 
@@ -480,6 +481,9 @@ void callback(const DetectedPersons::ConstPtr &detections)
         ros::Time currentCreationTime;
         hyposMDL(i).getCreationTime(currentCreationTime);
         trackedPerson.age = ros::Duration(ros::Time::now()-currentCreationTime);
+        // NOTE Hypo.cpp L69, ros::Time::now is used as the hypo creation time
+        // It seems that this time is only used to compute age, so might be ok
+        // trackedPerson.age = ros::Duration(trackedPersons.header.stamp-currentCreationTime);
         trackedPerson.is_occluded = false; // FIXME: available for mht tracker, yet?
         Vector<FrameInlier> frameInlier;
         hyposMDL(i).getIdx(frameInlier);
@@ -594,7 +598,7 @@ int main(int argc, char **argv)
     ros::init(argc, argv, "pedestrian_tracking");
     ros::NodeHandle n;
 
-    listener = new tf::TransformListener();
+    // listener = new tf::TransformListener();
 
     // Declare variables that can be modified by launch file or command line.
     int queue_size;
