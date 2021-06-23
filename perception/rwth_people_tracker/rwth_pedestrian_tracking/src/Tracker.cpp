@@ -301,12 +301,23 @@ void Tracker::process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allD
 void Tracker::process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allDet, int frame,
                                         const frame_msgs::DetectedPersons::ConstPtr &foundDetInFrame/*, CImg<unsigned char>& im, Camera &cam, Matrix<double> &depthMap*/)
 {
+    auto t0_debug = std::chrono::high_resolution_clock::now();
 
     allDet.addDetsOneFrame(foundDetInFrame, frame/*, im, cam, depthMap*/);
+
+    auto t1_debug = std::chrono::high_resolution_clock::now();
 
     //*****************************************************************************************************
     HyposMDL.clearContent();
     process_frame( allDet , /*cam,*/ frame, HyposAll);
+
+    auto t2_debug = std::chrono::high_resolution_clock::now();
+
+    auto dt01_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_debug - t0_debug);
+    auto dt12_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t2_debug - t1_debug);
+
+    std::cout << "Tracker.cpp, adding detection time: "<< dt01_debug.count() << "ms, ";
+    std::cout << "process frame time: "<< dt12_debug.count() << "ms\n";
 }
 
 #endif
