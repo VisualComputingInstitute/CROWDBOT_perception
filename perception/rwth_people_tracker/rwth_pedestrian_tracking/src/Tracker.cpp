@@ -10,6 +10,8 @@
 #include "ros/ros.h"
 #include "ros/time.h"
 
+#include <chrono>
+
 using namespace std;
 
 
@@ -197,12 +199,23 @@ void Tracker::process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allD
 
     char imageSavePath[200];
 
+    auto t0_debug = std::chrono::high_resolution_clock::now();
+
     allDet.addHOGdetOneFrame(foundDetInFrame, frame, im, cam, depthMap);
+
+    auto t1_debug = std::chrono::high_resolution_clock::now();
 
     //*****************************************************************************************************
     HyposMDL.clearContent();
     process_frame( allDet , cam, frame, HyposMDL, HyposAll, HypoEnded, hypoStack, possibleColors, assignedBBoxCol, hypoLastSelForVis);
 
+    auto t2_debug = std::chrono::high_resolution_clock::now();
+
+    auto dt01_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_debug - t0_debug);
+    auto dt12_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t2_debug - t1_debug);
+
+    std::cout << "Tracker.cpp, adding detection time: "<< dt01_debug.count() << "ms, ";
+    std::cout << "process frame time: "<< dt12_debug.count() << "ms\n";
 
     //***************************************************************************************
     // Visualization part 3D
