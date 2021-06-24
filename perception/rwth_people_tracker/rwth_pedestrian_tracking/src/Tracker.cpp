@@ -10,7 +10,7 @@
 #include "ros/ros.h"
 #include "ros/time.h"
 
-#define TIME_TRACKER
+// #define TIME_TRACKER
 
 #ifdef TIME_TRACKER
 #include <chrono>
@@ -696,7 +696,7 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
     t0_debug = std::chrono::high_resolution_clock::now();
     #endif
 
-    if(Globals::changeID_onthefly)
+    if (Globals::changeID_onthefly)
     {
         bool already_in_set = false;
         id_map.clear();

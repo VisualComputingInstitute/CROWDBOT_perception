@@ -49,7 +49,7 @@
 #include "frame_msgs/TrackedPersons2d.h"
 
 
-#define TIME_TRACKER
+// #define TIME_TRACKER
 
 #ifdef TIME_TRACKER
 #include <chrono>
@@ -159,7 +159,7 @@ void ReadConfigFile(string path_config_file)
     Globals::dSameIdThresh = config.read<double>("dSameIdThresh");
     Globals::reIdThresh_HypoLevel = config.read<double>("reIdThresh_HypoLevel");
     Globals::reIdThresh_DALevel = config.read<double>("reIdThresh_DALevel");
-    Globals::changeID_onthefly = config.read<double>("changeID_onthefly");
+    Globals::changeID_onthefly = config.read<bool>("changeID_onthefly");
 
     //======================================
     // Trajectory

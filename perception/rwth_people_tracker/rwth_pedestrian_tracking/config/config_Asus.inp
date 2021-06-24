@@ -76,8 +76,10 @@ dTau = 2 #! regulates the impact-factor for detections of the past to the weight
 #==========================
 # Time horizon for event cone search
 #==========================
-coneTimeHorizon = 160 #! number of frames a hypothesis needs to be useless (not selected) before getting dropped
-maxHoleLen = 80 #! allowed number of (consecutive) frames without detection support, when running Kalman up (+extending tracks)
+# coneTimeHorizon = 160 #! number of frames a hypothesis needs to be useless (not selected) before getting dropped
+# maxHoleLen = 80 #! allowed number of (consecutive) frames without detection support, when running Kalman up (+extending tracks)
+coneTimeHorizon = 80 #! number of frames a hypothesis needs to be useless (not selected) before getting dropped
+maxHoleLen = 40 #! allowed number of (consecutive) frames without detection support, when running Kalman up (+extending tracks)
 dHolePenalty = 0.5 #! simple factor to penalize holes (frames without detection support)
 
 #==============================
