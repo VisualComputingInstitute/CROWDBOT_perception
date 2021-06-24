@@ -214,7 +214,7 @@ void Tracker::process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allD
     auto dt01_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_debug - t0_debug);
     auto dt12_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t2_debug - t1_debug);
 
-    std::cout << "Tracker.cpp, adding detection time: "<< dt01_debug.count() << "ms, ";
+    std::cout << "Tracker.cpp summary, adding detection time: "<< dt01_debug.count() << "ms, ";
     std::cout << "process frame time: "<< dt12_debug.count() << "ms\n";
 
     //***************************************************************************************
@@ -316,7 +316,7 @@ void Tracker::process_tracking_oneFrame(Vector<Hypo>& HyposAll, Detections& allD
     auto dt01_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_debug - t0_debug);
     auto dt12_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t2_debug - t1_debug);
 
-    std::cout << "Tracker.cpp, adding detection time: "<< dt01_debug.count() << "ms, ";
+    std::cout << "Tracker.cpp summary, adding detection time: "<< dt01_debug.count() << "ms, ";
     std::cout << "process frame time: "<< dt12_debug.count() << "ms\n";
 }
 
@@ -364,15 +364,34 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
     // Extend Trajectories Hypos
     //******************************************************************
 
+    auto t0_debug = std::chrono::high_resolution_clock::now();
+
     Vector<int> extendUsedDet;
     extend_trajectories(HyposAll,  det, LTPmax, LTPmin, normfct, HypoExtended, extendUsedDet/*, cam*/);
     ROS_DEBUG("\33[36;40;1m Extended %i trajectories\33[0m", HypoExtended.getSize());
 
+    auto t1_debug = std::chrono::high_resolution_clock::now();
+
+    auto dt01_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_debug - t0_debug);
+
+    std::cout << "Tracker.cpp, extend_trajectories: "<< dt01_debug.count() << "ms";
+    std::cout << "  (extended " << HypoExtended.getSize() << " trajectories)\n";
+
+
     //******************************************************************
     // Find new Hypos
     //******************************************************************
+    t0_debug = std::chrono::high_resolution_clock::now();
+
     make_new_hypos(LTPmax, LTPmin, det, HypoNew, normfct, extendUsedDet);
     ROS_DEBUG("\33[31;40;1m     Created %i new Trajectories \33[0m", HypoNew.getSize());
+
+    t1_debug = std::chrono::high_resolution_clock::now();
+
+    dt01_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_debug - t0_debug);
+
+    std::cout << "Tracker.cpp, make_new_hypos: "<< dt01_debug.count() << "ms";
+    std::cout << " (created " << HypoNew.getSize() << " new trajectories)\n";
 
     HyposAll.clearContent();
 //    HyposAll.append(HypoEnded);
@@ -384,6 +403,8 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
     //******************************************************************
     // Prepare Hypos
     //******************************************************************
+    t0_debug = std::chrono::high_resolution_clock::now();
+
     prepare_hypos(HyposAll);
 
     Vector <Hypo> temp;
@@ -398,22 +419,38 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
 
     HyposAll = temp;
 
+    t1_debug = std::chrono::high_resolution_clock::now();
+    dt01_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_debug - t0_debug);
+    std::cout << "Tracker.cpp, prepare_hypos: "<< dt01_debug.count() << "ms\n";
+
     //******************************************************************
     // Build the MDL Matrix
     //******************************************************************
+    t0_debug = std::chrono::high_resolution_clock::now();
 
     mdl.build_mdl_matrix(Q, HyposAll, LTPmax, normfct);
+
+    t1_debug = std::chrono::high_resolution_clock::now();
+    dt01_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_debug - t0_debug);
+    std::cout << "Tracker.cpp, build_mdl_matrix: "<< dt01_debug.count() << "ms\n";
 
     //******************************************************************
     //  Solve MDL Greedy
     //******************************************************************
+    t0_debug = std::chrono::high_resolution_clock::now();
 
     //    mdl.solve_mdl_exactly(Q, m, HyposMDL, HypoIdx, HyposAll);
 
     mdl.solve_mdl_greedy(Q, m, HyposMDL, HypoIdx, HyposAll);
+
+    t1_debug = std::chrono::high_resolution_clock::now();
+    dt01_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_debug - t0_debug);
+    std::cout << "Tracker.cpp, solve_mdl_greedy: "<< dt01_debug.count() << "ms\n";
     //******************************************************************
     //  Fix IDs
     //******************************************************************
+
+    t0_debug = std::chrono::high_resolution_clock::now();
 
     for(int i = 0; i < HyposMDL.getSize(); i++)
     {
@@ -508,14 +545,26 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
         }
     }
 
+    t1_debug = std::chrono::high_resolution_clock::now();
+    dt01_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_debug - t0_debug);
+    std::cout << "Tracker.cpp, Fix IDs: "<< dt01_debug.count() << "ms\n";
+
     //******************************************************************
     // in case, "FixID" made new duplicate IDs, remove them
     //******************************************************************
+    t0_debug = std::chrono::high_resolution_clock::now();
+
     HypoIdx = remove_ID_duplicates(HyposMDL, HypoIdx);
+
+    t1_debug = std::chrono::high_resolution_clock::now();
+    dt01_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_debug - t0_debug);
+    std::cout << "Tracker.cpp, remove_ID_duplicates: "<< dt01_debug.count() << "ms\n";
 
     //******************************************************************
     // Print HypoMDL results
     //******************************************************************
+
+    t0_debug = std::chrono::high_resolution_clock::now();
 
     for(int i = 0; i < HyposMDL.getSize(); i++)
     {
@@ -539,12 +588,17 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
         }
     }
 
+    t1_debug = std::chrono::high_resolution_clock::now();
+    dt01_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_debug - t0_debug);
+    std::cout << "Tracker.cpp, print HypoMDL results: "<< dt01_debug.count() << "ms\n";
+
     // we dont check termination (exit zones, eg, at image border) anymore, to continue (or reidentify) targets, even if they have left the image
     //check_termination(cam, HyposAll);
 
     //******************************************************************
     // Only propagate non-terminated hypotheses to the next frame
     //******************************************************************
+    t0_debug = std::chrono::high_resolution_clock::now();
 
     unsigned int nr =  HyposAll.getSize();
     temp.clearContent();
@@ -579,6 +633,13 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
         }*/
     }
     hypoStack = newHypoStack;
+
+    t1_debug = std::chrono::high_resolution_clock::now();
+    dt01_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_debug - t0_debug);
+    std::cout << "Tracker.cpp, propagate hypotheses: "<< dt01_debug.count() << "ms";
+    std::cout << " (" << hypoStack.getSize() << " hypotheses)\n";
+
+    t0_debug = std::chrono::high_resolution_clock::now();
 
     // test for robust ID_map
     bool already_in_set = false;
@@ -644,7 +705,9 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
         it++;
     }*/
 
-
+    t1_debug = std::chrono::high_resolution_clock::now();
+    dt01_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_debug - t0_debug);
+    std::cout << "Tracker.cpp, test for robust_ID map: "<< dt01_debug.count() << "ms\n";
 }
 
 void Tracker::prepare_hypos(Vector<Hypo>& vHypos)

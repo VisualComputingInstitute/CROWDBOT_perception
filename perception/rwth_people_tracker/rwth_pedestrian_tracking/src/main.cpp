@@ -303,6 +303,7 @@ Vector<double> projectPlaneToCam(Vector<double> p, Camera cam)
 
 void callback(const DetectedPersons::ConstPtr &detections)
 {
+    std::cout << std::endl;
     auto t0_cb_debug = std::chrono::high_resolution_clock::now();
 
     ROS_DEBUG("Entered tracking callback");
