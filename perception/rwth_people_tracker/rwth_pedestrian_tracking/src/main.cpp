@@ -49,7 +49,11 @@
 #include "frame_msgs/TrackedPersons2d.h"
 
 
+#define TIME_TRACKER
+
+#ifdef TIME_TRACKER
 #include <chrono>
+#endif
 
 using namespace std;
 using namespace sensor_msgs;
@@ -303,8 +307,10 @@ Vector<double> projectPlaneToCam(Vector<double> p, Camera cam)
 
 void callback(const DetectedPersons::ConstPtr &detections)
 {
+    #ifdef TIME_TRACKER
     std::cout << std::endl;
     auto t0_cb_debug = std::chrono::high_resolution_clock::now();
+    #endif
 
     ROS_DEBUG("Entered tracking callback");
 
@@ -416,13 +422,17 @@ void callback(const DetectedPersons::ConstPtr &detections)
         cim.save(safe_string_char);
     }*/
 
+    #ifdef TIME_TRACKER
     auto t0_tracker_debug = std::chrono::high_resolution_clock::now();
+    #endif
 
     ///////////////////////////////////////////TRACKING///////////////////////////
     tracker.process_tracking_oneFrame(HyposAll, *det_comb, cnt, detections/*, cim, camera*/);
     ///////////////////////////////////////////TRACKING-END///////////////////////////
 
+    #ifdef TIME_TRACKER
     auto t1_tracker_debug = std::chrono::high_resolution_clock::now();
+    #endif
 
     /*if (Globals::save_for_eval){
         // save processed image
@@ -588,14 +598,14 @@ void callback(const DetectedPersons::ConstPtr &detections)
     numAllDets += detections->detections.size();
     cnt++;
 
+    #ifdef TIME_TRACKER
     auto t1_cb_debug = std::chrono::high_resolution_clock::now();
-    
     auto dt_cb_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_cb_debug - t0_cb_debug);
     auto dt_tracker_debug = std::chrono::duration_cast<std::chrono::milliseconds>(t1_tracker_debug - t0_tracker_debug);
-
     std::cout << "Tracking callback time: "<< dt_cb_debug.count() << "ms, ";
     std::cout << "core time: "<< dt_tracker_debug.count() << "ms ";
     std::cout << "(" << double(dt_tracker_debug.count()) / double(dt_cb_debug.count()) << ")\n";
+    #endif
 }
 
 // Connection callback that unsubscribes from the tracker if no one is subscribed.
