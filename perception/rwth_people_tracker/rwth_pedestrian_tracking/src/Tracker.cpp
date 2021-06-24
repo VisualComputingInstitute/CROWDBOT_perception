@@ -696,35 +696,19 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
     t0_debug = std::chrono::high_resolution_clock::now();
     #endif
 
-    bool already_in_set = false;
-    id_map.clear();
-    for (int j = 0; j < hypoStack.getSize(); j++)
+    if(Globals::changeID_onthefly)
     {
-        //already in a set? continue!
-        already_in_set = false;
-        std::map<int, std::set<int>>::iterator it = id_map.begin();
-        while(it != id_map.end())
-        {
-            //std::cout<<it->first<<" :: "<<it->second<<std::endl;
-            if(it->second.find(hypoStack(j).getHypoID())!=it->second.end()){
-                already_in_set = true;
-                break;
-            }
-            it++;
-        }
-        if(already_in_set){
-            continue;
-        } else{
-            id_map[hypoStack(j).getHypoID()].insert(hypoStack(j).getHypoID());
-        }
-        for (int k = j+1; k < hypoStack.getSize(); k++)
+        bool already_in_set = false;
+        id_map.clear();
+        for (int j = 0; j < hypoStack.getSize(); j++)
         {
             //already in a set? continue!
             already_in_set = false;
             std::map<int, std::set<int>>::iterator it = id_map.begin();
             while(it != id_map.end())
             {
-                if(it->second.find(hypoStack(k).getHypoID())!=it->second.end()){
+                //std::cout<<it->first<<" :: "<<it->second<<std::endl;
+                if(it->second.find(hypoStack(j).getHypoID())!=it->second.end()){
                     already_in_set = true;
                     break;
                 }
@@ -735,29 +719,48 @@ void Tracker::process_frame(Detections& det, /*Camera &cam,*/ int t,  Vector< Hy
             } else{
                 id_map[hypoStack(j).getHypoID()].insert(hypoStack(j).getHypoID());
             }
-            Vector<double> embDistVec = hypoStack(j).getEmb_vec() - hypoStack(k).getEmb_vec();
-            double embDist = embDistVec.norm();
-            if(embDist<=Globals::reIdThresh_HypoLevel && embDistVec.getSize()>0){
-                id_map[hypoStack(j).getHypoID()].insert(hypoStack(k).getHypoID());
-                // CHANGE ID ON-THE-FLY
-                if(Globals::changeID_onthefly) hypoStack(k).setHypoID(hypoStack(j).getHypoID());
+            for (int k = j+1; k < hypoStack.getSize(); k++)
+            {
+                //already in a set? continue!
+                already_in_set = false;
+                std::map<int, std::set<int>>::iterator it = id_map.begin();
+                while(it != id_map.end())
+                {
+                    if(it->second.find(hypoStack(k).getHypoID())!=it->second.end()){
+                        already_in_set = true;
+                        break;
+                    }
+                    it++;
+                }
+                if(already_in_set){
+                    continue;
+                } else{
+                    id_map[hypoStack(j).getHypoID()].insert(hypoStack(j).getHypoID());
+                }
+                Vector<double> embDistVec = hypoStack(j).getEmb_vec() - hypoStack(k).getEmb_vec();
+                double embDist = embDistVec.norm();
+                if(embDist<=Globals::reIdThresh_HypoLevel && embDistVec.getSize()>0){
+                    id_map[hypoStack(j).getHypoID()].insert(hypoStack(k).getHypoID());
+                    // CHANGE ID ON-THE-FLY
+                    if(Globals::changeID_onthefly) hypoStack(k).setHypoID(hypoStack(j).getHypoID());
+                }
+                //std::cout << "kept hypoID " << hypoStack(j).getHypoID() << " in stack for reID" << std::endl;
+                //std::cout << "last selected: " << (t - hypoStack(j).getLastSelected()) << " frames ago" << std::endl;
             }
-            //std::cout << "kept hypoID " << hypoStack(j).getHypoID() << " in stack for reID" << std::endl;
-            //std::cout << "last selected: " << (t - hypoStack(j).getLastSelected()) << " frames ago" << std::endl;
         }
+        /*std::map<int, std::set<int>>::iterator it = id_map.begin();
+        while(it != id_map.end())
+        {
+            std::cout<<it->first<<" :: {";
+            std::set<int>::iterator it2 = it->second.begin();
+            while(it2 != it->second.end()){
+                std::cout<< *it2 << ", ";
+                it2++;
+            }
+            std::cout<< "} "<<std::endl;
+            it++;
+        }*/
     }
-    /*std::map<int, std::set<int>>::iterator it = id_map.begin();
-    while(it != id_map.end())
-    {
-        std::cout<<it->first<<" :: {";
-        std::set<int>::iterator it2 = it->second.begin();
-        while(it2 != it->second.end()){
-            std::cout<< *it2 << ", ";
-            it2++;
-        }
-        std::cout<< "} "<<std::endl;
-        it++;
-    }*/
 
     #ifdef TIME_TRACKER
     t1_debug = std::chrono::high_resolution_clock::now();
