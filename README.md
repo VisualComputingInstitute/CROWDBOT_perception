@@ -11,7 +11,7 @@ New features include:
 
 For setting up, refer to `rwth_crowdbot_launch/README.md`.
 
-# Acknowledgement
+## Acknowledgement
 - SPENCER tracking pipeline [`[repo]`](https://github.com/spencer-project/spencer_people_tracking), [`[repo]`](https://github.com/sbreuers/detta)
 - [YOLOv3 with TensorRT](https://github.com/lewes6369/TensorRT-Yolov3)
 - [darknet_ros](https://github.com/leggedrobotics/darknet_ros) for person detection
