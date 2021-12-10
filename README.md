@@ -1,7 +1,7 @@
 # CROWDBOT_perception
 This is the perception pipeline for the [CROWDBOT project](http://crowdbot.eu/), featuring person detection and tracking from multi-sensor modalities.
 The project is based on earlier works from the [SPENCER project](https://github.com/spencer-project/spencer_people_tracking).
-The new features include:
+New features include:
 - Adaption for operating on Jetson AGX 
 - YOLOv3 with TensorRT acceleration for fast RGB-based person detection
 - DROW3/DR-SPAAM for person detection with 2D LiDAR sensors
